@@ -18,11 +18,5 @@ env/
 .ruff_cache/
 .pyright/
 
-# Generated evaluation reports (re-created by running evaluations)
-baseline_evaluation/reports_zero_shot/*.json
-baseline_evaluation/reports_few_shot/*.json
-!baseline_evaluation/reports_zero_shot/.gitkeep
-!baseline_evaluation/reports_few_shot/.gitkeep
-
 # macOS
 .DS_Store
