@@ -1,0 +1,22 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+
+# Type checker and test caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+
+# macOS
+.DS_Store

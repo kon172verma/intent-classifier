@@ -1,0 +1,149 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# tool_router/config.yaml
+# Central configuration for the PEFT MCP tool-selection project.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+data:
+  sample_file:    tool_router/data/sample.json          # 100-example evaluation set
+  tools_ref:      tool_router/data/tools_reference.json # 30-tool catalogue
+
+# ── Model registry ────────────────────────────────────────────────────────────
+# Maps short CLI keys to HuggingFace model IDs and param counts.
+# Gated models require HF_TOKEN in .env (or `huggingface-cli login`).
+models:
+  smollm2-135m:
+    hf_id:   HuggingFaceTB/SmolLM2-135M-Instruct
+    params_b: 0.135
+    gated:   false
+
+  gemma3-270m:
+    hf_id:   google/gemma-3-270m-it
+    params_b: 0.270
+    gated:   true
+
+  smollm2-360m:
+    hf_id:   HuggingFaceTB/SmolLM2-360M-Instruct
+    params_b: 0.360
+    gated:   false
+
+  qwen2.5-0.5b:
+    hf_id:   Qwen/Qwen2.5-0.5B-Instruct
+    params_b: 0.500
+    gated:   false
+
+  qwen3-0.6b:
+    hf_id:   Qwen/Qwen3-0.6B
+    params_b: 0.600
+    gated:   false
+
+  gemma3-1b:
+    hf_id:   google/gemma-3-1b-it
+    params_b: 1.000
+    gated:   true
+
+  tinyllama:
+    hf_id:   TinyLlama/TinyLlama-1.1B-Chat-v1.0
+    params_b: 1.100
+    gated:   false
+
+  qwen2.5-1.5b:
+    hf_id:   Qwen/Qwen2.5-1.5B-Instruct
+    params_b: 1.500
+    gated:   false
+
+  qwen3-1.7b:
+    hf_id:   Qwen/Qwen3-1.7B
+    params_b: 1.700
+    gated:   false
+
+  smollm3:
+    hf_id:   HuggingFaceTB/SmolLM3-3B
+    params_b: 3.000
+    gated:   false
+
+  llama3.2-3b:
+    hf_id:   meta-llama/Llama-3.2-3B-Instruct
+    params_b: 3.200
+    gated:   true   # requires Meta licence acceptance on HF
+
+  qwen3-4b:
+    hf_id:   Qwen/Qwen3-4B
+    params_b: 4.000
+    gated:   false
+
+# ── Model size categories (params in billions) ────────────────────────────────
+categories:
+  tiny:
+    label:    "< 0.6 B"
+    max_b:    0.600
+    color:    "#4C72B0"
+  small:
+    label:    "0.6 B - 1.2 B"
+    min_b:    0.600
+    max_b:    1.200
+    color:    "#55A868"
+  mid:
+    label:    ">= 1.2 B"
+    min_b:    1.200
+    color:    "#C44E52"
+
+# ── Inference settings ────────────────────────────────────────────────────────
+inference:
+  device:         auto          # auto | cpu | cuda | mps
+  dtype:          bfloat16      # bfloat16 on GPU/MPS, float32 on CPU
+  max_new_tokens: 32
+  do_sample:      false         # greedy decoding
+
+# ── Zero-shot evaluation ──────────────────────────────────────────────────────
+zero_shot:
+  reports_dir:  tool_router/baseline_evaluation/reports
+  figures_dir:  tool_router/baseline_evaluation/figures
+
+# ── Few-shot evaluation ───────────────────────────────────────────────────────
+few_shot:
+  # Examples are embedded directly in the system prompt (see prompts.few_shot below).
+  # No external shots file is used.
+  reports_dir:  tool_router/baseline_evaluation/few_shot_reports
+  figures_dir:  tool_router/baseline_evaluation/figures
+
+# ── System prompts ────────────────────────────────────────────────────────────
+prompts:
+  zero_shot: |
+    You are a tool router.
+
+    Rules:
+    - Return only the tool name.
+    - Return "none" if no tool matches.
+    - Do not explain.
+
+  few_shot: |
+    You are a tool router.
+
+    Rules:
+    - Return only the tool name.
+    - Return "none" if no tool matches.
+    - Do not explain.
+
+    Examples:
+
+    User Request: "I need directions to the airport."
+    Selected Tool: nav_route_planner
+
+    User Request: "Call my wife."
+    Selected Tool: call_handler
+
+    User Request: "It is too warm in the car."
+    Selected Tool: climate_control
+
+    User Request: "My tyre went flat on the motorway."
+    Selected Tool: roadside_assistance
+
+    User Request: "Read me the latest news headlines."
+    Selected Tool: news_briefing
+
+    User Request: "Lock the car remotely."
+    Selected Tool: remote_vehicle_lock
+
+    User Request: "What is the capital of France?"
+    Selected Tool: none
