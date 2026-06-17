@@ -1,0 +1,1019 @@
+{
+  "model_key": "smollm3",
+  "model_id": "HuggingFaceTB/SmolLM3-3B",
+  "quant": "nf4",
+  "device": "cuda:0",
+  "compute_dtype": "bfloat16",
+  "timestamp": "2026-06-17T14:14:20",
+  "eval_mode": "zero_shot",
+  "n_examples": 100,
+  "n_correct": 1,
+  "accuracy": 0.01,
+  "avg_latency_ms": 1816.68,
+  "p50_latency_ms": 1821.47,
+  "p95_latency_ms": 1868.29,
+  "avg_tokens_per_sec": 17.47,
+  "peak_memory_mb": 2186.14,
+  "results": [
+    {
+      "index": 0,
+      "user_request": "Call my wife.",
+      "n_tools": 18,
+      "answer": "call_handler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 2.3505420289998256,
+      "tokens_generated": 32
+    },
+    {
+      "index": 1,
+      "user_request": "Any accidents reported on Route 1?",
+      "n_tools": 16,
+      "answer": "traffic_alert_service",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8329568040003323,
+      "tokens_generated": 32
+    },
+    {
+      "index": 2,
+      "user_request": "Alert me if my heart rate goes above 100.",
+      "n_tools": 15,
+      "answer": "health_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.815944638000019,
+      "tokens_generated": 32
+    },
+    {
+      "index": 3,
+      "user_request": "Sync my seat and mirror settings to the cloud.",
+      "n_tools": 11,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8117680719997225,
+      "tokens_generated": 32
+    },
+    {
+      "index": 4,
+      "user_request": "How do I file my tax return online?",
+      "n_tools": 1,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8395328440001322,
+      "tokens_generated": 32
+    },
+    {
+      "index": 5,
+      "user_request": "What's the number for Dr. Kim?",
+      "n_tools": 23,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.868292424000174,
+      "tokens_generated": 32
+    },
+    {
+      "index": 6,
+      "user_request": "How much does parking cost at the shopping mall?",
+      "n_tools": 16,
+      "answer": "parking_locator",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.806987853999999,
+      "tokens_generated": 32
+    },
+    {
+      "index": 7,
+      "user_request": "Which nearby station has the lowest fuel price today?",
+      "n_tools": 9,
+      "answer": "fuel_station_finder",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8031459200001336,
+      "tokens_generated": 32
+    },
+    {
+      "index": 8,
+      "user_request": "Remind me to drink more water today.",
+      "n_tools": 18,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8192812490001415,
+      "tokens_generated": 32
+    },
+    {
+      "index": 9,
+      "user_request": "What's the cheapest diesel within 5 km?",
+      "n_tools": 17,
+      "answer": "fuel_station_finder",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8208647700002984,
+      "tokens_generated": 32
+    },
+    {
+      "index": 10,
+      "user_request": "Is there a contact named Liu Wei in my address book?",
+      "n_tools": 21,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.846221675000379,
+      "tokens_generated": 32
+    },
+    {
+      "index": 11,
+      "user_request": "What does error code P0302 mean on my dashboard?",
+      "n_tools": 6,
+      "answer": "vehicle_diagnostics",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8345968879998509,
+      "tokens_generated": 32
+    },
+    {
+      "index": 12,
+      "user_request": "Sync my seat and mirror settings to the cloud.",
+      "n_tools": 11,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8131992639996497,
+      "tokens_generated": 32
+    },
+    {
+      "index": 13,
+      "user_request": "Send a quick text to the office: 'stuck in traffic'.",
+      "n_tools": 5,
+      "answer": "sms_messenger",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8179106819998196,
+      "tokens_generated": 32
+    },
+    {
+      "index": 14,
+      "user_request": "When will my delivery arrive today?",
+      "n_tools": 14,
+      "answer": "package_tracker",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.817111692999788,
+      "tokens_generated": 32
+    },
+    {
+      "index": 15,
+      "user_request": "Save this journey to my trip log.",
+      "n_tools": 5,
+      "answer": "trip_logger",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.818868489000124,
+      "tokens_generated": 32
+    },
+    {
+      "index": 16,
+      "user_request": "Stop charging at 80% to preserve battery life.",
+      "n_tools": 12,
+      "answer": "ev_charging_scheduler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8366192160001447,
+      "tokens_generated": 32
+    },
+    {
+      "index": 17,
+      "user_request": "Can you tell if I'm stressed?",
+      "n_tools": 13,
+      "answer": "face_emotion",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8519950400000198,
+      "tokens_generated": 32
+    },
+    {
+      "index": 18,
+      "user_request": "Apply my saved settings to this rental vehicle.",
+      "n_tools": 1,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8092784289997326,
+      "tokens_generated": 32
+    },
+    {
+      "index": 19,
+      "user_request": "Am I fit to drive according to my biometrics?",
+      "n_tools": 4,
+      "answer": "health_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8186716309996882,
+      "tokens_generated": 32
+    },
+    {
+      "index": 20,
+      "user_request": "What meetings do I have this week?",
+      "n_tools": 13,
+      "answer": "corp-scheduler-app",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.817115844,
+      "tokens_generated": 32
+    },
+    {
+      "index": 21,
+      "user_request": "I'm running low on fuel – where's the nearest station?",
+      "n_tools": 11,
+      "answer": "fuel_station_finder",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8193582129997594,
+      "tokens_generated": 32
+    },
+    {
+      "index": 22,
+      "user_request": "Is there a traffic jam on the expressway right now?",
+      "n_tools": 18,
+      "answer": "traffic_alert_service",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8445345639997868,
+      "tokens_generated": 32
+    },
+    {
+      "index": 23,
+      "user_request": "Find me a parking spot within 200 metres of the venue.",
+      "n_tools": 16,
+      "answer": "parking_locator",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8682845769999403,
+      "tokens_generated": 32
+    },
+    {
+      "index": 24,
+      "user_request": "Shuffle my driving playlist.",
+      "n_tools": 12,
+      "answer": "media_player_ctrl",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.876683643999968,
+      "tokens_generated": 32
+    },
+    {
+      "index": 25,
+      "user_request": "How can I improve my driving safety score?",
+      "n_tools": 28,
+      "answer": "safety_proposal",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8561887060000117,
+      "tokens_generated": 32
+    },
+    {
+      "index": 26,
+      "user_request": "What meetings do I have this week?",
+      "n_tools": 14,
+      "answer": "corp-scheduler-app",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.800373246000163,
+      "tokens_generated": 32
+    },
+    {
+      "index": 27,
+      "user_request": "Find John's phone number.",
+      "n_tools": 10,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.804116294999858,
+      "tokens_generated": 32
+    },
+    {
+      "index": 28,
+      "user_request": "Alert me if my heart rate goes above 100.",
+      "n_tools": 19,
+      "answer": "health_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8196807560002526,
+      "tokens_generated": 32
+    },
+    {
+      "index": 29,
+      "user_request": "Check traffic conditions ahead on my route.",
+      "n_tools": 1,
+      "answer": "traffic_alert_service",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.796481577999657,
+      "tokens_generated": 32
+    },
+    {
+      "index": 30,
+      "user_request": "Draft an email to my manager about the project delay.",
+      "n_tools": 12,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8110209260003103,
+      "tokens_generated": 32
+    },
+    {
+      "index": 31,
+      "user_request": "Recommend a book on machine learning for beginners.",
+      "n_tools": 21,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8193629760003205,
+      "tokens_generated": 32
+    },
+    {
+      "index": 32,
+      "user_request": "Any free parking spots downtown?",
+      "n_tools": 18,
+      "answer": "parking_locator",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8115920369996275,
+      "tokens_generated": 32
+    },
+    {
+      "index": 33,
+      "user_request": "Give me the latest news headlines.",
+      "n_tools": 9,
+      "answer": "news_briefing",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.801937487000032,
+      "tokens_generated": 32
+    },
+    {
+      "index": 34,
+      "user_request": "I'm running low on fuel – where's the nearest station?",
+      "n_tools": 11,
+      "answer": "fuel_station_finder",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.793003749000036,
+      "tokens_generated": 32
+    },
+    {
+      "index": 35,
+      "user_request": "What's the number for Dr. Kim?",
+      "n_tools": 20,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8374908370001322,
+      "tokens_generated": 32
+    },
+    {
+      "index": 36,
+      "user_request": "My parcel was supposed to arrive yesterday – where is it?",
+      "n_tools": 30,
+      "answer": "package_tracker",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8898404860001392,
+      "tokens_generated": 32
+    },
+    {
+      "index": 37,
+      "user_request": "Has my order been dispatched yet?",
+      "n_tools": 6,
+      "answer": "package_tracker",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8198878329999388,
+      "tokens_generated": 32
+    },
+    {
+      "index": 38,
+      "user_request": "Do I have a contact called Sarah in my list?",
+      "n_tools": 12,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8230786040003295,
+      "tokens_generated": 32
+    },
+    {
+      "index": 39,
+      "user_request": "How do I file my tax return online?",
+      "n_tools": 12,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8431103579996488,
+      "tokens_generated": 32
+    },
+    {
+      "index": 40,
+      "user_request": "Get me to the downtown office by 9 am.",
+      "n_tools": 17,
+      "answer": "nav_route_planner",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8244847669998308,
+      "tokens_generated": 32
+    },
+    {
+      "index": 41,
+      "user_request": "Order a pizza for delivery tonight.",
+      "n_tools": 15,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8064667339999687,
+      "tokens_generated": 32
+    },
+    {
+      "index": 42,
+      "user_request": "Give me driving safety tips for heavy rain conditions.",
+      "n_tools": 2,
+      "answer": "safety_proposal",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8295774419998452,
+      "tokens_generated": 32
+    },
+    {
+      "index": 43,
+      "user_request": "The engine stopped and I'm stranded on the hard shoulder.",
+      "n_tools": 15,
+      "answer": "roadside_assistance",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8300291719997404,
+      "tokens_generated": 32
+    },
+    {
+      "index": 44,
+      "user_request": "Move my Monday standup to Tuesday at 10 am.",
+      "n_tools": 6,
+      "answer": "corp-scheduler-app",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8111062779998974,
+      "tokens_generated": 32
+    },
+    {
+      "index": 45,
+      "user_request": "Restore my preferred car settings.",
+      "n_tools": 1,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8060923859998184,
+      "tokens_generated": 32
+    },
+    {
+      "index": 46,
+      "user_request": "What's the best programming language to learn first?",
+      "n_tools": 16,
+      "answer": "none",
+      "prediction": "none",
+      "correct": true,
+      "latency_s": 0.37116007399981754,
+      "tokens_generated": 6
+    },
+    {
+      "index": 47,
+      "user_request": "Show me 24-hour parking garages nearby.",
+      "n_tools": 9,
+      "answer": "parking_locator",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8094540079996477,
+      "tokens_generated": 32
+    },
+    {
+      "index": 48,
+      "user_request": "Call Kenji on speakerphone.",
+      "n_tools": 3,
+      "answer": "call_handler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8195634669996252,
+      "tokens_generated": 32
+    },
+    {
+      "index": 49,
+      "user_request": "Check my blood oxygen level.",
+      "n_tools": 20,
+      "answer": "health_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8256081770000492,
+      "tokens_generated": 32
+    },
+    {
+      "index": 50,
+      "user_request": "Sync my language and unit preferences.",
+      "n_tools": 6,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.831438014000014,
+      "tokens_generated": 32
+    },
+    {
+      "index": 51,
+      "user_request": "Unlock the boot from here.",
+      "n_tools": 11,
+      "answer": "remote_vehicle_lock",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8293956429997706,
+      "tokens_generated": 32
+    },
+    {
+      "index": 52,
+      "user_request": "Give me a quick 2-minute news update.",
+      "n_tools": 1,
+      "answer": "news_briefing",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8126213079999616,
+      "tokens_generated": 32
+    },
+    {
+      "index": 53,
+      "user_request": "Who won the last FIFA World Cup?",
+      "n_tools": 19,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.827911141000186,
+      "tokens_generated": 32
+    },
+    {
+      "index": 54,
+      "user_request": "What's the best programming language to learn first?",
+      "n_tools": 8,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8189387339998575,
+      "tokens_generated": 32
+    },
+    {
+      "index": 55,
+      "user_request": "Are there any delays I should know about before I leave?",
+      "n_tools": 10,
+      "answer": "traffic_alert_service",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8095039109998652,
+      "tokens_generated": 32
+    },
+    {
+      "index": 56,
+      "user_request": "Forward the last message I received to Hiroshi.",
+      "n_tools": 14,
+      "answer": "sms_messenger",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8237106080000558,
+      "tokens_generated": 32
+    },
+    {
+      "index": 57,
+      "user_request": "Show me my eco-driving score for the past month.",
+      "n_tools": 5,
+      "answer": "in_car_analytics",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.830782588999682,
+      "tokens_generated": 32
+    },
+    {
+      "index": 58,
+      "user_request": "Phone the office.",
+      "n_tools": 14,
+      "answer": "call_handler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8225949249999758,
+      "tokens_generated": 32
+    },
+    {
+      "index": 59,
+      "user_request": "What movies are showing at the cinema tonight?",
+      "n_tools": 12,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8211093490003805,
+      "tokens_generated": 32
+    },
+    {
+      "index": 60,
+      "user_request": "Find John's phone number.",
+      "n_tools": 12,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.813917475999915,
+      "tokens_generated": 32
+    },
+    {
+      "index": 61,
+      "user_request": "Increase the fan speed.",
+      "n_tools": 15,
+      "answer": "climate_control",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8167053739998664,
+      "tokens_generated": 32
+    },
+    {
+      "index": 62,
+      "user_request": "Find me a parking spot within 200 metres of the venue.",
+      "n_tools": 10,
+      "answer": "parking_locator",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8120499290002954,
+      "tokens_generated": 32
+    },
+    {
+      "index": 63,
+      "user_request": "When will my delivery arrive today?",
+      "n_tools": 8,
+      "answer": "package_tracker",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.825435113000367,
+      "tokens_generated": 32
+    },
+    {
+      "index": 64,
+      "user_request": "Book a flight to London for next week.",
+      "n_tools": 15,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.833160250000219,
+      "tokens_generated": 32
+    },
+    {
+      "index": 65,
+      "user_request": "How many kilometres did I drive last month?",
+      "n_tools": 6,
+      "answer": "trip_logger",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8369697830003133,
+      "tokens_generated": 32
+    },
+    {
+      "index": 66,
+      "user_request": "What is the population of Japan?",
+      "n_tools": 12,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.832219650999832,
+      "tokens_generated": 32
+    },
+    {
+      "index": 67,
+      "user_request": "Look up Yamamoto-san's address.",
+      "n_tools": 16,
+      "answer": "corp-contact-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.828312810999705,
+      "tokens_generated": 32
+    },
+    {
+      "index": 68,
+      "user_request": "What's my estimated range on the current charge?",
+      "n_tools": 15,
+      "answer": "battery_status_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.820351178999772,
+      "tokens_generated": 32
+    },
+    {
+      "index": 69,
+      "user_request": "What's the capital of France?",
+      "n_tools": 29,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8863916329996755,
+      "tokens_generated": 32
+    },
+    {
+      "index": 70,
+      "user_request": "What movies are showing at the cinema tonight?",
+      "n_tools": 11,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.860453545999917,
+      "tokens_generated": 32
+    },
+    {
+      "index": 71,
+      "user_request": "Find me the fastest route home.",
+      "n_tools": 17,
+      "answer": "nav_route_planner",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8437333430001672,
+      "tokens_generated": 32
+    },
+    {
+      "index": 72,
+      "user_request": "How do I file my tax return online?",
+      "n_tools": 12,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8312487260000125,
+      "tokens_generated": 32
+    },
+    {
+      "index": 73,
+      "user_request": "How much have I spent on tolls this month?",
+      "n_tools": 14,
+      "answer": "toll_payment_service",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.846894877000068,
+      "tokens_generated": 32
+    },
+    {
+      "index": 74,
+      "user_request": "Is the battery degrading faster than normal?",
+      "n_tools": 3,
+      "answer": "battery_status_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.7811989320002795,
+      "tokens_generated": 32
+    },
+    {
+      "index": 75,
+      "user_request": "Check traffic conditions ahead on my route.",
+      "n_tools": 18,
+      "answer": "traffic_alert_service",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.820972413999698,
+      "tokens_generated": 32
+    },
+    {
+      "index": 76,
+      "user_request": "How much fuel did I use on the last trip?",
+      "n_tools": 8,
+      "answer": "in_car_analytics",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8026456620000317,
+      "tokens_generated": 32
+    },
+    {
+      "index": 77,
+      "user_request": "What's my current heart rate?",
+      "n_tools": 7,
+      "answer": "health_monitor",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.827028846000303,
+      "tokens_generated": 32
+    },
+    {
+      "index": 78,
+      "user_request": "Apply my saved settings to this rental vehicle.",
+      "n_tools": 7,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8409560400000373,
+      "tokens_generated": 32
+    },
+    {
+      "index": 79,
+      "user_request": "What's my average speed on the expressway today?",
+      "n_tools": 10,
+      "answer": "in_car_analytics",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8226282860000538,
+      "tokens_generated": 32
+    },
+    {
+      "index": 80,
+      "user_request": "Schedule a full charge starting at midnight.",
+      "n_tools": 7,
+      "answer": "ev_charging_scheduler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8164273029997275,
+      "tokens_generated": 32
+    },
+    {
+      "index": 81,
+      "user_request": "Recommend a book on machine learning for beginners.",
+      "n_tools": 7,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8121940759997415,
+      "tokens_generated": 32
+    },
+    {
+      "index": 82,
+      "user_request": "Restore my preferred car settings.",
+      "n_tools": 9,
+      "answer": "corp-cloud-sync",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8177537950000442,
+      "tokens_generated": 32
+    },
+    {
+      "index": 83,
+      "user_request": "What was my top speed today?",
+      "n_tools": 5,
+      "answer": "in_car_analytics",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8355708949998188,
+      "tokens_generated": 32
+    },
+    {
+      "index": 84,
+      "user_request": "Hang up the call.",
+      "n_tools": 1,
+      "answer": "call_handler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.801762644000064,
+      "tokens_generated": 32
+    },
+    {
+      "index": 85,
+      "user_request": "Am I showing signs of fatigue on the camera?",
+      "n_tools": 16,
+      "answer": "face_emotion",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8253745459996935,
+      "tokens_generated": 32
+    },
+    {
+      "index": 86,
+      "user_request": "Translate this paragraph into German.",
+      "n_tools": 10,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8182822180001494,
+      "tokens_generated": 32
+    },
+    {
+      "index": 87,
+      "user_request": "Redial the last number.",
+      "n_tools": 11,
+      "answer": "call_handler",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8149175819999073,
+      "tokens_generated": 32
+    },
+    {
+      "index": 88,
+      "user_request": "Find me a coffee shop close by.",
+      "n_tools": 15,
+      "answer": "poi_search",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8421925789998568,
+      "tokens_generated": 32
+    },
+    {
+      "index": 89,
+      "user_request": "Get me to the downtown office by 9 am.",
+      "n_tools": 16,
+      "answer": "nav_route_planner",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8274487489998137,
+      "tokens_generated": 32
+    },
+    {
+      "index": 90,
+      "user_request": "Translate this paragraph into German.",
+      "n_tools": 10,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8594875569997384,
+      "tokens_generated": 32
+    },
+    {
+      "index": 91,
+      "user_request": "Which fleet vehicles are currently unassigned?",
+      "n_tools": 6,
+      "answer": "corp-fleet-manager",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8214672149997568,
+      "tokens_generated": 32
+    },
+    {
+      "index": 92,
+      "user_request": "Can you tell if I'm stressed?",
+      "n_tools": 3,
+      "answer": "face_emotion",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8257052339999973,
+      "tokens_generated": 32
+    },
+    {
+      "index": 93,
+      "user_request": "What safety precautions should I take in dense fog?",
+      "n_tools": 5,
+      "answer": "safety_proposal",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8215022499998668,
+      "tokens_generated": 32
+    },
+    {
+      "index": 94,
+      "user_request": "Find parking near the station.",
+      "n_tools": 11,
+      "answer": "parking_locator",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8183850440000242,
+      "tokens_generated": 32
+    },
+    {
+      "index": 95,
+      "user_request": "Reroute to avoid the highway.",
+      "n_tools": 8,
+      "answer": "nav_route_planner",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8192640639999809,
+      "tokens_generated": 32
+    },
+    {
+      "index": 96,
+      "user_request": "Who won the last FIFA World Cup?",
+      "n_tools": 4,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8253938759999073,
+      "tokens_generated": 32
+    },
+    {
+      "index": 97,
+      "user_request": "Recommend a book on machine learning for beginners.",
+      "n_tools": 6,
+      "answer": "none",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.812419532000149,
+      "tokens_generated": 32
+    },
+    {
+      "index": 98,
+      "user_request": "Am I showing signs of fatigue on the camera?",
+      "n_tools": 23,
+      "answer": "face_emotion",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8566274199997679,
+      "tokens_generated": 32
+    },
+    {
+      "index": 99,
+      "user_request": "Did I lock the car?",
+      "n_tools": 26,
+      "answer": "remote_vehicle_lock",
+      "prediction": "<think>",
+      "correct": false,
+      "latency_s": 1.8644133070001772,
+      "tokens_generated": 32
+    }
+  ]
+}
