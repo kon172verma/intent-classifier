@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
-Batch runner: evaluates all 5 selected models × 3 quant configs × 2 modes.
+Batch runner: evaluates all 4 selected models × 4 quant configs × 2 modes.
 
 Runs one subprocess at a time (one model per process, sequentially) to avoid
 OOM. Models are iterated in increasing parameter order.
 
+Quantization configs:
+  int8    – Classic 8-bit (universal fallback)
+  nf4     – 4-bit NF4 (NVIDIA GPUs: H100, A100, L4, T4, G4)
+  int4    – 4-bit INT4 (broader hardware: TensorRT, ONNX, edge devices)
+  fp8     – 8-bit FP8 (modern GPUs + emerging edge device support)
+
 Usage
 -----
-# Full run (both zero-shot and few-shot)
+# Full run (all 4 models × 4 quants × 2 modes = 32 runs)
 python run_quant_eval.py
 
 # Zero-shot only
@@ -17,7 +23,10 @@ python run_quant_eval.py --mode zero_shot
 python run_quant_eval.py --limit 5
 
 # Only specific models
-python run_quant_eval.py --models qwen2.5-0.5b qwen3-0.6b
+python run_quant_eval.py --models qwen2.5-0.5b qwen2.5-1.5b
+
+# Only specific quantizations
+python run_quant_eval.py --quants int8 int4 fp8
 """
 
 import argparse
@@ -27,28 +36,37 @@ import sys
 from pathlib import Path
 
 _THIS_DIR = Path(__file__).parent
-_EVAL_SCRIPT = _THIS_DIR / "quant_eval.py"
+_EVAL_SCRIPT = _THIS_DIR / "src" / "quant_eval.py"
 _PYTHON = sys.executable
 
-# Models in increasing parameter order
+# Models in increasing parameter order (4-model core set)
 ALL_MODELS: list[str] = [
     "qwen2.5-0.5b",   # ~500M
     "qwen3-0.6b",     # ~600M
-    "gemma3-1b",      # ~1.0B
     "qwen2.5-1.5b",   # ~1.5B
     "smollm3",        # ~3.0B
 ]
 
-ALL_QUANTS: list[str] = ["int8", "nf4", "nf4_dq"]
+# All quantization precisions
+ALL_QUANTS: list[str] = ["int8", "nf4", "int4", "fp8"]
 
 QUANT_LABELS: dict[str, str] = {
-    "int8":   "INT8",
-    "nf4":    "NF4",
-    "nf4_dq": "NF4+DQ",
+    "int8": "INT8",
+    "nf4":  "NF4",
+    "int4": "INT4",
+    "fp8":  "FP8",
+}
+
+# Map quantization to output directory
+QUANT_OUTPUT_DIRS: dict[str, str] = {
+    "int8": "reports_int8",
+    "nf4": "reports_nf4",
+
+    "int4": "reports_int4",
+    "fp8": "reports_fp8",
 }
 
 DEFAULT_DATA = _THIS_DIR.parent / "dataset_sample" / "sample.json"
-DEFAULT_OUT_DIR = _THIS_DIR / "reports"
 
 
 def run_one(
@@ -56,12 +74,14 @@ def run_one(
     quant: str,
     mode: str,
     data: Path,
-    out_dir: Path,
     device: str,
     limit: int | None,
     max_new_tokens: int,
 ) -> int:
     """Spawn a subprocess for one (model, quant, mode) combo. Returns exit code."""
+    # Output directory is determined by quantization type
+    out_dir = _THIS_DIR / QUANT_OUTPUT_DIRS[quant]
+    
     cmd = [
         _PYTHON, str(_EVAL_SCRIPT),
         "--model", model,
@@ -86,15 +106,20 @@ def run_one(
     return result.returncode
 
 
-def print_summary(out_dir: Path, modes: list[str]) -> None:
-    """Print a compact accuracy table from the saved reports."""
+def print_summary(modes: list[str]) -> None:
+    """Print a compact accuracy table from the saved reports across all quant dirs."""
     reports: list[dict] = []
-    for f in sorted(out_dir.glob("*.json")):
-        try:
-            r = json.loads(f.read_text(encoding="utf-8"))
-            reports.append(r)
-        except Exception:
+    
+    for quant in ALL_QUANTS:
+        out_dir = _THIS_DIR / QUANT_OUTPUT_DIRS[quant]
+        if not out_dir.exists():
             continue
+        for f in sorted(out_dir.glob("*.json")):
+            try:
+                r = json.loads(f.read_text(encoding="utf-8"))
+                reports.append(r)
+            except Exception:
+                continue
 
     if not reports:
         print("No reports found.")
@@ -104,11 +129,11 @@ def print_summary(out_dir: Path, modes: list[str]) -> None:
         subset = [r for r in reports if r.get("eval_mode") == mode]
         if not subset:
             continue
-        print(f"\n{'─'*72}")
+        print(f"\n{'─'*80}")
         print(f"  Summary — {mode.upper()}")
-        print(f"{'─'*72}")
-        print(f"  {'Model':<20} {'Quant':<10} {'Accuracy':>10} {'Mem (MB)':>12}")
-        print(f"  {'─'*20} {'─'*10} {'─'*10} {'─'*12}")
+        print(f"{'─'*80}")
+        print(f"  {'Model':<20} {'Quant':<10} {'Accuracy':>10} {'Mem (MB)':>12} {'Latency (ms)':>14}")
+        print(f"  {'─'*20} {'─'*10} {'─'*10} {'─'*12} {'─'*14}")
         for r in sorted(
             subset,
             key=lambda x: (x.get("model_key", ""), x.get("quant", "")),
@@ -116,20 +141,21 @@ def print_summary(out_dir: Path, modes: list[str]) -> None:
             print(
                 f"  {r.get('model_key',''):20s} {r.get('quant',''):10s} "
                 f"{r.get('accuracy',0)*100:>9.1f}%  "
-                f"{r.get('peak_memory_mb',0):>10.0f} MB"
+                f"{r.get('peak_memory_mb',0):>10.0f} MB  "
+                f"{r.get('avg_latency_ms',0):>12.1f} ms"
             )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Batch quantization evaluation runner.",
+        description="Batch quantization evaluation runner for 4 selected models × 5 precisions.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--models", nargs="+", default=ALL_MODELS,
         choices=ALL_MODELS,
         metavar="MODEL",
-        help="Models to evaluate (default: all 5 selected models).",
+        help="Models to evaluate (default: all 4 selected models).",
     )
     parser.add_argument(
         "--quants", nargs="+", default=ALL_QUANTS,
@@ -146,9 +172,6 @@ def main() -> None:
         "--data", type=Path, default=DEFAULT_DATA,
     )
     parser.add_argument(
-        "--out-dir", type=Path, default=DEFAULT_OUT_DIR,
-    )
-    parser.add_argument(
         "--device", type=str, default="auto",
         choices=["auto", "cpu", "cuda", "mps"],
     )
@@ -162,7 +185,6 @@ def main() -> None:
     args = parser.parse_args()
 
     modes = ["zero_shot", "few_shot"] if args.mode == "both" else [args.mode]
-    args.out_dir.mkdir(parents=True, exist_ok=True)
 
     total = len(args.models) * len(args.quants) * len(modes)
     done = 0
@@ -178,7 +200,6 @@ def main() -> None:
                     quant=quant,
                     mode=mode,
                     data=args.data,
-                    out_dir=args.out_dir,
                     device=args.device,
                     limit=args.limit,
                     max_new_tokens=args.max_new_tokens,
@@ -186,7 +207,7 @@ def main() -> None:
                 if rc != 0:
                     failures.append(f"{model}/{quant}/{mode}")
 
-    print_summary(args.out_dir, modes)
+    print_summary(modes)
 
     if failures:
         print(f"\n  *** {len(failures)} run(s) failed: {failures} ***")

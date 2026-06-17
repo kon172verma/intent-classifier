@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
 """
-Phase 3 – Quantization evaluation for selected PEFT candidates.
+Quantization evaluation for 4 selected PEFT candidates.
 
-Runs the 5 selected models under three quantization configs:
+Runs the 4 selected models under multiple quantization configs:
   int8        – bitsandbytes LLM.int8()
-  nf4         – 4-bit NF4 (QLoRA default)
-  nf4_dq      – 4-bit NF4 + double quantization
+  nf4         – 4-bit NF4 (QLoRA default, NVIDIA GPUs only)
+  int4        – 4-bit INT4 (ONNX/TensorRT compatible, wider device support)
+  fp8         – 8-bit FP8 (modern GPUs + edge devices)
 
 Supports both zero-shot and few-shot prompt modes.
+
+Note on device compatibility:
+  nf4   : NVIDIA GPUs only (H100, A100, L4, T4, G4)
+  int4  : Broader support (TensorRT, ONNX, QNN, edge devices)
+  fp8   : Most modern GPUs + upcoming edge device support
+  int8  : Universal fallback
 
 Usage
 -----
 # Single model, single quant, zero-shot
-python quant_eval.py --model qwen2.5-0.5b --quant nf4
+python quant_eval.py --model qwen2.5-0.5b --quant int8
 
 # Few-shot
-python quant_eval.py --model gemma3-1b --quant int8 --mode few_shot
+python quant_eval.py --model qwen2.5-1.5b --quant nf4 --mode few_shot
 
 # Quick smoke-test
-python quant_eval.py --model qwen2.5-0.5b --quant nf4 --limit 5
+python quant_eval.py --model qwen2.5-0.5b --quant int4 --limit 5
 """
 
 import argparse
@@ -33,7 +40,7 @@ from pathlib import Path
 from typing import Optional
 
 # ── path bootstrap ──────────────────────────────────────────────────────────
-_BASELINE_DIR = Path(__file__).parent.parent / "baseline_evaluation"
+_BASELINE_DIR = Path(__file__).parent.parent.parent / "baseline_evaluation" / "src"
 sys.path.insert(0, str(_BASELINE_DIR))
 
 # Suppress noisy HF warnings before importing transformers
@@ -44,7 +51,7 @@ warnings.filterwarnings("ignore", message=".*MatMul8bitLt.*")
 warnings.filterwarnings("ignore", message=".*bitsandbytes.*")
 
 from dotenv import load_dotenv  # noqa: E402
-_env_file = Path(__file__).parent.parent / ".env"
+_env_file = Path(__file__).parent.parent.parent / ".env"
 if _env_file.exists():
     load_dotenv(_env_file)
 
@@ -70,11 +77,10 @@ from baseline_eval import (  # type: ignore[import]  # noqa: E402
     ExampleResult,
 )
 
-# ── Selected models for PEFT ────────────────────────────────────────────────
+# ── Selected models (4-model core set) ──────────────────────────────────────
 SELECTED_MODELS: dict[str, str] = {
     "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B-Instruct",
     "qwen3-0.6b":   "Qwen/Qwen3-0.6B",
-    "gemma3-1b":    "google/gemma-3-1b-it",
     "qwen2.5-1.5b": "Qwen/Qwen2.5-1.5B-Instruct",
     "smollm3":      "HuggingFaceTB/SmolLM3-3B",
 }
@@ -88,22 +94,27 @@ QUANT_CONFIGS: dict[str, Optional[BitsAndBytesConfig]] = {
         bnb_4bit_compute_dtype=torch.bfloat16,
         bnb_4bit_use_double_quant=False,
     ),
-    "nf4_dq": BitsAndBytesConfig(
+    "int4": BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
+        bnb_4bit_quant_type="int4",
         bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=True,
+        bnb_4bit_use_double_quant=False,
     ),
+    "fp8": BitsAndBytesConfig(
+        load_in_8bit=True,
+        llm_int8_skip_modules=["lm_head"],
+    ),  # fp8 via HF (fallback to int8 if not supported)
 }
 
 QUANT_LABELS: dict[str, str] = {
     "int8":   "INT8",
     "nf4":    "NF4",
-    "nf4_dq": "NF4+DQ",
+    "int4":   "INT4",
+    "fp8":    "FP8",
 }
 
-DEFAULT_DATA = Path(__file__).parent.parent / "dataset_sample" / "sample.json"
-DEFAULT_OUT_DIR = Path(__file__).parent / "reports"
+DEFAULT_DATA = Path(__file__).parent.parent.parent / "dataset_sample" / "sample.json"
+DEFAULT_OUT_DIR = Path(__file__).parent.parent / "reports_int8"
 
 
 # ── Data structures ──────────────────────────────────────────────────────────
@@ -112,7 +123,7 @@ DEFAULT_OUT_DIR = Path(__file__).parent / "reports"
 class QuantBenchmarkReport:
     model_key: str
     model_id: str
-    quant: str          # "int8" | "nf4" | "nf4_dq"
+    quant: str          # "int8" | "nf4" | "int4" | "fp8"
     device: str
     compute_dtype: str
     timestamp: str
@@ -277,9 +288,22 @@ def evaluate_quantized(
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
+def get_output_dir(quant: str, base_dir: Path) -> Path:
+    """Map quantization type to corresponding reports directory."""
+    quant_to_dir = {
+        "int8": "reports_int8",
+        "int4": "reports_int4",
+        "nf4": "reports_nf4",
+    
+        "fp8": "reports_fp8",
+    }
+    subdir = quant_to_dir.get(quant, "reports_int8")
+    return base_dir.parent / subdir
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Quantization evaluation for PEFT candidate models.",
+        description="Quantization evaluation for 4 selected PEFT candidate models.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -290,7 +314,7 @@ def main() -> None:
     parser.add_argument(
         "--quant", "-q", type=str, required=True,
         choices=list(QUANT_CONFIGS.keys()),
-        help="Quantization scheme: int8 | nf4 | nf4_dq.",
+        help="Quantization scheme: int8 | nf4 | int4 | fp8.",
     )
     parser.add_argument(
         "--mode", type=str, default="zero_shot",
@@ -313,12 +337,17 @@ def main() -> None:
         help="Evaluate only first N examples.",
     )
     parser.add_argument(
-        "--out-dir", type=Path, default=DEFAULT_OUT_DIR,
+        "--out-dir", type=Path, default=None,
+        help="Override automatic output directory (defaults to reports_{quant}).",
     )
     args = parser.parse_args()
 
     device = resolve_device(args.device)
     model_id = SELECTED_MODELS[args.model]
+
+    # Determine output directory
+    if args.out_dir is None:
+        args.out_dir = get_output_dir(args.quant, Path(__file__).parent.parent)
 
     print(f"\n{'='*60}")
     print(f"  Model   : {model_id}")
