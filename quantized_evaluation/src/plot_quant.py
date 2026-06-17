@@ -1,34 +1,19 @@
 #!/usr/bin/env python3
 """
-Quantization comparison plots for 4 models × 5 precisions.
+Generate one combined 3-row comparison figure for quantized evaluation reports.
 
-Reads:
-  quantized_evaluation/reports_int8/*.json   – INT8 quantized reports
-  quantized_evaluation/reports_nf4/*.json    – NF4 reports
-  quantized_evaluation/reports_int4/*.json   – INT4 quantized reports
-  quantized_evaluation/reports_fp8/*.json    – FP8 quantized reports
-  baseline_evaluation/reports_zero_shot/     – BF16 zero-shot baseline
-  baseline_evaluation/reports_few_shot/      – BF16 few-shot baseline
+Row 1 – Accuracy (%):         grouped by model, 10 bars per group
+Row 2 – Peak memory (MB):     same grouping
+Row 3 – Throughput + latency: throughput bars + latency dot markers
 
-Produces (in quantized_evaluation/analysis/):
-  zero_shot_quant_comparision.png
-  few_shot_quant_comparision.png
+Bar order per model group:
+  fp16-ZS  fp16-FS | fp8-ZS  fp8-FS | int8-ZS  int8-FS | nf4-ZS  nf4-FS | int4-ZS  int4-FS
 
-Each figure shows one grouped-bar cluster per model (4 models × 5 precisions).
-Bars = Accuracy (%).
-Below each bar: peak memory in MB as a text annotation.
+Zero-shot bars: solid colour.
+Few-shot bars:  lighter tint + diagonal /// hatch.
 
-Precision variants:
-  bf16    – Full precision baseline (from baseline_evaluation)
-  int8    – 8-bit integer quantization
-  nf4     – 4-bit NF4 (NVIDIA GPUs: H100, A100, L4, T4, G4)
-  int4    – 4-bit INT4 (broader device support)
-  fp8     – 8-bit floating-point (modern GPUs + emerging edge support)
-
-Usage
------
-    python plot_quant.py
-    python plot_quant.py --out-dir quantized_evaluation/analysis
+FP16 values are sourced from baseline_evaluation reports.
+Quantized precision values are sourced from quantized report folders.
 """
 
 import argparse
@@ -40,11 +25,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
-# ── Layout constants ─────────────────────────────────────────────────────────
 
-# 4-model core set in ascending parameter order
+# ── Layout constants ──────────────────────────────────────────────────────────
+
 SELECTED_MODELS: list[str] = [
     "qwen2.5-0.5b",
     "qwen3-0.6b",
@@ -59,268 +45,399 @@ MODEL_DISPLAY: dict[str, str] = {
     "smollm3":      "SmolLM3-3B",
 }
 
-# All 6 precision variants
-PRECISIONS: list[str] = ["bf16", "int8", "int4", "nf4", "fp8"]
+# Precision order (left → right within each ZS/FS pair)
+PRECISIONS: list[str] = ["fp16", "fp8", "int8", "nf4", "int4"]
 
 PREC_LABELS: dict[str, str] = {
-    "bf16":   "BF16",
-    "int8": "INT8",
-    "int4": "INT4",
-    "nf4":  "NF4",
+    "fp16": "FP16",
     "fp8":  "FP8",
+    "int8": "INT8",
+    "nf4":  "NF4",
+    "int4": "INT4",
 }
 
-# Distinct colours per precision
 PREC_COLORS: dict[str, str] = {
-    "bf16":   "#4C72B0",   # blue (baseline)
-    "int8":   "#DD8452",   # orange
-    "int4":   "#9467BD",   # purple
-    "nf4":    "#55A868",   # green
-
-    "fp8":    "#CCBB44",   # gold
+    "fp16": "#4C72B0",   # blue
+    "fp8":  "#CCBB44",   # gold
+    "int8": "#DD8452",   # orange
+    "nf4":  "#55A868",   # green
+    "int4": "#9467BD",   # purple
 }
 
-# ── Default paths ────────────────────────────────────────────────────────────
+# 10 bar slots per model group: (precision, mode) in requested order
+BAR_SLOTS: list[tuple[str, str]] = [
+    (prec, mode)
+    for prec in PRECISIONS
+    for mode in ("zero_shot", "few_shot")
+]
+
+
+# ── Default paths ─────────────────────────────────────────────────────────────
+
 _THIS_DIR = Path(__file__).parent
-_BASELINE_DIR = _THIS_DIR.parent / "baseline_evaluation"
+_QUANT_DIR = _THIS_DIR.parent
+_REPO_ROOT = _QUANT_DIR.parent
+_BASELINE_DIR = _REPO_ROOT / "baseline_evaluation"
 
-# Quantization report directories (per precision)
-DEFAULT_QUANT_INT8_REPORTS = _THIS_DIR / "reports_int8"
-DEFAULT_QUANT_NF4_REPORTS  = _THIS_DIR / "reports_nf4"
-DEFAULT_QUANT_INT4_REPORTS = _THIS_DIR / "reports_int4"
-DEFAULT_QUANT_FP8_REPORTS  = _THIS_DIR / "reports_fp8"
+DEFAULT_QUANT_INT8_REPORTS = _QUANT_DIR / "reports_int8"
+DEFAULT_QUANT_NF4_REPORTS  = _QUANT_DIR / "reports_nf4"
+DEFAULT_QUANT_INT4_REPORTS = _QUANT_DIR / "reports_int4"
+DEFAULT_QUANT_FP8_REPORTS  = _QUANT_DIR / "reports_fp8"
 
-# Baseline (BF16 full precision)
 DEFAULT_ZS_BASELINE = _BASELINE_DIR / "reports_zero_shot"
 DEFAULT_FS_BASELINE = _BASELINE_DIR / "reports_few_shot"
 
-DEFAULT_OUT_DIR = _THIS_DIR / "analysis"
+DEFAULT_OUT_DIR = _QUANT_DIR / "analysis"
 
 
-# ── Report loading ────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
-def load_quant_reports(int8_dir: Path, nf4_dir: Path, int4_dir: Path, fp8_dir: Path) -> dict[tuple[str, str, str], dict]:
-    """
-    Returns {(model_key, quant, eval_mode): report_dict}.
-    Loads from all quantization directories.
-    Keeps only the newest file per (model, quant, mode) triple.
-    """
-    latest: dict[tuple[str, str, str], dict] = {}
-    
-    for report_dir, quant_types in [
-        (int8_dir, ["int8"]),
-        (nf4_dir, ["nf4"]),
-        (int4_dir, ["int4"]),
-        (fp8_dir, ["fp8"]),
-    ]:
+def lighten(hex_color: str, factor: float = 0.40) -> str:
+    """Return a lighter tint of a hex colour."""
+    r = int(hex_color[1:3], 16)
+    g = int(hex_color[3:5], 16)
+    b = int(hex_color[5:7], 16)
+    r = int(r + (255 - r) * factor)
+    g = int(g + (255 - g) * factor)
+    b = int(b + (255 - b) * factor)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _safe_load_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _iter_report_objects(payload) -> list[dict]:
+    if payload is None:
+        return []
+    if isinstance(payload, dict):
+        return [payload]
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    return []
+
+
+# ── Loading ───────────────────────────────────────────────────────────────────
+
+def load_quant_reports(
+    int8_dir: Path,
+    nf4_dir: Path,
+    int4_dir: Path,
+    fp8_dir: Path,
+) -> dict:
+    """Returns {(model_key, quant, eval_mode): latest_report_dict}."""
+    latest: dict = {}
+    for report_dir in [int8_dir, nf4_dir, int4_dir, fp8_dir]:
         if not report_dir.exists():
             continue
         for f in report_dir.glob("*.json"):
-            try:
-                r = json.loads(f.read_text(encoding="utf-8"))
-                key = (r["model_key"], r["quant"], r["eval_mode"])
-                if key not in latest or r["timestamp"] > latest[key]["timestamp"]:
+            for r in _iter_report_objects(_safe_load_json(f)):
+                key = (r.get("model_key"), r.get("quant"), r.get("eval_mode"))
+                if None in key:
+                    continue
+                if key not in latest or r.get("timestamp", "") > latest[key].get("timestamp", ""):
                     latest[key] = r
-            except Exception:
-                continue
-    
     return latest
 
 
-def load_baseline_reports(reports_dir: Path) -> dict[str, dict]:
-    """Returns {model_key: report_dict} keeping only the newest file per model."""
-    latest: dict[str, dict] = {}
+def load_baseline_reports(reports_dir: Path) -> dict:
+    """Returns {(model_key, eval_mode): latest_report_dict}."""
+    latest: dict = {}
     if not reports_dir.exists():
         return latest
     for f in reports_dir.glob("*.json"):
-        try:
-            r = json.loads(f.read_text(encoding="utf-8"))
-            key = r.get("model_key", "")
-            if not key:
+        for r in _iter_report_objects(_safe_load_json(f)):
+            model = r.get("model_key")
+            mode  = r.get("eval_mode")
+            if not model or not mode:
                 continue
-            if key not in latest or r["timestamp"] > latest[key]["timestamp"]:
+            key = (model, mode)
+            if key not in latest or r.get("timestamp", "") > latest[key].get("timestamp", ""):
                 latest[key] = r
-        except Exception:
-            continue
     return latest
 
 
-# ── Plotting ──────────────────────────────────────────────────────────────────
-
-def plot_quant_comparison(
+def get_metrics_for_mode(
+    model: str,
+    precision: str,
     mode: str,
-    quant_reports: dict[tuple[str, str, str], dict],
-    zs_baseline: dict[str, dict],
-    fs_baseline: dict[str, dict],
-    out_dir: Path,
-) -> None:
+    quant_reports: dict,
+    zs_base: dict,
+    fs_base: dict,
+):
+    """Return raw metrics dict for a single (model, precision, mode), or None."""
+    if precision == "fp16":
+        src = zs_base if mode == "zero_shot" else fs_base
+        r = src.get((model, mode))
+    else:
+        r = quant_reports.get((model, precision, mode))
+    if r is None:
+        return None
+    return {
+        "accuracy":    r.get("accuracy", 0.0) * 100,
+        "latency":     r.get("avg_latency_ms", 0.0),
+        "throughput":  r.get("avg_tokens_per_sec", 0.0),
+        "peak_memory": r.get("peak_memory_mb", 0.0),
+    }
+
+
+def _bar_style(prec: str, mode: str) -> dict:
+    """Solid colour for zero-shot; lighter + hatch for few-shot."""
+    base = PREC_COLORS[prec]
+    if mode == "zero_shot":
+        return dict(color=base,               hatch=None,  edgecolor="white",   linewidth=0.4)
+    else:
+        return dict(color=lighten(base, 0.40), hatch="///", edgecolor="#aaaaaa", linewidth=0.4)
+
+
+# ── Shared legend builder ────────────────────────────────────────────────────
+
+def _build_legend_handles() -> list:
     """
-    One figure per mode. Groups = models, bars = precision variants.
-    Accuracy on Y-axis; peak memory shown as text below each bar.
+    Build 12 handles arranged so that matplotlib's column-first fill
+    produces 2 clean rows:
+      Row 1:  Zero-Shot →  | FP16  FP8  INT8  NF4  INT4
+      Row 2:  Few-Shot  →  | FP16  FP8  INT8  NF4  INT4
+
+    With ncol=6 and column-first fill the order must be:
+      [col0-row0, col0-row1, col1-row0, col1-row1, ... col5-row0, col5-row1]
     """
-    baseline = fs_baseline if mode == "few_shot" else zs_baseline
-    mode_label = "Few-Shot" if mode == "few_shot" else "Zero-Shot"
+    _zs_label = Patch(facecolor="none", edgecolor="none", label="Zero-Shot  →")
+    _fs_label = Patch(facecolor="none", edgecolor="none", label="Few-Shot   →")
 
-    # Build data matrix: models × precisions
-    # acc[model][prec]  = accuracy (0–100) or None
-    # mem[model][prec]  = peak_memory_mb or None
-    acc: dict[str, dict[str, float | None]] = {m: {} for m in SELECTED_MODELS}
-    mem: dict[str, dict[str, float | None]] = {m: {} for m in SELECTED_MODELS}
+    zs_patches = [
+        Patch(facecolor=PREC_COLORS[p], edgecolor="#555", linewidth=0.5, label=PREC_LABELS[p])
+        for p in PRECISIONS
+    ]
+    fs_patches = [
+        Patch(
+            facecolor=lighten(PREC_COLORS[p], 0.40),
+            hatch="///", edgecolor="#555", linewidth=0.5,
+            label=PREC_LABELS[p] + " ",   # trailing space keeps labels unique
+        )
+        for p in PRECISIONS
+    ]
 
-    # BF16 baseline (full precision)
-    for model in SELECTED_MODELS:
-        r = baseline.get(model)
-        if r is not None:
-            acc[model]["bf16"] = r["accuracy"] * 100
-            mem[model]["bf16"] = r["peak_memory_mb"]
-        else:
-            acc[model]["bf16"] = None
-            mem[model]["bf16"] = None
+    # Interleave so column-first fill lands each ZS item on row 1 and FS on row 2:
+    # col0: (ZS-label, FS-label), col1: (fp16-zs, fp16-fs), ...
+    handles = [_zs_label, _fs_label]
+    for zp, fp in zip(zs_patches, fs_patches):
+        handles.append(zp)
+        handles.append(fp)
+    return handles   # 12 items → ncol=6 → 2 rows
 
-    # Quantized runs (int8, int4, nf4, fp8)
-    for model in SELECTED_MODELS:
-        for quant in ["int8", "int4", "nf4", "fp8"]:
-            r = quant_reports.get((model, quant, mode))
-            if r is not None:
-                acc[model][quant] = r["accuracy"] * 100
-                mem[model][quant] = r["peak_memory_mb"]
-            else:
-                acc[model][quant] = None
-                mem[model][quant] = None
 
-    n_models = len(SELECTED_MODELS)
-    n_prec   = len(PRECISIONS)
-    group_w  = 0.8
-    bar_w    = group_w / n_prec
-    x_center = np.arange(n_models, dtype=float)
-
-    fig, ax = plt.subplots(figsize=(max(16, n_models * 3.2), 7), constrained_layout=True)
-
-    for pi, prec in enumerate(PRECISIONS):
-        offsets = x_center + (pi - (n_prec - 1) / 2) * bar_w
-        values  = [acc[m].get(prec) for m in SELECTED_MODELS]
-        mem_vals = [mem[m].get(prec) for m in SELECTED_MODELS]
-        color   = PREC_COLORS[prec]
-
-        for xi, (val, mval) in enumerate(zip(values, mem_vals)):
-            bx = offsets[xi]
-            if val is None:
-                # No data – draw a faint placeholder
-                ax.bar(bx, 0, bar_w * 0.92, color="#e0e0e0", edgecolor="white", zorder=3)
-                ax.text(bx, 2, "N/A", ha="center", va="bottom", fontsize=6.5,
-                        color="#aaaaaa", rotation=90)
-                continue
-
-            bar = ax.bar(bx, val, bar_w * 0.92, color=color,
-                         edgecolor="white", linewidth=0.5, zorder=3)
-
-            # Accuracy label on top of bar
-            ax.text(
-                bx, val + 0.8,
-                f"{val:.0f}%",
-                ha="center", va="bottom",
-                fontsize=7, fontweight="bold", color="#222222",
-            )
-
-            # Memory label below the bar (below x-axis line)
-            if mval is not None:
-                mem_str = f"{mval:.0f}MB"
-                ax.text(
-                    bx, -3.5,
-                    mem_str,
-                    ha="center", va="top",
-                    fontsize=6, color="#555555",
-                    rotation=90,
-                    clip_on=False,
-                )
-
-    # Axes
-    ax.set_xticks(x_center)
-    ax.set_xticklabels(
-        [MODEL_DISPLAY.get(m, m) for m in SELECTED_MODELS],
-        fontsize=10,
+def _attach_legend(fig) -> None:
+    fig.legend(
+        handles=_build_legend_handles(),
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.99),
+        ncol=6,
+        framealpha=0.92,
+        fontsize=9.5,
+        handlelength=1.8,
+        handleheight=1.1,
+        columnspacing=1.2,
+        borderpad=0.9,
     )
-    ax.set_ylabel("Accuracy (%)", fontsize=11)
-    ax.set_ylim(-18, 115)          # headroom below x-axis for memory labels
-    ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.0f%%"))
-    ax.yaxis.grid(True, linestyle="--", alpha=0.4, zorder=0)
+
+
+# ── Common bar-drawing helper ────────────────────────────────────────────────
+
+def _draw_bars(ax, data_slice: dict, metric: str, label_fn, x_center, bar_w, n_slots) -> float:
+    """
+    Draw 10 grouped bars for *metric* on *ax*.
+    data_slice: {model: {(prec, mode): value | None}}
+    Returns max value seen (for ylim sizing).
+    """
+    all_vals = [
+        v for m in SELECTED_MODELS for slot in BAR_SLOTS
+        if (v := data_slice[m].get(slot)) is not None
+    ]
+    max_val = max(all_vals) if all_vals else 1.0
+
+    for si, (prec, mode) in enumerate(BAR_SLOTS):
+        offsets = x_center + (si - (n_slots - 1) / 2) * bar_w
+        style = _bar_style(prec, mode)
+        for xi, model in enumerate(SELECTED_MODELS):
+            bx  = offsets[xi]
+            val = data_slice[model].get((prec, mode))
+            if val is None:
+                ax.bar(bx, 0, bar_w * 0.70, color="#eeeeee", edgecolor="white", linewidth=0.3)
+            else:
+                ax.bar(
+                    bx, val, bar_w * 0.70,
+                    color=style["color"],
+                    hatch=style["hatch"],
+                    edgecolor=style["edgecolor"],
+                    linewidth=style["linewidth"],
+                )
+                ax.text(
+                    bx, val + max_val * 0.015,
+                    label_fn(val),
+                    ha="center", va="bottom",
+                    fontsize=8, color="#333333",
+                    rotation=90,
+                )
+    return max_val
+
+
+def _style_ax(ax, ylabel: str, x_center, ylim_max: float,
+              yformatter=None) -> None:
+    ax.set_ylabel(ylabel, fontsize=11)
+    ax.set_xticks(x_center)
+    ax.set_xticklabels([MODEL_DISPLAY[m] for m in SELECTED_MODELS], fontsize=10)
+    ax.set_ylim(0, ylim_max)
+    if yformatter:
+        ax.yaxis.set_major_formatter(yformatter)
+    ax.yaxis.grid(True, linestyle="--", alpha=0.35)
     ax.set_axisbelow(True)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.tick_params(axis="x", length=0)
 
-    # Draw a subtle line at y=0 to visually separate bars from memory annotations
-    ax.axhline(0, color="#cccccc", linewidth=0.8, zorder=2)
 
-    # Legend
-    legend_handles = [
-        Patch(facecolor=PREC_COLORS[p], label=PREC_LABELS[p])
-        for p in PRECISIONS
-    ]
-    ax.legend(
-        handles=legend_handles,
-        title="Precision",
-        fontsize=9,
-        title_fontsize=10,
-        loc="upper left",
-        framealpha=0.85,
-        ncol=2,
+# ── Figure 1: Accuracy + Peak Memory ────────────────────────────────────────
+
+def plot_acc_mem(
+    quant_reports: dict,
+    zs_base: dict,
+    fs_base: dict,
+    out_dir: Path,
+) -> Path:
+    METRICS = ("accuracy", "peak_memory")
+    data: dict = {met: {m: {} for m in SELECTED_MODELS} for met in METRICS}
+    for model in SELECTED_MODELS:
+        for prec, mode in BAR_SLOTS:
+            row = get_metrics_for_mode(model, prec, mode, quant_reports, zs_base, fs_base)
+            for met in METRICS:
+                data[met][model][(prec, mode)] = row[met] if row else None
+
+    n_models = len(SELECTED_MODELS)
+    n_slots  = len(BAR_SLOTS)       # 10
+    group_w  = 0.88
+    bar_w    = group_w / n_slots
+    x_center = np.arange(n_models, dtype=float)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(max(24, n_models * 5.5), 16))
+    fig.subplots_adjust(top=0.91, hspace=0.50)
+
+    max_acc = _draw_bars(ax1, data["accuracy"], "accuracy",
+                         lambda v: f"{v:.0f}%", x_center, bar_w, n_slots)
+    ax1.set_title(
+        "Accuracy Comparison  (All Models × All Precisions × Zero-Shot & Few-Shot)",
+        fontsize=12, fontweight="bold", pad=8,
     )
+    _style_ax(ax1, "Accuracy (%)", x_center, min(max_acc * 1.30, 112),
+              yformatter=mticker.FormatStrFormatter("%.0f%%"))
 
-    ax.set_title(
-        f"{mode_label}: Accuracy by Quantization Precision — 4 selected PEFT models\n"
-        "(memory footprint shown below each bar)",
-        fontsize=12, fontweight="bold", pad=10,
+    max_mem = _draw_bars(ax2, data["peak_memory"], "peak_memory",
+                         lambda v: f"{v:.0f}", x_center, bar_w, n_slots)
+    ax2.set_title(
+        "Peak Memory Comparison  (All Models × All Precisions × Zero-Shot & Few-Shot)",
+        fontsize=12, fontweight="bold", pad=8,
     )
+    _style_ax(ax2, "Peak Memory (MB)", x_center, max_mem * 1.30)
+
+    _attach_legend(fig)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"{mode}_quant_comparision.png"
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    out_path = out_dir / "combined_quant_comparision.png"
+    fig.savefig(out_path, dpi=160, bbox_inches="tight")
     plt.close(fig)
-    print(f"  Saved → {out_path}")
+    return out_path
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Figure 2: Throughput + Latency ──────────────────────────────────────────
+
+def plot_throughput_latency(
+    quant_reports: dict,
+    zs_base: dict,
+    fs_base: dict,
+    out_dir: Path,
+) -> Path:
+    METRICS = ("throughput", "latency")
+    data: dict = {met: {m: {} for m in SELECTED_MODELS} for met in METRICS}
+    for model in SELECTED_MODELS:
+        for prec, mode in BAR_SLOTS:
+            row = get_metrics_for_mode(model, prec, mode, quant_reports, zs_base, fs_base)
+            for met in METRICS:
+                data[met][model][(prec, mode)] = row[met] if row else None
+
+    n_models = len(SELECTED_MODELS)
+    n_slots  = len(BAR_SLOTS)
+    group_w  = 0.88
+    bar_w    = group_w / n_slots
+    x_center = np.arange(n_models, dtype=float)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(max(24, n_models * 5.5), 16))
+    fig.subplots_adjust(top=0.91, hspace=0.50)
+
+    max_tps = _draw_bars(ax1, data["throughput"], "throughput",
+                         lambda v: f"{v:.0f}", x_center, bar_w, n_slots)
+    ax1.set_title(
+        "Avg Throughput  (All Models × All Precisions × Zero-Shot & Few-Shot)",
+        fontsize=12, fontweight="bold", pad=8,
+    )
+    _style_ax(ax1, "Avg Tokens / Sec", x_center, max_tps * 1.30)
+
+    max_lat = _draw_bars(ax2, data["latency"], "latency",
+                         lambda v: f"{v:.0f}", x_center, bar_w, n_slots)
+    ax2.set_title(
+        "Avg Latency  (All Models × All Precisions × Zero-Shot & Few-Shot)",
+        fontsize=12, fontweight="bold", pad=8,
+    )
+    _style_ax(ax2, "Avg Latency (ms)", x_center, max_lat * 1.30)
+
+    _attach_legend(fig)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "throughput_latency_comparision.png"
+    fig.savefig(out_path, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
+# ── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Plot quantization accuracy comparison figures for 4 models × 6 precisions.",
+        description="Generate quantization comparison plots.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--int8-reports-dir",  type=Path, default=DEFAULT_QUANT_INT8_REPORTS)
-    parser.add_argument("--nf4-reports-dir",   type=Path, default=DEFAULT_QUANT_NF4_REPORTS)
-    parser.add_argument("--int4-reports-dir",  type=Path, default=DEFAULT_QUANT_INT4_REPORTS)
-    parser.add_argument("--fp8-reports-dir",   type=Path, default=DEFAULT_QUANT_FP8_REPORTS)
-    parser.add_argument("--zs-baseline-dir",   type=Path, default=DEFAULT_ZS_BASELINE)
-    parser.add_argument("--fs-baseline-dir",   type=Path, default=DEFAULT_FS_BASELINE)
-    parser.add_argument("--out-dir",           type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument("--int8-reports-dir", type=Path, default=DEFAULT_QUANT_INT8_REPORTS)
+    parser.add_argument("--nf4-reports-dir", type=Path, default=DEFAULT_QUANT_NF4_REPORTS)
+    parser.add_argument("--int4-reports-dir", type=Path, default=DEFAULT_QUANT_INT4_REPORTS)
+    parser.add_argument("--fp8-reports-dir", type=Path, default=DEFAULT_QUANT_FP8_REPORTS)
+    parser.add_argument("--zs-baseline-dir", type=Path, default=DEFAULT_ZS_BASELINE)
+    parser.add_argument("--fs-baseline-dir", type=Path, default=DEFAULT_FS_BASELINE)
+    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     args = parser.parse_args()
 
-    print("Loading quantization reports …")
+    print("Loading quantized reports …")
     quant_reports = load_quant_reports(
         args.int8_reports_dir,
         args.nf4_reports_dir,
         args.int4_reports_dir,
         args.fp8_reports_dir,
     )
-    print(f"  {len(quant_reports)} quantized report(s) found.")
+    print(f"  Found {len(quant_reports)} latest quantized (model, quant, mode) entries.")
 
-    print("Loading BF16 baselines …")
-    zs_baseline = load_baseline_reports(args.zs_baseline_dir)
-    fs_baseline = load_baseline_reports(args.fs_baseline_dir)
-    print(f"  {len(zs_baseline)} zero-shot, {len(fs_baseline)} few-shot baseline(s).")
+    print("Loading baseline reports for FP16 source …")
+    zs_base = load_baseline_reports(args.zs_baseline_dir)
+    fs_base = load_baseline_reports(args.fs_baseline_dir)
+    print(f"  Found {len(zs_base)} zero-shot and {len(fs_base)} few-shot baseline entries.")
 
-    for mode in ("zero_shot", "few_shot"):
-        print(f"\nGenerating {mode}_quant_comparision.png …")
-        plot_quant_comparison(
-            mode=mode,
-            quant_reports=quant_reports,
-            zs_baseline=zs_baseline,
-            fs_baseline=fs_baseline,
-            out_dir=args.out_dir,
-        )
+    p1 = plot_acc_mem(quant_reports, zs_base, fs_base, args.out_dir)
+    p2 = plot_throughput_latency(quant_reports, zs_base, fs_base, args.out_dir)
+    print(f"\nSaved → {p1}")
+    print(f"Saved → {p2}")
 
-    print("\nDone.")
+
+if __name__ == "__main__":
+    main()
 
 
 if __name__ == "__main__":
