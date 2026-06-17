@@ -217,10 +217,9 @@ def plot_overview(reports: list[dict], out_dir: Path, mode: str = "zero_shot") -
 
 def plot_combined(zs_reports: list[dict], fs_reports: list[dict], out_dir: Path) -> None:
     """
-    3-bar grouped figure per model:
-      Bar 1 - Zero-shot accuracy (%)     solid category colour
-      Bar 2 - Few-shot accuracy (%)      medium-tint category colour
-      Bar 3 - Peak memory (MB)           light hatch, secondary Y axis
+        Two-panel figure per model:
+            Panel 1 - Zero-shot accuracy, few-shot accuracy, peak memory (max of the two)
+            Panel 2 - Averaged token throughput and averaged latency
     Only models present in BOTH zero-shot and few-shot reports are shown.
     Sorted by parameter count ascending.
     """
@@ -237,46 +236,43 @@ def plot_combined(zs_reports: list[dict], fs_reports: list[dict], out_dir: Path)
     x_labels    = [display_label(k) for k in common_keys]
     zs_acc      = [zs_by_key[k]["accuracy"] * 100 for k in common_keys]
     fs_acc      = [fs_by_key[k]["accuracy"] * 100 for k in common_keys]
-    # Use zero-shot peak memory (hardware baseline is the same model)
-    memories    = [zs_by_key[k]["peak_memory_mb"] for k in common_keys]
+    peak_mem    = [max(zs_by_key[k]["peak_memory_mb"], fs_by_key[k]["peak_memory_mb"]) for k in common_keys]
+    avg_lat     = [(zs_by_key[k]["avg_latency_ms"] + fs_by_key[k]["avg_latency_ms"]) / 2 for k in common_keys]
+    avg_tps     = [(zs_by_key[k]["avg_tokens_per_sec"] + fs_by_key[k]["avg_tokens_per_sec"]) / 2 for k in common_keys]
 
     n = len(common_keys)
     x = np.arange(n)
-    width = 0.24          # three bars + small gap fits in each group
+    width = 0.24
 
     cats         = [assign_category(k) for k in common_keys]
     solid_colors = [CATEGORIES[c][1] for c in cats]
     mid_colors   = [lighten(c, 0.25) for c in solid_colors]   # medium tint for few-shot
-    light_colors = [lighten(c, 0.55) for c in solid_colors]   # light tint for memory
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(max(16, n * 1.6), 12), constrained_layout=True)
 
-    fig, ax1 = plt.subplots(figsize=(max(14, n * 1.5), 7), constrained_layout=True)
-
-    # -- Zero-shot accuracy bars ------------------------------------------------
+    # -- Panel 1: accuracy + peak memory --------------------------------------
     bars_zs = ax1.bar(
         x - width, zs_acc, width,
         color=solid_colors, edgecolor="white", linewidth=0.6, zorder=3,
     )
-    # -- Few-shot accuracy bars -------------------------------------------------
     bars_fs = ax1.bar(
         x, fs_acc, width,
         color=mid_colors, edgecolor="white", linewidth=0.6, zorder=3,
     )
+    ax1_mem = ax1.twinx()
+    bars_mem = ax1_mem.bar(
+        x + width, peak_mem, width,
+        color=[lighten(c, 0.55) for c in solid_colors],
+        edgecolor="white", linewidth=0.6, hatch="//", zorder=3,
+    )
+
     ax1.set_ylabel("Accuracy (%)", fontsize=11)
     ax1.set_ylim(0, 122)
     ax1.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.0f%%"))
+    mem_max = max(peak_mem) if peak_mem else 1000
+    ax1_mem.set_ylabel("Peak Memory (MB)", fontsize=11)
+    ax1_mem.set_ylim(0, mem_max * 1.3)
+    ax1_mem.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.0f"))
 
-    # -- Peak memory bars (right axis) ------------------------------------------
-    ax2 = ax1.twinx()
-    mem_max = max(memories) if memories else 1000
-    bars_mem = ax2.bar(
-        x + width, memories, width,
-        color=light_colors, edgecolor="white", linewidth=0.6, hatch="//", zorder=3,
-    )
-    ax2.set_ylabel("Peak Memory (MB)", fontsize=11)
-    ax2.set_ylim(0, mem_max * 1.3)
-    ax2.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.0f"))
-
-    # -- Value labels -----------------------------------------------------------
     for bar, val in zip(bars_zs, zs_acc):
         ax1.text(
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.2,
@@ -287,51 +283,99 @@ def plot_combined(zs_reports: list[dict], fs_reports: list[dict], out_dir: Path)
             bar.get_x() + bar.get_width() / 2, bar.get_height() + 1.2,
             f"{val:.0f}%", ha="center", va="bottom", fontsize=7, fontweight="bold",
         )
-    for bar, val in zip(bars_mem, memories):
-        ax2.text(
+    for bar, val in zip(bars_mem, peak_mem):
+        ax1_mem.text(
             bar.get_x() + bar.get_width() / 2,
             bar.get_height() + mem_max * 0.012,
-            f"{val:.0f}", ha="center", va="bottom", fontsize=6.5, color="#555555",
+            f"{val / 1024:.1f} GB", ha="center", va="bottom", fontsize=6.8, color="#555555",
         )
 
-    # -- X axis -----------------------------------------------------------------
     ax1.set_xticks(x)
-    ax1.set_xticklabels(x_labels, rotation=35, ha="right", fontsize=9)
+    ax1.set_xticklabels(x_labels, rotation=35, ha="right", fontsize=8)
     ax1.tick_params(axis="x", length=0)
-
-    # -- Grid -------------------------------------------------------------------
-    ax1.yaxis.grid(True, linestyle="--", alpha=0.4, zorder=0)
+    ax1.yaxis.grid(True, linestyle="--", alpha=0.35, zorder=0)
     ax1.set_axisbelow(True)
-
-    # -- Spines -----------------------------------------------------------------
     ax1.spines["top"].set_visible(False)
-    ax2.spines["top"].set_visible(False)
+    ax1_mem.spines["top"].set_visible(False)
 
-    # -- Legend -----------------------------------------------------------------
     size_patches = [
         Patch(facecolor=CATEGORIES[k][1], label=f"{CATEGORIES[k][0]} params")
         for k in ("tiny", "small", "mid")
     ]
     metric_patches = [
-        Patch(facecolor="#555555",                label="Zero-shot accuracy (%)"),
-        Patch(facecolor="#999999",                label="Few-shot accuracy (%)"),
-        Patch(facecolor="#cccccc", hatch="//",    label="Peak Memory (MB)"),
+        Patch(facecolor="#555555", label="Zero-shot accuracy"),
+        Patch(facecolor="#999999", label="Few-shot accuracy"),
+        Patch(facecolor="#cccccc", hatch="//", label="Peak memory (max)"),
     ]
     leg1 = ax1.legend(
         handles=size_patches, title="Model size",
         fontsize=8, title_fontsize=9,
-        loc="upper left", bbox_to_anchor=(0.0, 1.0),
+        loc="upper left", bbox_to_anchor=(0.0, 1.15),
     )
     ax1.add_artist(leg1)
     ax1.legend(
         handles=metric_patches,
         fontsize=8,
-        loc="upper left", bbox_to_anchor=(0.0, 0.80),
+        loc="upper left", bbox_to_anchor=(0.0, 0.95),
+    )
+    ax1.set_title(
+        "Zero-Shot vs Few-Shot Accuracy & Peak Memory (peak memory uses the larger of the two runs)",
+        fontsize=12, fontweight="bold", pad=12,
     )
 
-    ax1.set_title(
-        "Zero-Shot vs Few-Shot Accuracy & Peak Memory  (all models, sorted by parameter count)",
+    # -- Panel 2: averaged throughput + latency --------------------------------
+    ax2_lat = ax2.twinx()
+    bars_tps = ax2.bar(
+        x - width / 2, avg_tps, width,
+        color=solid_colors, edgecolor="white", linewidth=0.6, zorder=3,
+    )
+    bars_lat = ax2_lat.bar(
+        x + width / 2, avg_lat, width,
+        color=[lighten(c, 0.55) for c in solid_colors],
+        edgecolor="white", linewidth=0.6, hatch="//", zorder=3,
+    )
+
+    tps_max = max(avg_tps) if avg_tps else 100.0
+    lat_max = max(avg_lat) if avg_lat else 100.0
+    ax2.set_ylabel("Avg token throughput", fontsize=11)
+    ax2.set_ylim(0, tps_max * 1.3)
+    ax2.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.1f"))
+    ax2_lat.set_ylabel("Avg latency (ms)", fontsize=11)
+    ax2_lat.set_ylim(0, lat_max * 1.3)
+    ax2_lat.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.0f"))
+    ax2.yaxis.grid(True, linestyle="--", alpha=0.35, zorder=0)
+    ax2.set_axisbelow(True)
+    ax2.spines["top"].set_visible(False)
+    ax2_lat.spines["top"].set_visible(False)
+
+    for bar, val in zip(bars_tps, avg_tps):
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2, bar.get_height() + tps_max * 0.02,
+            f"{val:.1f}", ha="center", va="bottom", fontsize=7, fontweight="bold",
+        )
+    for bar, val in zip(bars_lat, avg_lat):
+        ax2_lat.text(
+            bar.get_x() + bar.get_width() / 2, bar.get_height() + lat_max * 0.02,
+            f"{val:.0f}", ha="center", va="bottom", fontsize=7, fontweight="bold",
+        )
+
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(x_labels, rotation=35, ha="right", fontsize=8)
+    ax2.tick_params(axis="x", length=0)
+
+    metric_patches_2 = [
+        Patch(facecolor="#555555", label="Avg token throughput"),
+        Patch(facecolor="#999999", label="Avg latency"),
+    ]
+    ax2.legend(handles=metric_patches_2, fontsize=8, loc="upper left")
+    ax2.set_title(
+        "Averaged Token Throughput & Latency (zero-shot and few-shot averaged per model)",
         fontsize=12, fontweight="bold", pad=12,
+    )
+
+    fig.suptitle(
+        "Zero-Shot vs Few-Shot Combined Comparison",
+        fontsize=13, fontweight="bold",
     )
 
     out_path = out_dir / "combined_comparision.png"
