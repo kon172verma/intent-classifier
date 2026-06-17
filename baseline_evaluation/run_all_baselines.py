@@ -4,10 +4,10 @@ Run zero-shot baseline evaluation across all registered models and
 print/save a summary accuracy table.
 
 Usage:
-    .venv/bin/python tool_router/baseline_evaluation/run_all_baselines.py
-    .venv/bin/python tool_router/baseline_evaluation/run_all_baselines.py --models smollm2-135m qwen3-0.6b
-    .venv/bin/python tool_router/baseline_evaluation/run_all_baselines.py --skip smollm2-135m
-    .venv/bin/python tool_router/baseline_evaluation/run_all_baselines.py --limit 10   # smoke-test
+    .venv/bin/python baseline_evaluation/run_all_baselines.py
+    .venv/bin/python baseline_evaluation/run_all_baselines.py --models smollm2-135m qwen3-0.6b
+    .venv/bin/python baseline_evaluation/run_all_baselines.py --skip smollm2-135m
+    .venv/bin/python baseline_evaluation/run_all_baselines.py --limit 10   # smoke-test
 """
 
 import argparse
@@ -19,14 +19,14 @@ from datetime import datetime
 from pathlib import Path
 
 # Load .env from repo root so HF_TOKEN is available to subprocess runs
-_env_file = Path(__file__).parent.parent.parent / ".env"
+_env_file = Path(__file__).parent.parent / ".env"
 if _env_file.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_file)
 
-ROOT = Path(__file__).parent.parent.parent  # repo root (PEFT/)
+ROOT = Path(__file__).parent.parent  # repo root
 EVAL_SCRIPT = Path(__file__).parent / "baseline_eval.py"
-DEFAULT_DATA = ROOT / "tool_router" / "data" / "sample.json"
+DEFAULT_DATA = ROOT / "dataset_sample" / "sample.json"
 REPORTS_DIR = Path(__file__).parent / "reports"
 PYTHON = sys.executable  # use the same venv python that launched this script
 

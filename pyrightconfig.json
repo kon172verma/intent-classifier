@@ -3,7 +3,7 @@
   "venvPath": ".",
   "venv": ".venv",
   "extraPaths": [
-    "tool_router/dataset_sample"
+    "dataset_sample"
   ],
   "reportMissingModuleSource": "none"
 }

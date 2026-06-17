@@ -44,7 +44,7 @@ warnings.filterwarnings("ignore", message=".*MatMul8bitLt.*")
 warnings.filterwarnings("ignore", message=".*bitsandbytes.*")
 
 from dotenv import load_dotenv  # noqa: E402
-_env_file = Path(__file__).parent.parent.parent / ".env"
+_env_file = Path(__file__).parent.parent / ".env"
 if _env_file.exists():
     load_dotenv(_env_file)
 

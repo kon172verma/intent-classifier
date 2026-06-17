@@ -19,11 +19,11 @@ All models were evaluated on the same 100-question benchmark drawn from `data/sa
 
 ### Combined Comparison
 
-![Combined bar chart — zero-shot, few-shot, and peak memory per model](/tool_router/baseline_evaluation/results/combined_comparision.png)
+![Combined bar chart - zero-shot, few-shot, and peak memory per model](/baseline_evaluation/results/combined_comparision.png)
 
 ### Summary Table
 
-![Combined table with zero-shot accuracy, few-shot accuracy, delta, latency, and memory](/tool_router/baseline_evaluation/results/combined_table.png)
+![Combined table with zero-shot accuracy, few-shot accuracy, delta, latency, and memory](/baseline_evaluation/results/combined_table.png)
 
 ---
 

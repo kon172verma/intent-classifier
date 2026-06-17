@@ -13,9 +13,9 @@ Models are colour-coded by size category:
 
 Usage
 -----
-    .venv/bin/python tool_router/evaluation/plot_baselines.py
-    .venv/bin/python tool_router/evaluation/plot_baselines.py --out-dir figures/
-    .venv/bin/python tool_router/evaluation/plot_baselines.py --reports-dir path/to/reports
+    .venv/bin/python evaluation/plot_baselines.py
+    .venv/bin/python evaluation/plot_baselines.py --out-dir figures/
+    .venv/bin/python evaluation/plot_baselines.py --reports-dir path/to/reports
 """
 
 import argparse

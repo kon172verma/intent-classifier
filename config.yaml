@@ -1,12 +1,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# tool_router/config.yaml
+# config.yaml
 # Central configuration for the PEFT MCP tool-selection project.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Data ─────────────────────────────────────────────────────────────────────
 data:
-  sample_file:    tool_router/data/sample.json          # 100-example evaluation set
-  tools_ref:      tool_router/data/tools_reference.json # 30-tool catalogue
+  sample_file:    dataset_sample/sample.json            # 100-example evaluation set
+  tools_ref:      dataset_sample/tools_reference.json   # 30-tool catalogue
 
 # ── Model registry ────────────────────────────────────────────────────────────
 # Maps short CLI keys to HuggingFace model IDs and param counts.
@@ -97,15 +97,15 @@ inference:
 
 # ── Zero-shot evaluation ──────────────────────────────────────────────────────
 zero_shot:
-  reports_dir:  tool_router/baseline_evaluation/reports
-  figures_dir:  tool_router/baseline_evaluation/figures
+  reports_dir:  baseline_evaluation/reports
+  figures_dir:  baseline_evaluation/figures
 
 # ── Few-shot evaluation ───────────────────────────────────────────────────────
 few_shot:
   # Examples are embedded directly in the system prompt (see prompts.few_shot below).
   # No external shots file is used.
-  reports_dir:  tool_router/baseline_evaluation/few_shot_reports
-  figures_dir:  tool_router/baseline_evaluation/figures
+  reports_dir:  baseline_evaluation/few_shot_reports
+  figures_dir:  baseline_evaluation/figures
 
 # ── System prompts ────────────────────────────────────────────────────────────
 prompts:

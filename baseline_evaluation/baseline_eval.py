@@ -11,7 +11,7 @@ python baseline_eval.py --list-models
 python baseline_eval.py --model qwen3-0.6b
 
 # Specify data file, device, output directory
-python baseline_eval.py --model qwen3-4b --data ../data/sample.json --device mps --out-dir reports/
+python baseline_eval.py --model qwen3-4b --data ../dataset_sample/sample.json --device mps --out-dir reports/
 
 # Quick smoke-test on first 10 examples
 python baseline_eval.py --model smollm2-135m --limit 10
@@ -29,7 +29,7 @@ from dataclasses import asdict, dataclass, field
 
 # Load .env from repo root (provides HF_TOKEN for gated models)
 from pathlib import Path as _Path
-_env_file = _Path(__file__).parent.parent.parent / ".env"
+_env_file = _Path(__file__).parent.parent / ".env"
 if _env_file.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_file)

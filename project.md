@@ -78,7 +78,7 @@ Dataset schema:
 
 A fixed reference catalog of 30 tools is maintained at:
 
-tool_router/data/tools_reference.json
+dataset_sample/tools_reference.json
 
 Tools have stable names and descriptions. The catalog is the single source of truth used by the generator.
 Tool names intentionally mix naming styles (kebab-case corp names, snake_case) to mimic realistic MCP server registries.
@@ -324,7 +324,7 @@ Only routing.
 
 ## Project Structure
 
-tool_router/
+intent-classifier/
 ├── data/
 ├── datasets/
 ├── models/
