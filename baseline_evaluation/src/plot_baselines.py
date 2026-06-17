@@ -16,9 +16,9 @@ Models are colour-coded by size category:
 
 Usage
 -----
-    .venv/bin/python baseline_evaluation/plot_baselines.py
-    .venv/bin/python baseline_evaluation/plot_baselines.py \\
-        --few-shot-reports-dir baseline_evaluation/few_shot_reports
+    .venv/bin/python baseline_evaluation/src/plot_baselines.py
+    .venv/bin/python baseline_evaluation/src/plot_baselines.py \\
+        --few-shot-reports-dir baseline_evaluation/reports_few_shot
 """
 
 import argparse
@@ -509,17 +509,17 @@ def main() -> None:
     )
     parser.add_argument(
         "--few-shot-reports-dir", type=Path,
-        default=Path(__file__).parent / "few_shot_reports",
+        default=Path(__file__).parent.parent / "reports_few_shot",
         help="Directory containing few-shot JSON report files (for combined figure).",
     )
     parser.add_argument(
         "--reports-dir", type=Path,
-        default=Path(__file__).parent / "reports",
+        default=Path(__file__).parent.parent / "reports_zero_shot",
         help="Directory containing JSON report files.",
     )
     parser.add_argument(
         "--out-dir", type=Path,
-        default=Path(__file__).parent / "results",
+        default=Path(__file__).parent.parent / "analysis",
         help="Directory to write PNG figures.",
     )
     args = parser.parse_args()
