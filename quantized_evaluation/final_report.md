@@ -24,6 +24,8 @@ Scope: Full-dataset evaluation across 4 models, 4 quantization modes (int8, nf4,
 
 ## Detailed Observations
 
+<!-- markdownlint-disable MD029 -->
+
 1. Memory behavior is as expected and stable.
 
 - fp16 had the highest peak memory footprint.
@@ -58,6 +60,8 @@ Scope: Full-dataset evaluation across 4 models, 4 quantization modes (int8, nf4,
 - If quality is priority, fp16 remains safest.
 - If memory-constrained, nf4 appears to be a more stable low-bit default than int4 in this benchmark.
 - int4 should be paired with adaptation/fine-tuning (for example QLoRA/AdaLoRA) rather than used directly without tuning.
+
+<!-- markdownlint-enable MD029 -->
 
 ## Focused Metrics For Proposed Next-Step Models
 
