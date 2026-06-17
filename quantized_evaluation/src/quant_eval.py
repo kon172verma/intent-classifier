@@ -3,7 +3,7 @@
 Quantization evaluation for 4 selected PEFT candidates.
 
 Runs the 4 selected models under multiple quantization configs:
-  int8        – bitsandbytes LLM.int8()
+    int8        – bitsandbytes LLM.int8() 
   nf4         – 4-bit NF4 (QLoRA default, NVIDIA GPUs only)
   int4        – 4-bit INT4 (ONNX/TensorRT compatible, wider device support)
   fp8         – 8-bit FP8 (modern GPUs + edge devices)
@@ -261,11 +261,11 @@ def evaluate_quantized(
 
     del model, tokenizer
     gc.collect()
-    try:
+    
+    # Clear only the cache for the active backend.
+    if device.type == "mps" and torch.backends.mps.is_available():
         torch.mps.empty_cache()
-    except AttributeError:
-        pass
-    if torch.cuda.is_available():
+    elif device.type == "cuda" and torch.cuda.is_available():
         torch.cuda.empty_cache()
 
     return QuantBenchmarkReport(

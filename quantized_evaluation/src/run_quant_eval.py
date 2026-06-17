@@ -36,7 +36,7 @@ import sys
 from pathlib import Path
 
 _THIS_DIR = Path(__file__).parent
-_EVAL_SCRIPT = _THIS_DIR / "src" / "quant_eval.py"
+_EVAL_SCRIPT = _THIS_DIR / "quant_eval.py"
 _PYTHON = sys.executable
 
 # Models in increasing parameter order (4-model core set)
