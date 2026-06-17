@@ -96,7 +96,9 @@ QUANT_CONFIGS: dict[str, Optional[BitsAndBytesConfig]] = {
     ),
     "int4": BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_quant_type="int4",
+        # bitsandbytes supports "nf4" and "fp4" 4-bit types.
+        # Keep the CLI label as int4 for user-facing consistency.
+        bnb_4bit_quant_type="fp4",
         bnb_4bit_compute_dtype=torch.bfloat16,
         bnb_4bit_use_double_quant=False,
     ),
