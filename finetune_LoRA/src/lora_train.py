@@ -4,7 +4,8 @@ Phase 3 – LoRA fine-tuning for MCP tool selection.
 
 Uses HuggingFace PEFT + TRL SFTTrainer.
 Loss is computed only on the assistant (answer) tokens via
-DataCollatorForCompletionOnlyLM.
+pre-tokenized labels (-100 masking) + DataCollatorForSeq2Seq.
+Compatible with TRL 1.x (DataCollatorForCompletionOnlyLM was removed in TRL 1.0).
 Validation accuracy is measured at each eval checkpoint via a custom
 TrainerCallback that runs greedy generation on ≤100 val examples.
 EarlyStoppingCallback stops training if eval_loss does not improve for
@@ -29,7 +30,6 @@ Usage
 
 import argparse
 import gc
-import inspect
 import json
 import os
 import sys
@@ -53,6 +53,7 @@ import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
+    DataCollatorForSeq2Seq,
     EarlyStoppingCallback,
     TrainerCallback,
     TrainerControl,
@@ -60,7 +61,7 @@ from transformers import (
     TrainingArguments,
 )
 from peft import LoraConfig, TaskType, get_peft_model
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM  # type: ignore
+from trl import SFTTrainer  # type: ignore
 from datasets import Dataset  # type: ignore
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -180,12 +181,50 @@ def load_jsonl(path: Path) -> list[dict]:
     ]
 
 
-def format_for_training(example: dict, tokenizer, model_key: str) -> str:
-    """Full conversation including the assistant answer — used as training text."""
+def tokenize_with_labels(
+    example: dict,
+    tokenizer,
+    model_key: str,
+) -> dict:
+    """
+    Tokenizes one training example and masks all non-assistant tokens with -100.
+
+    Pre-tokenizing the dataset means TRL skips its own tokenization step, making
+    this compatible with TRL 1.x where DataCollatorForCompletionOnlyLM was removed.
+    Returns a dict with 'input_ids', 'attention_mask', and 'labels'.
+    """
     messages = build_chat_messages(example, include_answer=True)
-    return apply_chat_template_safe(
+    text = apply_chat_template_safe(
         tokenizer, messages, model_key, add_generation_prompt=False
     )
+    enc = tokenizer(
+        text,
+        truncation=True,
+        max_length=MAX_SEQ_LENGTH,
+        return_tensors=None,   # plain Python lists
+    )
+    input_ids: list[int]      = [int(x) for x in enc["input_ids"]]
+    attention_mask: list[int] = [int(x) for x in enc["attention_mask"]]
+
+    # Find the LAST occurrence of "<|im_start|>assistant\n" token sequence.
+    # Everything up to and including that template is masked (-100); only
+    # the assistant answer tokens receive gradient signal.
+    resp_ids: list[int] = [
+        int(x) for x in
+        tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
+    ]
+    rlen = len(resp_ids)
+    last_pos = -1
+    for i in range(len(input_ids) - rlen + 1):
+        if input_ids[i : i + rlen] == resp_ids:
+            last_pos = i
+
+    labels = list(input_ids)
+    mask_end = (last_pos + rlen) if last_pos >= 0 else len(labels)
+    for i in range(mask_end):
+        labels[i] = -100
+
+    return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
 
 
 def resolve_device(requested: str) -> torch.device:
@@ -308,16 +347,17 @@ def main() -> None:
     print(f"\n  Trainable params : {trainable:,}  ({trainable / total * 100:.3f}%)")
     print(f"  Total params     : {total:,}")
 
-    # ── Format datasets ───────────────────────────────────────────────────────
-    print("\n  Formatting training data...")
-    train_texts = [
-        format_for_training(ex, tokenizer, args.model) for ex in train_examples
+    # ── Tokenize datasets (with prompt masking) ───────────────────────────────
+    # Pre-tokenize so TRL skips its own dataset processing step (TRL 1.x compat).
+    print("\n  Tokenizing training data...")
+    train_records = [
+        tokenize_with_labels(ex, tokenizer, args.model) for ex in train_examples
     ]
-    val_texts = [
-        format_for_training(ex, tokenizer, args.model) for ex in val_examples
+    val_records = [
+        tokenize_with_labels(ex, tokenizer, args.model) for ex in val_examples
     ]
-    train_dataset = Dataset.from_dict({"text": train_texts})
-    val_dataset   = Dataset.from_dict({"text": val_texts})
+    train_dataset = Dataset.from_list(train_records)
+    val_dataset   = Dataset.from_list(val_records)
 
     # ── Compute eval_steps (approximately twice per epoch) ────────────────────
     eff_batch       = (lora_cfg["per_device_train_batch_size"]
@@ -363,15 +403,13 @@ def main() -> None:
         optim="adamw_torch",
     )
 
-    # ── Data collator (loss on assistant tokens only) ─────────────────────────
-    # The response template is the token sequence that opens the assistant turn.
-    # Using token IDs directly avoids tokenization-boundary matching issues.
-    response_template_ids = tokenizer.encode(
-        "<|im_start|>assistant\n", add_special_tokens=False
-    )
-    collator = DataCollatorForCompletionOnlyLM(
-        response_template=response_template_ids,
+    # ── Data collator ──────────────────────────────────────────────────────────
+    # DataCollatorForSeq2Seq pads input_ids/attention_mask and pads labels with
+    # -100, so padded label positions are excluded from the loss automatically.
+    collator = DataCollatorForSeq2Seq(
         tokenizer=tokenizer,
+        padding=True,
+        label_pad_token_id=-100,
     )
 
     # ── Callbacks ─────────────────────────────────────────────────────────────
@@ -381,25 +419,19 @@ def main() -> None:
         ValAccuracyCallback(val_examples, tokenizer, args.model, device),
     ]
 
-    # ── Build SFTTrainer (handles TRL API differences across versions) ─────────
-    trainer_kwargs: dict = dict(
+    # ── Build SFTTrainer ───────────────────────────────────────────────────────
+    # Dataset is already tokenized (has 'input_ids'), so TRL 1.x skips its own
+    # dataset-processing step entirely.  processing_class= is the only valid
+    # tokenizer kwarg in TRL 1.x (tokenizer= was removed).
+    trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        dataset_text_field="text",
-        max_seq_length=MAX_SEQ_LENGTH,
         data_collator=collator,
+        processing_class=tokenizer,
         callbacks=callbacks,
     )
-    # TRL >= 0.10 uses processing_class=; earlier versions use tokenizer=.
-    sft_sig = inspect.signature(SFTTrainer.__init__).parameters
-    if "processing_class" in sft_sig:
-        trainer_kwargs["processing_class"] = tokenizer
-    else:
-        trainer_kwargs["tokenizer"] = tokenizer
-
-    trainer = SFTTrainer(**trainer_kwargs)
 
     # ── Train ─────────────────────────────────────────────────────────────────
     print(
