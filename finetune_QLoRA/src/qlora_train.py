@@ -285,6 +285,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args     = parse_args()
     device   = resolve_device(args.device)
+
+    # Reduce CUDA allocator fragmentation — especially helpful for 4-bit models
+    # where large contiguous allocations are needed mid-training.
+    if device.type == "cuda":
+        import os
+        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
     lora_cfg = LORA_CONFIGS[args.lora_config]
     model_id = MODEL_REGISTRY[args.model]
     run_tag  = f"{args.model}_config_{args.lora_config}_{args.dataset_size}"
@@ -390,6 +397,11 @@ def main() -> None:
     # ── Step 0 baseline (untrained model) ─────────────────────────────────────
     # Captures val accuracy and loss BEFORE any gradient updates so training
     # curves start at step 0 — makes the improvement from fine-tuning visible.
+    #
+    # Memory discipline: use inference_mode (no autograd graph), delete every
+    # intermediate tensor immediately, then empty_cache so the trainer starts
+    # with a clean allocator.  This is critical on 4-bit / QLoRA where the
+    # optimizer states will need the headroom freed here.
     print("\n  Computing step 0 baseline (untrained model)...")
     model.eval()
     step0_preds = [
@@ -399,10 +411,11 @@ def main() -> None:
     step0_acc = compute_accuracy(
         step0_preds, [ex["answer"] for ex in val_examples[:_CALLBACK_MAX_VAL]]
     )
+    del step0_preds  # free generation outputs before loss loop
     _loss_total = 0.0
     _loss_n     = 0
-    with torch.no_grad():
-        for record in val_records[:32]:  # sample 32 for speed
+    with torch.inference_mode():
+        for record in val_records[:16]:  # 16 samples — enough for a stable estimate
             ids  = torch.tensor([record["input_ids"]],      device=device)
             lbls = torch.tensor([record["labels"]],         device=device)
             mask = torch.tensor([record["attention_mask"]], device=device)
@@ -410,6 +423,7 @@ def main() -> None:
             if not torch.isnan(out.loss):
                 _loss_total += out.loss.item()
                 _loss_n     += 1
+            del ids, lbls, mask, out  # release each tensor immediately
     step0_loss = _loss_total / _loss_n if _loss_n > 0 else float("nan")
     step0_log_entry = {
         "step": 0, "epoch": 0.0,
@@ -418,6 +432,8 @@ def main() -> None:
     }
     print(f"  [Step 0]  val_loss={step0_loss:.4f}  val_acc={step0_acc:.4f}")
     model.train()
+    if device.type == "cuda":
+        torch.cuda.empty_cache()  # return all freed memory to the allocator
 
     # ── Compute eval_steps ────────────────────────────────────────────────────
     eff_batch       = (lora_cfg["per_device_train_batch_size"]
