@@ -387,6 +387,38 @@ def main() -> None:
     train_dataset = Dataset.from_list(train_records)
     val_dataset   = Dataset.from_list(val_records)
 
+    # ── Step 0 baseline (untrained model) ─────────────────────────────────────
+    # Captures val accuracy and loss BEFORE any gradient updates so training
+    # curves start at step 0 — makes the improvement from fine-tuning visible.
+    print("\n  Computing step 0 baseline (untrained model)...")
+    model.eval()
+    step0_preds = [
+        _generate_one(model, tokenizer, ex, device, args.model)
+        for ex in val_examples[:_CALLBACK_MAX_VAL]
+    ]
+    step0_acc = compute_accuracy(
+        step0_preds, [ex["answer"] for ex in val_examples[:_CALLBACK_MAX_VAL]]
+    )
+    _loss_total = 0.0
+    _loss_n     = 0
+    with torch.no_grad():
+        for record in val_records[:32]:  # sample 32 for speed
+            ids  = torch.tensor([record["input_ids"]],      device=device)
+            lbls = torch.tensor([record["labels"]],         device=device)
+            mask = torch.tensor([record["attention_mask"]], device=device)
+            out  = model(input_ids=ids, attention_mask=mask, labels=lbls)
+            if not torch.isnan(out.loss):
+                _loss_total += out.loss.item()
+                _loss_n     += 1
+    step0_loss = _loss_total / _loss_n if _loss_n > 0 else float("nan")
+    step0_log_entry = {
+        "step": 0, "epoch": 0.0,
+        "eval_loss":     round(step0_loss, 6),
+        "eval_accuracy": round(step0_acc, 4),
+    }
+    print(f"  [Step 0]  val_loss={step0_loss:.4f}  val_acc={step0_acc:.4f}")
+    model.train()
+
     # ── Compute eval_steps ────────────────────────────────────────────────────
     eff_batch       = (lora_cfg["per_device_train_batch_size"]
                        * lora_cfg["gradient_accumulation_steps"])
@@ -468,6 +500,9 @@ def main() -> None:
     mem_mb       = peak_memory_mb(device)
 
     print(f"\n  Training complete in {t_elapsed:.1f}s  |  Peak memory: {mem_mb:.0f} MB")
+
+    # Prepend step 0 entry so training curves show the full improvement arc.
+    trainer.state.log_history.insert(0, step0_log_entry)
 
     # ── Save adapter ──────────────────────────────────────────────────────────
     if not args.smoke_test:

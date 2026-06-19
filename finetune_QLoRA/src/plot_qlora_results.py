@@ -155,11 +155,22 @@ def plot_training_curves(train_reports: list[dict], out_dir: Path) -> None:
 
     reports = sorted(train_reports, key=lambda r: f"{r['model_key']}_{r['lora_config']}")
     n = len(reports)
-    fig, axes = plt.subplots(
-        1, n, figsize=(6 * n, 4.5), constrained_layout=True, squeeze=False
-    )
 
-    for ax, report in zip(axes[0], reports):
+    # Fixed 2-row × 3-col grid for the standard 2-model × 3-config matrix.
+    # Gracefully handles fewer runs by hiding unused axes.
+    n_cols = 3
+    n_rows = max(2, (n + n_cols - 1) // n_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(6 * n_cols, 4.5 * n_rows),
+        constrained_layout=True,
+    )
+    ax_flat = axes.flatten()
+
+    for idx, report in enumerate(reports):
+        ax  = ax_flat[idx]
+        ax2 = ax.twinx()
+
         history = report.get("log_history", [])
 
         train_steps  = [h["step"] for h in history if "loss"      in h and "eval_loss" not in h]
@@ -167,8 +178,6 @@ def plot_training_curves(train_reports: list[dict], out_dir: Path) -> None:
         eval_steps   = [h["step"] for h in history if "eval_loss" in h]
         eval_losses  = [h["eval_loss"] for h in history if "eval_loss" in h]
         eval_accs    = [h.get("eval_accuracy") for h in history if "eval_loss" in h]
-
-        ax2 = ax.twinx()
 
         if train_steps:
             ax.plot(
@@ -201,6 +210,10 @@ def plot_training_curves(train_reports: list[dict], out_dir: Path) -> None:
         lines1, labels1 = ax.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax.legend(lines1 + lines2, labels1 + labels2, fontsize=8)
+
+    # Hide unused subplot slots
+    for idx in range(len(reports), n_rows * n_cols):
+        ax_flat[idx].set_visible(False)
 
     out_path = out_dir / "qlora_training_curves.png"
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
