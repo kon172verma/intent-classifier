@@ -88,19 +88,44 @@ SYSTEM_PROMPT_FEW_SHOT: str = (
     '- Return "none" if no tool matches.\n'
     "- Do not explain.\n\n"
     "Examples:\n\n"
-    'User Request: "I need directions to the airport."\n'
+    # ── Example 1: clear match ──────────────────────────────────────────────
+    "Available Tools:\n"
+    "Name: nav_route_planner\n"
+    "Description: Plans a driving route to a destination.\n"
+    "\n"
+    "Name: climate_control\n"
+    "Description: Adjusts cabin temperature and fan settings.\n"
+    "\n"
+    "Name: media_player_ctrl\n"
+    "Description: Controls music and audio playback.\n"
+    "\n"
+    'User Request: "Get me to the downtown office by 9 am."\n'
     "Selected Tool: nav_route_planner\n\n"
-    'User Request: "Call my wife."\n'
-    "Selected Tool: call_handler\n\n"
-    'User Request: "It is too warm in the car."\n'
-    "Selected Tool: climate_control\n\n"
-    'User Request: "My tyre went flat on the motorway."\n'
-    "Selected Tool: roadside_assistance\n\n"
-    'User Request: "Read me the latest news headlines."\n'
-    "Selected Tool: news_briefing\n\n"
-    'User Request: "Lock the car remotely."\n'
-    "Selected Tool: remote_vehicle_lock\n\n"
-    'User Request: "What is the capital of France?"\n'
+    # ── Example 2: clear match ──────────────────────────────────────────────
+    "Available Tools:\n"
+    "Name: call_handler\n"
+    "Description: Makes and manages phone calls.\n"
+    "\n"
+    "Name: sms_messenger\n"
+    "Description: Sends and reads SMS text messages.\n"
+    "\n"
+    "Name: vehicle_diagnostics\n"
+    "Description: Reads and explains vehicle fault codes and sensor data.\n"
+    "\n"
+    "User Request: \"Send a quick text to the office: 'stuck in traffic'.\"\n"
+    "Selected Tool: sms_messenger\n\n"
+    # ── Example 3: no match → none ──────────────────────────────────────────
+    "Available Tools:\n"
+    "Name: ev_charging_scheduler\n"
+    "Description: Schedules and manages EV charging sessions.\n"
+    "\n"
+    "Name: fuel_station_finder\n"
+    "Description: Finds nearby fuel stations and current prices.\n"
+    "\n"
+    "Name: parking_locator\n"
+    "Description: Finds and reserves parking spots.\n"
+    "\n"
+    'User Request: "How do I file my tax return online?"\n'
     "Selected Tool: none"
 )
 
