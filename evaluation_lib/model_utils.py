@@ -108,13 +108,36 @@ def load_model_and_tokenizer(
                 rs["type"] = rs["rope_type"]
         kwargs["config"] = cfg
 
-    print(f"  Loading model     … (device={device}, dtype={dtype})")
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        dtype=dtype,
-        device_map=str(device),
-        trust_remote_code=True,
-        **kwargs,
-    )
+    # Attempt Flash Attention 2 on CUDA for faster prefill; fall back silently
+    # if the package is absent or the model architecture doesn't support it.
+    if device.type == "cuda":
+        try:
+            print(f"  Loading model     … (device={device}, dtype={dtype}, attn=flash_attention_2)")
+            model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                dtype=dtype,
+                device_map=str(device),
+                trust_remote_code=True,
+                attn_implementation="flash_attention_2",
+                **kwargs,
+            )
+        except (ImportError, ValueError, NotImplementedError):
+            print(f"  Loading model     … (device={device}, dtype={dtype}, attn=sdpa [FA2 unavailable])")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                dtype=dtype,
+                device_map=str(device),
+                trust_remote_code=True,
+                **kwargs,
+            )
+    else:
+        print(f"  Loading model     … (device={device}, dtype={dtype})")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            dtype=dtype,
+            device_map=str(device),
+            trust_remote_code=True,
+            **kwargs,
+        )
     model.eval()
     return model, tokenizer

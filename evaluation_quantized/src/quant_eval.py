@@ -71,6 +71,7 @@ from evaluation_lib import (  # noqa: E402
     peak_memory_mb,
     reset_peak_memory,
     ExampleResult,
+    compute_prefix_kv_cache,
 )
 from evaluation_lib.config import QWEN3_KEYS  # noqa: E402  (unused here; kept for compat)
 from evaluation_lib.config import SELECTED_MODELS_QUANT as _SELECTED_MODELS_QUANT  # noqa: E402
@@ -151,13 +152,26 @@ def load_quantized(
 
     # BitsAndBytes quantized models use device_map="auto" (works on CUDA;
     # falls back to CPU on MPS).
-    print(f"  Loading model [{QUANT_LABELS[quant]}] … (device_map=auto, compute_dtype=bfloat16)")
-    model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
-        model_id,
+    # Attempt Flash Attention 2 on CUDA; fall back silently if unavailable.
+    load_kwargs: dict = dict(
         quantization_config=bnb_config,
         device_map="auto",
         trust_remote_code=True,
     )
+    if device.type == "cuda":
+        try:
+            print(f"  Loading model [{QUANT_LABELS[quant]}] … (device_map=auto, attn=flash_attention_2)")
+            model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                **load_kwargs,
+                attn_implementation="flash_attention_2",
+            )
+        except (ImportError, ValueError, NotImplementedError):
+            print(f"  Loading model [{QUANT_LABELS[quant]}] … (device_map=auto, attn=sdpa [FA2 unavailable])")
+            model = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
+    else:
+        print(f"  Loading model [{QUANT_LABELS[quant]}] … (device_map=auto, compute_dtype=bfloat16)")
+        model = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
     model.eval()
     return model, tokenizer
 
@@ -202,6 +216,17 @@ def evaluate_quantized(
         actual_device = device
 
     reset_peak_memory(device)
+    prefix_kv = None
+    prefix_len = 0
+    try:
+        prefix_kv, prefix_len = compute_prefix_kv_cache(
+            tokenizer, model, model_key, system_prompt, actual_device
+        )
+        print(f"  Prefix KV cache: {prefix_len} tokens cached\n")
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        print("  Prefix KV cache unavailable — falling back to full prefill\n")
     print(f"\n  Running inference on {len(examples)} examples …\n")
 
     per_results: list[ExampleResult] = []
@@ -211,6 +236,8 @@ def evaluate_quantized(
                 ex, model, tokenizer, actual_device, model_key, max_new_tokens,
                 use_cache=True,
                 system_prompt=system_prompt,
+                prefix_kv=prefix_kv,
+                prefix_len=prefix_len,
             )
         except Exception:  # noqa: BLE001
             import traceback
