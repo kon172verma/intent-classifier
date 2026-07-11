@@ -133,6 +133,7 @@ class QuantBenchmarkReport:
     n_examples:         int
     n_correct:          int
     accuracy:           float
+    garbage_pct:        float   # % of wrong predictions that are hallucinated tool names
     avg_latency_ms:     float
     p50_latency_ms:     float
     p95_latency_ms:     float
@@ -251,6 +252,9 @@ def evaluate_quantized(
             pred, lat, ntok = "", 0.0, 0
 
         correct = pred.strip().lower() == ex["answer"].strip().lower()
+        valid_tools: set[str] = {t["name"].strip().lower() for t in ex["available_tools"]} | {"none"}
+        pred_lower = pred.strip().lower()
+        is_garbage = bool(pred_lower) and pred_lower not in valid_tools
         per_results.append(ExampleResult(
             index=i,
             user_request=ex["user_request"],
@@ -258,10 +262,11 @@ def evaluate_quantized(
             answer=ex["answer"],
             prediction=pred,
             correct=correct,
+            is_garbage=is_garbage,
             latency_s=lat,
             tokens_generated=ntok,
         ))
-        status = "✓" if correct else "✗"
+        status = "✓" if correct else ("?" if is_garbage else "✗")
         print(
             f"  [{i+1:>3}/{len(examples)}] {status} "
             f"pred={pred!r:30s}  ans={ex['answer']!r:30s}  "
@@ -272,6 +277,8 @@ def evaluate_quantized(
 
     n_correct    = sum(r.correct for r in per_results)
     accuracy     = n_correct / len(per_results) if per_results else 0.0
+    n_garbage    = sum(r.is_garbage for r in per_results)
+    garbage_pct  = round(n_garbage / len(per_results) * 100, 2) if per_results else 0.0
     latencies_ms = sorted(r.latency_s * 1000 for r in per_results if r.latency_s > 0)
     avg_lat      = sum(latencies_ms) / len(latencies_ms) if latencies_ms else 0.0
     p50_lat      = latencies_ms[len(latencies_ms) // 2] if latencies_ms else 0.0
@@ -301,6 +308,7 @@ def evaluate_quantized(
         n_examples=len(per_results),
         n_correct=n_correct,
         accuracy=round(accuracy, 4),
+        garbage_pct=garbage_pct,
         avg_latency_ms=round(avg_lat, 2),
         p50_latency_ms=round(p50_lat, 2),
         p95_latency_ms=round(p95_lat, 2),
@@ -373,6 +381,7 @@ def main() -> None:
     print(f"  RESULTS — {report.model_key} [{QUANT_LABELS[report.quant]}]")
     print(f"{'='*60}")
     print(f"  Accuracy       : {report.accuracy:.2%}  ({report.n_correct}/{report.n_examples})")
+    print(f"  Garbage preds  : {report.garbage_pct:.1f}%")
     print(f"  Avg latency    : {report.avg_latency_ms:.1f} ms")
     print(f"  Peak memory    : {report.peak_memory_mb:.1f} MB")
     print(f"{'='*60}\n")

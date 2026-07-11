@@ -182,6 +182,7 @@ class ExampleResult:
     answer:           str
     prediction:       str
     correct:          bool
+    is_garbage:       bool    # pred is non-empty, not "none", and not in the available tool list
     latency_s:        float
     tokens_generated: int
 
@@ -197,6 +198,7 @@ class BenchmarkReport:
     n_examples:         int
     n_correct:          int
     accuracy:           float
+    garbage_pct:        float   # % of wrong predictions that are hallucinated tool names
     avg_latency_ms:     float
     p50_latency_ms:     float
     p95_latency_ms:     float
@@ -347,6 +349,9 @@ def evaluate(
             pred, lat, ntok = "", 0.0, 0
 
         correct = pred.strip().lower() == ex["answer"].strip().lower()
+        valid_tools: set[str] = {t["name"].strip().lower() for t in ex["available_tools"]} | {"none"}
+        pred_lower = pred.strip().lower()
+        is_garbage = bool(pred_lower) and pred_lower not in valid_tools
         per_results.append(ExampleResult(
             index=i,
             user_request=ex["user_request"],
@@ -354,10 +359,11 @@ def evaluate(
             answer=ex["answer"],
             prediction=pred,
             correct=correct,
+            is_garbage=is_garbage,
             latency_s=lat,
             tokens_generated=ntok,
         ))
-        status = "✓" if correct else "✗"
+        status = "✓" if correct else ("?" if is_garbage else "✗")
         print(
             f"  [{i+1:>3}/{len(examples)}] {status} "
             f"pred={pred!r:30s}  ans={ex['answer']!r:30s}  "
@@ -369,6 +375,8 @@ def evaluate(
     # ── Aggregate ─────────────────────────────────────────────────────────────
     n_correct = sum(r.correct for r in per_results)
     accuracy  = n_correct / len(per_results) if per_results else 0.0
+    n_garbage    = sum(r.is_garbage for r in per_results)
+    garbage_pct  = round(n_garbage / len(per_results) * 100, 2) if per_results else 0.0
 
     latencies_ms = sorted(r.latency_s * 1000 for r in per_results if r.latency_s > 0)
     avg_lat = sum(latencies_ms) / len(latencies_ms) if latencies_ms else 0.0
@@ -394,6 +402,7 @@ def evaluate(
         n_examples=len(per_results),
         n_correct=n_correct,
         accuracy=round(accuracy, 4),
+        garbage_pct=garbage_pct,
         avg_latency_ms=round(avg_lat, 2),
         p50_latency_ms=round(p50_lat, 2),
         p95_latency_ms=round(p95_lat, 2),

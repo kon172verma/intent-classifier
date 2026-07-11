@@ -22,22 +22,22 @@ MODEL_REGISTRY: dict[str, str] = {
     # ── TINY (<300M) ──────────────────────────────────────────────────────
     "pythia-70m":     "EleutherAI/pythia-70m",                  # base only — no instruct variant exists
     "cerebras-111m":  "cerebras/Cerebras-GPT-111M",             # base only — no instruct variant exists
-    "smollm2-135m":   "HuggingFaceTB/SmolLM2-135M-Instruct",   # instruct, open
+    "smollm2-135m":   "HuggingFaceTB/SmolLM2-135M-Instruct",    # instruct, open
     "gemma3-270m":    "google/gemma-3-270m-it",                 # instruct, gated (Google Gemma licence)
     # ── SMALL (<1B) ────────────────────────────────────────────────────────
-    "smollm2-360m":   "HuggingFaceTB/SmolLM2-360M-Instruct",   # instruct, open
-    "qwen2.5-0.5b":   "Qwen/Qwen2.5-0.5B-Instruct",            # instruct, open
-    "qwen3-0.6b":     "Qwen/Qwen3-0.6B",                       # unified base+chat, open
+    "smollm2-360m":   "HuggingFaceTB/SmolLM2-360M-Instruct",    # instruct, open
+    "qwen2.5-0.5b":   "Qwen/Qwen2.5-0.5B-Instruct",             # instruct, open
+    "qwen3-0.6b":     "Qwen/Qwen3-0.6B",                        # unified base+chat, open
     # ── MEDIUM (<2B) ───────────────────────────────────────────────────────
     "gemma3-1b":      "google/gemma-3-1b-it",                   # instruct, gated (Google Gemma licence)
-    "llama3.2-1b":    "meta-llama/Llama-3.2-1B-Instruct",      # instruct, gated (Meta Llama 3.2 licence)
-    "qwen3-1.7b":     "Qwen/Qwen3-1.7B",                       # unified base+chat, open
-    "smollm2-1.7b":   "HuggingFaceTB/SmolLM2-1.7B-Instruct",  # instruct, open
+    "llama3.2-1b":    "meta-llama/Llama-3.2-1B-Instruct",       # instruct, gated (Meta Llama 3.2 licence)
+    "qwen3-1.7b":     "Qwen/Qwen3-1.7B",                        # unified base+chat, open
+    "smollm2-1.7b":   "HuggingFaceTB/SmolLM2-1.7B-Instruct",    # instruct, open
     # ── LARGE (<=3B) ───────────────────────────────────────────────────────
-    "granite3.3-2b":  "ibm-granite/granite-3.3-2b-instruct",   # instruct, open
+    "granite3.3-2b":  "ibm-granite/granite-3.3-2b-instruct",    # instruct, open
     "gemma2-2b":      "google/gemma-2-2b-it",                   # instruct, gated (Google Gemma licence); Gemma 2 series
-    "smollm3":        "HuggingFaceTB/SmolLM3-3B",              # unified base+chat, open
-    "llama3.2-3b":    "meta-llama/Llama-3.2-3B-Instruct",      # instruct, gated (Meta Llama 3.2 licence)
+    "smollm3":        "HuggingFaceTB/SmolLM3-3B",               # unified base+chat, open
+    "llama3.2-3b":    "meta-llama/Llama-3.2-3B-Instruct",       # instruct, gated (Meta Llama 3.2 licence)
 }
 
 # Ordered smallest → largest (used as default run order in batch runners)

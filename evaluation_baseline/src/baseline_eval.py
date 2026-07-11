@@ -126,6 +126,7 @@ def main() -> None:
     print(f"  RESULTS — {report.model_key}")
     print(f"{'='*60}")
     print(f"  Accuracy       : {report.accuracy:.2%}  ({report.n_correct}/{report.n_examples})")
+    print(f"  Garbage preds  : {report.garbage_pct:.1f}%")
     print(f"  Avg latency    : {report.avg_latency_ms:.1f} ms")
     print(f"  P50 latency    : {report.p50_latency_ms:.1f} ms")
     print(f"  P95 latency    : {report.p95_latency_ms:.1f} ms")

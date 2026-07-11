@@ -118,7 +118,7 @@ def print_summary(results: list[dict]) -> None:
     mode_lbl = results[0].get("eval_mode", "zero_shot").upper().replace("_", "-")
     header   = (
         f"{'Model':<{col_key}}  {'Acc':>7}  {'Correct':>8}  "
-        f"{'AvgLat(ms)':>11}  {'Tok/s':>7}  {'Mem(MB)':>8}"
+        f"{'Garbage%':>9}  {'AvgLat(ms)':>11}  {'Tok/s':>7}  {'Mem(MB)':>8}"
     )
     sep = "-" * len(header)
     print(f"\n{'='*len(header)}\n  {mode_lbl} BASELINE SUMMARY\n{'='*len(header)}")
@@ -128,6 +128,7 @@ def print_summary(results: list[dict]) -> None:
         print(
             f"{r['model_key']:<{col_key}}  {r['accuracy']:>6.1%}  "
             f"{r['n_correct']:>4}/{r['n_examples']:<3}  "
+            f"{r.get('garbage_pct', 0.0):>8.1f}%  "
             f"{r['avg_latency_ms']:>11.1f}  {r['avg_tokens_per_sec']:>7.1f}  "
             f"{r['peak_memory_mb']:>8.1f}"
         )
@@ -139,7 +140,7 @@ def save_summary(results: list[dict], out_dir: Path) -> None:
     path = out_dir / f"summary_{ts}.json"
     keep = (
         "model_key", "model_id", "device", "dtype", "timestamp",
-        "n_examples", "n_correct", "accuracy",
+        "n_examples", "n_correct", "accuracy", "garbage_pct",
         "avg_latency_ms", "p50_latency_ms", "p95_latency_ms",
         "avg_tokens_per_sec", "peak_memory_mb",
     )
