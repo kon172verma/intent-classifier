@@ -10,7 +10,6 @@ Re-exports commonly used symbols so callers can do:
 from .config import (
     MODEL_REGISTRY,
     ALL_MODELS,
-    SELECTED_MODELS_QUANT,
     QWEN3_KEYS,
     SYSTEM_PROMPT_ZERO_SHOT,
     SYSTEM_PROMPT_FEW_SHOT,
@@ -49,7 +48,7 @@ from .model_info import (
 
 __all__ = [
     # config
-    "MODEL_REGISTRY", "ALL_MODELS", "SELECTED_MODELS_QUANT", "QWEN3_KEYS",
+    "MODEL_REGISTRY", "ALL_MODELS", "QWEN3_KEYS",
     "SYSTEM_PROMPT_ZERO_SHOT", "SYSTEM_PROMPT_FEW_SHOT", "SYSTEM_PROMPT",
     # eval_core
     "ExampleResult", "BenchmarkReport",

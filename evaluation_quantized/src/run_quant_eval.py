@@ -43,13 +43,13 @@ if _env_file.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_file)
 
-from evaluation_lib.config import ALL_MODELS, SELECTED_MODELS_QUANT  # noqa: E402
+from evaluation_lib.config import ALL_MODELS  # noqa: E402
 
+# Mirror of SELECTED_MODELS_QUANT in quant_eval.py — keep in sync if models change.
+_SELECTED_KEYS: set[str] = {"qwen2.5-0.5b", "qwen3-0.6b", "qwen3-1.7b", "smollm3"}
 _EVAL_SCRIPT = Path(__file__).parent / "quant_eval.py"
 _PYTHON      = sys.executable
 
-# Models in parameter order (only the 4 in the quant core set)
-_SELECTED_KEYS: set[str] = set(SELECTED_MODELS_QUANT.keys())
 ALL_MODELS_QUANT: list[str] = [m for m in ALL_MODELS if m in _SELECTED_KEYS]
 
 ALL_QUANTS: list[str] = ["int8", "nf4", "int4", "fp8"]

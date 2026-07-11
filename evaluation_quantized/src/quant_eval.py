@@ -73,11 +73,17 @@ from evaluation_lib import (  # noqa: E402
     ExampleResult,
     compute_prefix_kv_cache,
 )
-from evaluation_lib.config import QWEN3_KEYS  # noqa: E402  (unused here; kept for compat)
-from evaluation_lib.config import SELECTED_MODELS_QUANT as _SELECTED_MODELS_QUANT  # noqa: E402
+from evaluation_lib.config import MODEL_REGISTRY, QWEN3_KEYS  # noqa: E402
 
-# ── Selected models (4-model core set, base model IDs) ────────────────────────
-SELECTED_MODELS: dict[str, str] = dict(_SELECTED_MODELS_QUANT)
+# ── Selected models for quantization evaluation ──────────────────────────────
+# Core set covering a range of sizes and architectures (open models only).
+SELECTED_MODELS_QUANT: dict[str, str] = {
+    "qwen2.5-0.5b": MODEL_REGISTRY["qwen2.5-0.5b"],   # small,  instruct
+    "qwen3-0.6b":   MODEL_REGISTRY["qwen3-0.6b"],      # small,  unified base+chat
+    "qwen3-1.7b":   MODEL_REGISTRY["qwen3-1.7b"],      # medium, unified base+chat
+    "smollm3":      MODEL_REGISTRY["smollm3"],          # large,  unified base+chat
+}
+SELECTED_MODELS: dict[str, str] = dict(SELECTED_MODELS_QUANT)
 
 # ── Quantization configs ───────────────────────────────────────────────────────
 QUANT_CONFIGS: dict[str, Optional[BitsAndBytesConfig]] = {

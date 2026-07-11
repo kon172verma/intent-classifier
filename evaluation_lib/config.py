@@ -3,69 +3,72 @@ evaluation_lib/config.py
 ========================
 Single source of truth for all evaluation configuration:
 
-  MODEL_REGISTRY          – short CLI keys → HuggingFace model IDs (base models)
-  ALL_MODELS              – ordered list of all model keys (smallest → largest)
-  SELECTED_MODELS_QUANT   – 4-model core set for quantization evaluation
-  QWEN3_KEYS              – keys that need enable_thinking=False in chat template
-  SYSTEM_PROMPT_*         – zero-shot and few-shot system prompts
+  MODEL_REGISTRY  – short CLI keys → HuggingFace model IDs
+  ALL_MODELS      – ordered list of all model keys (smallest → largest)
+  QWEN3_KEYS      – keys that need enable_thinking=False in chat template
+  SYSTEM_PROMPT_* – zero-shot and few-shot system prompts
 """
 
 from __future__ import annotations
 
 # ── Model registry ─────────────────────────────────────────────────────────────
-# All models use base (pretrained-only) checkpoints — no -Instruct / -it suffix.
-# Rationale: base models quantize more cleanly because their weights follow the
-# near-normal distribution that NF4/INT4 was designed for; RLHF/instruction
-# tuning shifts weight distributions away from that ideal.
-#
-# Qwen3 models are kept as-is: Alibaba released them as a unified base+chat
-# checkpoint with no separate base-only variant.
+# Instruct / chat checkpoints are preferred over base models throughout.
+# Qwen3 and SmolLM3 ship as unified base+chat checkpoints with no separate
+# -Instruct variant; their thinking mode is disabled at inference time via
+# QWEN3_KEYS below.
+# NOTE: granite3.3-2b uses thinking=False (not enable_thinking=) in
+# apply_chat_template — see QWEN3_KEYS comment for context.
 MODEL_REGISTRY: dict[str, str] = {
-    # ── Openly available base models ──────────────────────────────────────
-    "smollm2-135m": "HuggingFaceTB/SmolLM2-135M",        # was SmolLM2-135M-Instruct
-    "smollm2-360m": "HuggingFaceTB/SmolLM2-360M",        # was SmolLM2-360M-Instruct
-    "smollm3":      "HuggingFaceTB/SmolLM3-3B",          # no separate base released
-    "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B",                 # was Qwen2.5-0.5B-Instruct
-    "qwen2.5-1.5b": "Qwen/Qwen2.5-1.5B",                 # was Qwen2.5-1.5B-Instruct
-    "qwen3-0.6b":   "Qwen/Qwen3-0.6B",                   # unified base+chat model
-    "qwen3-1.7b":   "Qwen/Qwen3-1.7B",                   # unified base+chat model
-    "qwen3-4b":     "Qwen/Qwen3-4B",                     # unified base+chat model
-    "tinyllama":    "TinyLlama/TinyLlama-1.1B",           # was TinyLlama-1.1B-Chat-v1.0
-    # ── Gated models (require HF token + accepted licence) ────────────────
-    "gemma3-270m":  "google/gemma-3-270m",                # was gemma-3-270m-it
-    "gemma3-1b":    "google/gemma-3-1b",                  # was gemma-3-1b-it
-    "llama3.2-3b":  "meta-llama/Llama-3.2-3B",           # was Llama-3.2-3B-Instruct
+    # ── TINY (<300M) ──────────────────────────────────────────────────────
+    "pythia-70m":     "EleutherAI/pythia-70m",                  # base only — no instruct variant exists
+    "cerebras-111m":  "cerebras/Cerebras-GPT-111M",             # base only — no instruct variant exists
+    "smollm2-135m":   "HuggingFaceTB/SmolLM2-135M-Instruct",   # instruct, open
+    "gemma3-270m":    "google/gemma-3-270m-it",                 # instruct, gated (Google Gemma licence)
+    # ── SMALL (<1B) ────────────────────────────────────────────────────────
+    "smollm2-360m":   "HuggingFaceTB/SmolLM2-360M-Instruct",   # instruct, open
+    "qwen2.5-0.5b":   "Qwen/Qwen2.5-0.5B-Instruct",            # instruct, open
+    "qwen3-0.6b":     "Qwen/Qwen3-0.6B",                       # unified base+chat, open
+    # ── MEDIUM (<2B) ───────────────────────────────────────────────────────
+    "gemma3-1b":      "google/gemma-3-1b-it",                   # instruct, gated (Google Gemma licence)
+    "llama3.2-1b":    "meta-llama/Llama-3.2-1B-Instruct",      # instruct, gated (Meta Llama 3.2 licence)
+    "qwen3-1.7b":     "Qwen/Qwen3-1.7B",                       # unified base+chat, open
+    "smollm2-1.7b":   "HuggingFaceTB/SmolLM2-1.7B-Instruct",  # instruct, open
+    # ── LARGE (<=3B) ───────────────────────────────────────────────────────
+    "granite3.3-2b":  "ibm-granite/granite-3.3-2b-instruct",   # instruct, open
+    "gemma2-2b":      "google/gemma-2-2b-it",                   # instruct, gated (Google Gemma licence); Gemma 2 series
+    "smollm3":        "HuggingFaceTB/SmolLM3-3B",              # unified base+chat, open
+    "llama3.2-3b":    "meta-llama/Llama-3.2-3B-Instruct",      # instruct, gated (Meta Llama 3.2 licence)
 }
 
 # Ordered smallest → largest (used as default run order in batch runners)
 ALL_MODELS: list[str] = [
+    # TINY
+    "pythia-70m",
+    "cerebras-111m",
     "smollm2-135m",
     "gemma3-270m",
+    # SMALL
     "smollm2-360m",
     "qwen2.5-0.5b",
     "qwen3-0.6b",
-    "tinyllama",
+    # MEDIUM
     "gemma3-1b",
-    "qwen2.5-1.5b",
+    "llama3.2-1b",
     "qwen3-1.7b",
+    "smollm2-1.7b",
+    # LARGE
+    "granite3.3-2b",
+    "gemma2-2b",
     "smollm3",
     "llama3.2-3b",
-    "qwen3-4b",
 ]
 
-# ── 4-model core set for quantization evaluation ───────────────────────────────
-# Covers a range of sizes and architectures from the baseline set.
-SELECTED_MODELS_QUANT: dict[str, str] = {
-    "qwen2.5-0.5b": MODEL_REGISTRY["qwen2.5-0.5b"],
-    "qwen3-0.6b":   MODEL_REGISTRY["qwen3-0.6b"],
-    "qwen2.5-1.5b": MODEL_REGISTRY["qwen2.5-1.5b"],
-    "smollm3":      MODEL_REGISTRY["smollm3"],
-}
-
-# ── Qwen3 special handling ─────────────────────────────────────────────────────
-# Qwen3 tokenizers support enable_thinking= in apply_chat_template.
-# Always disable thinking for deterministic single-token routing output.
-QWEN3_KEYS: frozenset[str] = frozenset({"qwen3-0.6b", "qwen3-1.7b", "qwen3-4b"})
+# ── Models that use enable_thinking= in apply_chat_template ──────────────────
+# Qwen3 and SmolLM3 are unified base+chat checkpoints that default to thinking
+# mode. Always disable for deterministic single-token routing output.
+# NOTE: granite3.3-2b uses a *different* kwarg (thinking=False) rather than
+# enable_thinking= — it is NOT listed here; callers must handle it separately.
+QWEN3_KEYS: frozenset[str] = frozenset({"qwen3-0.6b", "qwen3-1.7b", "smollm3"})
 
 # ── System prompts ─────────────────────────────────────────────────────────────
 # Prompt order: system-prompt → available-tools → user-request.
