@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import torch
-from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 # ── Device resolution ──────────────────────────────────────────────────────────
@@ -70,14 +70,6 @@ def free_model_memory(model: Any, tokenizer: Any, device: torch.device) -> None:
             pass
 
 
-# ── Per-model quirks ───────────────────────────────────────────────────────────
-# Keys that need a rope_scaling config patch before loading
-_ROPE_SCALING_FIX_KEYS: frozenset[str] = frozenset()
-
-# Keys that should not use the KV cache during generation
-_NO_KV_CACHE_KEYS: frozenset[str] = frozenset()
-
-
 # ── Model loading ──────────────────────────────────────────────────────────────
 
 def load_model_and_tokenizer(
@@ -96,17 +88,6 @@ def load_model_and_tokenizer(
         tokenizer.pad_token_id = tokenizer.eos_token_id
 
     kwargs: dict = dict(extra_kwargs or {})
-
-    if model_key in _ROPE_SCALING_FIX_KEYS:
-        cfg = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
-        rs = getattr(cfg, "rope_scaling", None)
-        if isinstance(rs, dict):
-            rope_type = rs.get("rope_type") or rs.get("type", "")
-            if rope_type == "default":
-                cfg.rope_scaling = None
-            elif "type" not in rs and "rope_type" in rs:
-                rs["type"] = rs["rope_type"]
-        kwargs["config"] = cfg
 
     # Attempt Flash Attention 2 on CUDA for faster prefill; fall back silently
     # if the package is absent or the model architecture doesn't support it.

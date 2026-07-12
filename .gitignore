@@ -20,3 +20,6 @@ env/
 
 # macOS
 .DS_Store
+
+# notes
+notes.txt

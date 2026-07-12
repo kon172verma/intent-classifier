@@ -30,7 +30,6 @@ from evaluation_lib.config import (
     SYSTEM_PROMPT_FEW_SHOT,
 )
 from evaluation_lib.model_utils import (
-    _NO_KV_CACHE_KEYS,
     dtype_for_device,
     free_model_memory,
     load_model_and_tokenizer,
@@ -319,18 +318,16 @@ def evaluate(
     model, tokenizer = load_model_and_tokenizer(model_id, device, dtype, model_key=model_key)
     reset_peak_memory(device)   # reset after load; measure inference memory only
 
-    use_kv = model_key not in _NO_KV_CACHE_KEYS
     prefix_kv: Any | None = None
     prefix_len: int = 0
-    if use_kv:
-        try:
-            prefix_kv, prefix_len = compute_prefix_kv_cache(
-                tokenizer, model, model_key, system_prompt, device
-            )
-            print(f"  Prefix KV cache: {prefix_len} tokens cached\n")
-        except Exception:
-            traceback.print_exc()
-            print("  Prefix KV cache unavailable — falling back to full prefill\n")
+    try:
+        prefix_kv, prefix_len = compute_prefix_kv_cache(
+            tokenizer, model, model_key, system_prompt, device
+        )
+        print(f"  Prefix KV cache: {prefix_len} tokens cached\n")
+    except Exception:
+        traceback.print_exc()
+        print("  Prefix KV cache unavailable — falling back to full prefill\n")
 
     print(f"\n  Running inference on {len(examples)} examples …\n")
 
@@ -339,7 +336,7 @@ def evaluate(
         try:
             pred, lat, ntok = run_example(
                 ex, model, tokenizer, device, model_key, max_new_tokens,
-                use_cache=use_kv,
+                use_cache=True,
                 system_prompt=system_prompt,
                 prefix_kv=prefix_kv,
                 prefix_len=prefix_len,
