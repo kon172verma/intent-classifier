@@ -1,0 +1,52 @@
+{
+  "model_key": "pythia-70m",
+  "model_id": "EleutherAI/pythia-70m",
+  "device": "cuda",
+  "dtype": "torch.bfloat16",
+  "timestamp": "2026-07-12T16:43:43",
+  "eval_mode": "few_shot",
+  "n_examples": 3,
+  "n_correct": 0,
+  "accuracy": 0.0,
+  "garbage_pct": 100.0,
+  "avg_latency_ms": 117.92,
+  "p50_latency_ms": 84.78,
+  "p95_latency_ms": 217.9,
+  "avg_tokens_per_sec": 111.84,
+  "peak_memory_mb": 177.31,
+  "results": [
+    {
+      "index": 0,
+      "user_request": "Call my wife.",
+      "n_tools": 18,
+      "answer": "call_handler",
+      "prediction": "D-",
+      "correct": false,
+      "is_garbage": true,
+      "latency_s": 0.21789608199969734,
+      "tokens_generated": 3
+    },
+    {
+      "index": 1,
+      "user_request": "Any accidents reported on Route 1?",
+      "n_tools": 16,
+      "answer": "traffic_alert_service",
+      "prediction": "vehicles",
+      "correct": false,
+      "is_garbage": true,
+      "latency_s": 0.05107423399977051,
+      "tokens_generated": 8
+    },
+    {
+      "index": 2,
+      "user_request": "Alert me if my heart rate goes above 100.",
+      "n_tools": 15,
+      "answer": "health_monitor",
+      "prediction": "Description,-",
+      "correct": false,
+      "is_garbage": true,
+      "latency_s": 0.08478336200005288,
+      "tokens_generated": 14
+    }
+  ]
+}
