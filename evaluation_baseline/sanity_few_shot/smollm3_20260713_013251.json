@@ -1,0 +1,52 @@
+{
+  "model_key": "smollm3",
+  "model_id": "HuggingFaceTB/SmolLM3-3B",
+  "device": "cuda",
+  "dtype": "torch.bfloat16",
+  "timestamp": "2026-07-13T01:32:51",
+  "eval_mode": "few_shot",
+  "n_examples": 3,
+  "n_correct": 2,
+  "accuracy": 0.6667,
+  "garbage_pct": 0.0,
+  "avg_latency_ms": 190.58,
+  "p50_latency_ms": 143.54,
+  "p95_latency_ms": 322.2,
+  "avg_tokens_per_sec": 16.36,
+  "peak_memory_mb": 5987.19,
+  "results": [
+    {
+      "index": 0,
+      "user_request": "Call my wife.",
+      "n_tools": 18,
+      "answer": "call_handler",
+      "prediction": "call_handler",
+      "correct": true,
+      "is_garbage": false,
+      "latency_s": 0.322201519000032,
+      "tokens_generated": 3
+    },
+    {
+      "index": 1,
+      "user_request": "Any accidents reported on Route 1?",
+      "n_tools": 16,
+      "answer": "traffic_alert_service",
+      "prediction": "none",
+      "correct": false,
+      "is_garbage": false,
+      "latency_s": 0.10599801400007891,
+      "tokens_generated": 2
+    },
+    {
+      "index": 2,
+      "user_request": "Alert me if my heart rate goes above 100.",
+      "n_tools": 15,
+      "answer": "health_monitor",
+      "prediction": "health_monitor",
+      "correct": true,
+      "is_garbage": false,
+      "latency_s": 0.14354085699994812,
+      "tokens_generated": 3
+    }
+  ]
+}
