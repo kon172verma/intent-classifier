@@ -12,6 +12,7 @@ Core evaluation logic shared by evaluation_baseline and evaluation_quantized:
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 import time
@@ -27,7 +28,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizerBase
 from evaluation_lib.config import (
     QWEN3_KEYS,
     SYSTEM_PROMPT_ZERO_SHOT,
-    SYSTEM_PROMPT_FEW_SHOT,
+    SYSTEM_PROMPT_FEW_SHOT,  # noqa: F401
 )
 from evaluation_lib.model_utils import (
     dtype_for_device,
@@ -43,6 +44,7 @@ from evaluation_lib.model_utils import (
 # For chat models  : system role holds SYSTEM_PROMPT; user role holds
 #                    tool list + user request (in that order).
 # For base models  : same order flattened into a single completion string.
+
 
 def _tool_block(tools: list[dict]) -> str:
     parts: list[str] = []
@@ -81,11 +83,12 @@ def build_chat_messages(
     )
     return [
         {"role": "system", "content": system_prompt},
-        {"role": "user",   "content": user},
+        {"role": "user", "content": user},
     ]
 
 
 # ── Prefix KV-cache helpers ────────────────────────────────────────────────────
+
 
 def _build_prefix_text(
     tokenizer: PreTrainedTokenizerBase,
@@ -121,27 +124,17 @@ def compute_prefix_kv_cache(
 
     Returns ``(past_key_values, prefix_token_length)``.
 
-    The cache is stored as the legacy tuple-of-tuples format so that each
-    ``model.generate()`` call constructs its own internal ``DynamicCache``
-    from it rather than extending our stored tensors in-place.
+    The returned cache object is the raw value from ``model.forward()``.
+    **Do not pass it directly to ``model.generate()``** — generate() mutates
+    the cache in-place.  ``run_example`` calls ``copy.deepcopy`` on it before
+    each generate() call so that the stored prefix cache is never modified.
     """
     prefix_text = _build_prefix_text(tokenizer, model_key, system_prompt)
     inputs = tokenizer(prefix_text, return_tensors="pt").to(device)  # type: ignore[operator]
     prefix_len = int(inputs["input_ids"].shape[-1])
     with torch.inference_mode():
         out = model(**inputs, use_cache=True)  # type: ignore[operator]
-    kv: Any = out.past_key_values
-    # Convert DynamicCache → immutable legacy tuple so every generate() call
-    # builds a fresh internal cache rather than mutating our stored one.
-    try:
-        from transformers.cache_utils import Cache  # type: ignore[import-untyped]
-        if isinstance(kv, Cache):
-            to_legacy = getattr(kv, "to_legacy_cache", None)
-            if to_legacy is not None:
-                kv = to_legacy()
-    except (ImportError, AttributeError):
-        pass  # Already a tuple in older Transformers versions
-    return kv, prefix_len
+    return out.past_key_values, prefix_len
 
 
 # ── Output extraction ──────────────────────────────────────────────────────────
@@ -164,7 +157,7 @@ def extract_prediction(raw_generated: str) -> str:
     for line in text.splitlines():
         line = line.strip().strip("*_`\"'")
         if line.lower().startswith("selected tool:"):
-            line = line[len("selected tool:"):].strip().strip("*_`\"'")
+            line = line[len("selected tool:") :].strip().strip("*_`\"'")
         if line:
             token = line.split()[0].rstrip(".,;:()")
             return token
@@ -173,40 +166,44 @@ def extract_prediction(raw_generated: str) -> str:
 
 # ── Data structures ────────────────────────────────────────────────────────────
 
+
 @dataclass
 class ExampleResult:
-    index:            int
-    user_request:     str
-    n_tools:          int
-    answer:           str
-    prediction:       str
-    correct:          bool
-    is_garbage:       bool    # pred is non-empty, not "none", and not in the available tool list
-    latency_s:        float
+    index: int
+    user_request: str
+    n_tools: int
+    answer: str
+    prediction: str
+    correct: bool
+    is_garbage: (
+        bool  # pred is non-empty, not "none", and not in the available tool list
+    )
+    latency_s: float
     tokens_generated: int
 
 
 @dataclass
 class BenchmarkReport:
-    model_key:          str
-    model_id:           str
-    device:             str
-    dtype:              str
-    timestamp:          str
-    eval_mode:          str     # "zero_shot" | "few_shot"
-    n_examples:         int
-    n_correct:          int
-    accuracy:           float
-    garbage_pct:        float   # % of wrong predictions that are hallucinated tool names
-    avg_latency_ms:     float
-    p50_latency_ms:     float
-    p95_latency_ms:     float
+    model_key: str
+    model_id: str
+    device: str
+    dtype: str
+    timestamp: str
+    eval_mode: str  # "zero_shot" | "few_shot"
+    n_examples: int
+    n_correct: int
+    accuracy: float
+    garbage_pct: float  # % of wrong predictions that are hallucinated tool names
+    avg_latency_ms: float
+    p50_latency_ms: float
+    p95_latency_ms: float
     avg_tokens_per_sec: float
-    peak_memory_mb:     float
-    results:            list[dict] = field(default_factory=list)
+    peak_memory_mb: float
+    results: list[dict] = field(default_factory=list)
 
 
 # ── Single-example inference ───────────────────────────────────────────────────
+
 
 def run_example(
     example: dict,
@@ -234,12 +231,16 @@ def run_example(
         template_kwargs: dict = dict(tokenize=False, add_generation_prompt=True)
         if model_key in QWEN3_KEYS:
             template_kwargs["enable_thinking"] = False
-        prompt_text: str = str(tokenizer.apply_chat_template(messages, **template_kwargs))  # type: ignore[union-attr, assignment]
+        prompt_text: str = str(
+            tokenizer.apply_chat_template(messages, **template_kwargs)
+        )  # type: ignore[union-attr, assignment]
     else:
         prompt_text = build_raw_prompt(example, system_prompt=system_prompt)
 
     # Tokenise the full prompt once (needed by both paths).
-    full_ids: torch.Tensor = tokenizer(prompt_text, return_tensors="pt")["input_ids"].to(device)  # type: ignore[assignment, index]
+    full_ids: torch.Tensor = tokenizer(prompt_text, return_tensors="pt")[
+        "input_ids"
+    ].to(device)  # type: ignore[assignment, index]
     full_len = int(full_ids.shape[-1])
 
     t0 = time.perf_counter()
@@ -247,6 +248,9 @@ def run_example(
         # ── Prefix-KV path ────────────────────────────────────────────────────
         # Feed only the variable tokens; the prefix cache covers the system prompt.
         # Attention mask must span the entire sequence (prefix + variable).
+        #
+        # deepcopy the stored cache so generate() can extend it without
+        # corrupting the shared prefix_kv across examples.
         variable_ids = full_ids[:, prefix_len:]
         variable_len = int(variable_ids.shape[-1])
         attention_mask = torch.ones(1, full_len, dtype=torch.long, device=device)
@@ -254,7 +258,7 @@ def run_example(
             output_ids = model.generate(  # type: ignore[operator]
                 input_ids=variable_ids,
                 attention_mask=attention_mask,
-                past_key_values=prefix_kv,
+                past_key_values=copy.deepcopy(prefix_kv),
                 max_new_tokens=max_new_tokens,
                 do_sample=False,
                 temperature=None,
@@ -289,6 +293,7 @@ def run_example(
 
 # ── Full evaluation loop ───────────────────────────────────────────────────────
 
+
 def evaluate(
     model_key: str,
     model_id: str,
@@ -315,8 +320,10 @@ def evaluate(
 
     dtype = dtype_for_device(device)
     reset_peak_memory(device)
-    model, tokenizer = load_model_and_tokenizer(model_id, device, dtype, model_key=model_key)
-    reset_peak_memory(device)   # reset after load; measure inference memory only
+    model, tokenizer = load_model_and_tokenizer(
+        model_id, device, dtype, model_key=model_key
+    )
+    reset_peak_memory(device)  # reset after load; measure inference memory only
 
     prefix_kv: Any | None = None
     prefix_len: int = 0
@@ -335,7 +342,12 @@ def evaluate(
     for i, ex in enumerate(examples):
         try:
             pred, lat, ntok = run_example(
-                ex, model, tokenizer, device, model_key, max_new_tokens,
+                ex,
+                model,
+                tokenizer,
+                device,
+                model_key,
+                max_new_tokens,
                 use_cache=True,
                 system_prompt=system_prompt,
                 prefix_kv=prefix_kv,
@@ -346,34 +358,38 @@ def evaluate(
             pred, lat, ntok = "", 0.0, 0
 
         correct = pred.strip().lower() == ex["answer"].strip().lower()
-        valid_tools: set[str] = {t["name"].strip().lower() for t in ex["available_tools"]} | {"none"}
+        valid_tools: set[str] = {
+            t["name"].strip().lower() for t in ex["available_tools"]
+        } | {"none"}
         pred_lower = pred.strip().lower()
         is_garbage = bool(pred_lower) and pred_lower not in valid_tools
-        per_results.append(ExampleResult(
-            index=i,
-            user_request=ex["user_request"],
-            n_tools=len(ex["available_tools"]),
-            answer=ex["answer"],
-            prediction=pred,
-            correct=correct,
-            is_garbage=is_garbage,
-            latency_s=lat,
-            tokens_generated=ntok,
-        ))
+        per_results.append(
+            ExampleResult(
+                index=i,
+                user_request=ex["user_request"],
+                n_tools=len(ex["available_tools"]),
+                answer=ex["answer"],
+                prediction=pred,
+                correct=correct,
+                is_garbage=is_garbage,
+                latency_s=lat,
+                tokens_generated=ntok,
+            )
+        )
         status = "✓" if correct else ("?" if is_garbage else "✗")
         print(
-            f"  [{i+1:>3}/{len(examples)}] {status} "
+            f"  [{i + 1:>3}/{len(examples)}] {status} "
             f"pred={pred!r:30s}  ans={ex['answer']!r:30s}  "
-            f"{lat*1000:.0f}ms"
+            f"{lat * 1000:.0f}ms"
         )
 
     mem_mb = peak_memory_mb(device)
 
     # ── Aggregate ─────────────────────────────────────────────────────────────
     n_correct = sum(r.correct for r in per_results)
-    accuracy  = n_correct / len(per_results) if per_results else 0.0
-    n_garbage    = sum(r.is_garbage for r in per_results)
-    garbage_pct  = round(n_garbage / len(per_results) * 100, 2) if per_results else 0.0
+    accuracy = n_correct / len(per_results) if per_results else 0.0
+    n_garbage = sum(r.is_garbage for r in per_results)
+    garbage_pct = round(n_garbage / len(per_results) * 100, 2) if per_results else 0.0
 
     latencies_ms = sorted(r.latency_s * 1000 for r in per_results if r.latency_s > 0)
     avg_lat = sum(latencies_ms) / len(latencies_ms) if latencies_ms else 0.0
