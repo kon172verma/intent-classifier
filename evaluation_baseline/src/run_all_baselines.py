@@ -33,16 +33,17 @@ sys.path.insert(0, str(_REPO_ROOT))
 _env_file = _REPO_ROOT / ".env"
 if _env_file.exists():
     from dotenv import load_dotenv
+
     load_dotenv(_env_file)
 
-from evaluation_lib import MODEL_REGISTRY  # noqa: E402
+from evaluation_lib import MODEL_REGISTRY  # noqa: E402, F401
 from evaluation_lib.config import ALL_MODELS  # noqa: E402
 
-EVAL_SCRIPT    = Path(__file__).parent / "baseline_eval.py"
-DEFAULT_DATA   = _REPO_ROOT / "dataset_sample" / "sample.json"
-REPORTS_DIR    = Path(__file__).parent.parent / "reports_zero_shot"
+EVAL_SCRIPT = Path(__file__).parent / "baseline_eval.py"
+DEFAULT_DATA = _REPO_ROOT / "dataset_sample" / "sample.json"
+REPORTS_DIR = Path(__file__).parent.parent / "reports_zero_shot"
 FS_REPORTS_DIR = Path(__file__).parent.parent / "reports_few_shot"
-PYTHON         = sys.executable
+PYTHON = sys.executable
 
 
 def parse_args() -> argparse.Namespace:
@@ -50,15 +51,16 @@ def parse_args() -> argparse.Namespace:
         description="Batch baseline evaluation across all models.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--models", nargs="+", default=None,
-                   help="Subset of model keys to run (default: all).")
-    p.add_argument("--skip", nargs="+", default=None,
-                   help="Model keys to skip.")
+    p.add_argument(
+        "--models",
+        nargs="+",
+        default=None,
+        help="Subset of model keys to run (default: all).",
+    )
+    p.add_argument("--skip", nargs="+", default=None, help="Model keys to skip.")
     p.add_argument("--data", type=Path, default=DEFAULT_DATA)
-    p.add_argument("--device", default="auto",
-                   choices=["auto", "cpu", "cuda", "mps"])
-    p.add_argument("--mode", default="zero_shot",
-                   choices=["zero_shot", "few_shot"])
+    p.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda", "mps"])
+    p.add_argument("--mode", default="zero_shot", choices=["zero_shot", "few_shot"])
     p.add_argument("--out-dir", type=Path, default=None)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--max-new-tokens", type=int, default=32)
@@ -80,18 +82,25 @@ def run_model(
     max_new_tokens: int,
 ) -> dict | None:
     cmd = [
-        PYTHON, str(EVAL_SCRIPT),
-        "--model", model_key,
-        "--data", str(data),
-        "--device", device,
-        "--mode", mode,
-        "--out-dir", str(out_dir),
-        "--max-new-tokens", str(max_new_tokens),
+        PYTHON,
+        str(EVAL_SCRIPT),
+        "--model",
+        model_key,
+        "--data",
+        str(data),
+        "--device",
+        device,
+        "--mode",
+        mode,
+        "--out-dir",
+        str(out_dir),
+        "--max-new-tokens",
+        str(max_new_tokens),
     ]
     if limit is not None:
         cmd += ["--limit", str(limit)]
 
-    print(f"\n{'='*60}\n  Running: {model_key}\n{'='*60}")
+    print(f"\n{'=' * 60}\n  Running: {model_key}\n{'=' * 60}")
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
@@ -114,14 +123,14 @@ def run_model(
 def print_summary(results: list[dict]) -> None:
     if not results:
         return
-    col_key  = max(len(r["model_key"]) for r in results) + 2
+    col_key = max(len(r["model_key"]) for r in results) + 2
     mode_lbl = results[0].get("eval_mode", "zero_shot").upper().replace("_", "-")
-    header   = (
+    header = (
         f"{'Model':<{col_key}}  {'Acc':>7}  {'Correct':>8}  "
         f"{'Garbage%':>9}  {'AvgLat(ms)':>11}  {'Tok/s':>7}  {'Mem(MB)':>8}"
     )
     sep = "-" * len(header)
-    print(f"\n{'='*len(header)}\n  {mode_lbl} BASELINE SUMMARY\n{'='*len(header)}")
+    print(f"\n{'=' * len(header)}\n  {mode_lbl} BASELINE SUMMARY\n{'=' * len(header)}")
     print(header)
     print(sep)
     for r in sorted(results, key=lambda x: x["accuracy"], reverse=True):
@@ -136,18 +145,29 @@ def print_summary(results: list[dict]) -> None:
 
 
 def save_summary(results: list[dict], out_dir: Path) -> None:
-    ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = out_dir / f"summary_{ts}.json"
     keep = (
-        "model_key", "model_id", "device", "dtype", "timestamp",
-        "n_examples", "n_correct", "accuracy", "garbage_pct",
-        "avg_latency_ms", "p50_latency_ms", "p95_latency_ms",
-        "avg_tokens_per_sec", "peak_memory_mb",
+        "model_key",
+        "model_id",
+        "device",
+        "dtype",
+        "timestamp",
+        "n_examples",
+        "n_correct",
+        "accuracy",
+        "garbage_pct",
+        "avg_latency_ms",
+        "p50_latency_ms",
+        "p95_latency_ms",
+        "avg_tokens_per_sec",
+        "peak_memory_mb",
     )
     path.write_text(
         json.dumps(
             [{k: r[k] for k in keep if k in r} for r in results],
-            indent=2, ensure_ascii=False,
+            indent=2,
+            ensure_ascii=False,
         ),
         encoding="utf-8",
     )
@@ -155,16 +175,18 @@ def save_summary(results: list[dict], out_dir: Path) -> None:
 
 
 def main() -> None:
-    args    = parse_args()
-    out_dir = args.out_dir or (FS_REPORTS_DIR if args.mode == "few_shot" else REPORTS_DIR)
+    args = parse_args()
+    out_dir = args.out_dir or (
+        FS_REPORTS_DIR if args.mode == "few_shot" else REPORTS_DIR
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    targets  = args.models if args.models else ALL_MODELS
+    targets = args.models if args.models else ALL_MODELS
     skip_set = set(args.skip or [])
-    targets  = [m for m in targets if m not in skip_set]
+    targets = [m for m in targets if m not in skip_set]
 
     results: list[dict] = []
-    to_run: list[str]   = []
+    to_run: list[str] = []
     for key in targets:
         existing = latest_report_for(key, out_dir)
         if existing:
@@ -183,8 +205,13 @@ def main() -> None:
 
     for key in to_run:
         r = run_model(
-            key, args.data, args.device, args.limit,
-            out_dir, args.mode, args.max_new_tokens,
+            key,
+            args.data,
+            args.device,
+            args.limit,
+            out_dir,
+            args.mode,
+            args.max_new_tokens,
         )
         if r:
             results.append(r)
