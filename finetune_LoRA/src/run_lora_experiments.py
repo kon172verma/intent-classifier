@@ -1,67 +1,76 @@
 #!/usr/bin/env python3
 """
+finetune_LoRA/src/run_lora_experiments.py
+==========================================
 Batch runner for all LoRA fine-tuning experiments.
 
-Experiment matrix: 2 models × 4 configs = 8 training runs.
-For each run it:
-  1. Calls lora_train.py  (skipped with --skip-training)
-  2. Calls lora_validate.py --split val
+Experiment matrix: 5 models × 4 configs × 2 modes (train + val) = 40 runs.
+Models are iterated in increasing parameter order.
+For each run:
+  1. lora_train.py    (skipped with --skip-training)
+  2. lora_validate.py --split val
 
-Test-set evaluation is intentionally kept separate — run lora_validate.py
-with --split test or --split test_anchor manually after you are satisfied
-with the validation results to avoid data leakage from repeated test checks.
+Test-set evaluation is intentionally separate: run lora_validate.py
+with --split test manually after reviewing validation results to avoid
+accidental leakage from repeated test checks.
 
 Usage
 -----
-    # Full matrix (1k dataset, all models & configs)
+    # Full matrix (1k dataset)
     python run_lora_experiments.py
 
     # Specific models / configs
-    python run_lora_experiments.py --models qwen2.5-0.5b --configs A B
+    python run_lora_experiments.py --models qwen2.5-0.5b llama3.2-1b --configs A B
 
-    # Scale to 10k dataset
+    # 10k dataset
     python run_lora_experiments.py --dataset-size 10k
 
-    # Validate only (training already done)
+    # Validate only (training already done, adapters on HF)
     python run_lora_experiments.py --skip-training
 
-    # Quick pipeline check — 10 steps per run, no checkpoint saved
+    # Quick pipeline check (10 steps per run, no adapter saved)
     python run_lora_experiments.py --smoke-test
 """
 
 import argparse
-import json
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
-_env_file = Path(__file__).parent.parent.parent / ".env"
+_REPO_ROOT = Path(__file__).parent.parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+_env_file = _REPO_ROOT / ".env"
 if _env_file.exists():
     from dotenv import load_dotenv
 
     load_dotenv(_env_file)
 
-sys.path.insert(0, str(Path(__file__).parent))
-from common import MODEL_REGISTRY, LORA_CONFIGS
+from finetune_lib import (
+    FINETUNE_MODEL_REGISTRY,
+    ALL_FINETUNE_MODELS,
+    LORA_CONFIGS,
+    ALL_CONFIGS,
+)
 
 LORA_DIR = Path(__file__).parent.parent
 TRAIN_SCRIPT = Path(__file__).parent / "lora_train.py"
 EVAL_SCRIPT = Path(__file__).parent / "lora_validate.py"
 PYTHON = sys.executable
 
-DEFAULT_MODELS = ["qwen2.5-0.5b", "qwen3-0.6b"]
-DEFAULT_CONFIGS = ["A", "B", "C", "D"]
+DEFAULT_MODELS = ALL_FINETUNE_MODELS  # all 5 models
+DEFAULT_CONFIGS = ALL_CONFIGS  # A, B, C, D
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────
 
 
 def run_subprocess(cmd: list[str], label: str) -> bool:
-    """Stream subprocess output and return True on success."""
-    print(f"\n{'─' * 60}")
+    print(f"\n{'\u2500' * 60}")
     print(f"  {label}")
-    print(f"{'─' * 60}")
+    print(f"{'\u2500' * 60}")
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
@@ -74,17 +83,7 @@ def run_subprocess(cmd: list[str], label: str) -> bool:
     return proc.returncode == 0
 
 
-def latest_val_report(
-    model_key: str, lora_config: str, dataset_size: str
-) -> Path | None:
-    """Return the most recent val report JSON for this run, or None."""
-    val_dir = LORA_DIR / "reports_validation"
-    tag = f"{model_key}_config_{lora_config}_{dataset_size}_val_"
-    matches = sorted(val_dir.glob(f"{tag}*.json"))
-    return matches[-1] if matches else None
-
-
-# ── Argument parsing ──────────────────────────────────────────────────────────
+# ── Argument parsing ─────────────────────────────────────────────────────────
 
 
 def parse_args() -> argparse.Namespace:
@@ -97,13 +96,13 @@ def parse_args() -> argparse.Namespace:
         "--models",
         nargs="+",
         default=DEFAULT_MODELS,
-        choices=list(MODEL_REGISTRY.keys()),
+        choices=list(FINETUNE_MODEL_REGISTRY.keys()),
     )
     p.add_argument(
         "--configs",
         nargs="+",
         default=DEFAULT_CONFIGS,
-        choices=["A", "B", "C", "D"],
+        choices=list(LORA_CONFIGS.keys()),
     )
     p.add_argument(
         "--dataset-size",
@@ -119,46 +118,58 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--skip-training",
         action="store_true",
-        help="Skip lora_train.py and only run val evaluation on existing checkpoints.",
+        help="Skip lora_train.py and only run val evaluation on existing adapters.",
     )
     p.add_argument(
         "--smoke-test",
         action="store_true",
         help="10 training steps per run only — validates the pipeline without full training.",
     )
+    p.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Skip HF Hub upload (passed through to lora_train.py).",
+    )
     return p.parse_args()
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ───────────────────────────────────────────────────────────────
 
 
 def main() -> None:
     args = parse_args()
 
+    total_runs = len(args.models) * len(args.configs)
     print(f"\n{'=' * 60}")
     print(f"  LoRA Experiment Runner")
     print(f"  Models   : {args.models}")
     print(f"  Configs  : {args.configs}")
     print(f"  Dataset  : {args.dataset_size}")
     print(f"  Device   : {args.device}")
+    print(f"  Runs     : {total_runs} training + {total_runs} val eval")
     if args.smoke_test:
         print(f"  Mode     : SMOKE TEST (10 steps per run)")
+    if args.skip_training:
+        print(f"  Training : SKIPPED")
     print(f"{'=' * 60}")
 
     results: list[dict] = []
-    failed: list[str] = []
+    run_num = 0
 
-    for model_key in args.models:
+    for model in args.models:
         for cfg in args.configs:
-            run_tag = f"{model_key}_config_{cfg}_{args.dataset_size}"
+            run_num += 1
+            run_tag = f"{model}_{cfg}_{args.dataset_size}"
+            label = f"[{run_num}/{total_runs}] {run_tag}"
 
-            # ── Training ──────────────────────────────────────────────────────
+            # ── Training ────────────────────────────────────────────────────────────
+            train_ok = True
             if not args.skip_training:
                 train_cmd = [
                     PYTHON,
                     str(TRAIN_SCRIPT),
                     "--model",
-                    model_key,
+                    model,
                     "--lora-config",
                     cfg,
                     "--dataset-size",
@@ -168,75 +179,51 @@ def main() -> None:
                 ]
                 if args.smoke_test:
                     train_cmd.append("--smoke-test")
+                if args.no_push:
+                    train_cmd.append("--no-push")
+                train_ok = run_subprocess(train_cmd, f"TRAIN  {label}")
 
-                ok = run_subprocess(train_cmd, f"TRAIN  {run_tag}")
-                if not ok:
-                    failed.append(f"train:{run_tag}")
-                    continue
+            # ── Validation ───────────────────────────────────────────────────────────
+            val_ok = False
+            if not args.smoke_test:
+                val_cmd = [
+                    PYTHON,
+                    str(EVAL_SCRIPT),
+                    "--model",
+                    model,
+                    "--lora-config",
+                    cfg,
+                    "--dataset-size",
+                    args.dataset_size,
+                    "--split",
+                    "val",
+                    "--device",
+                    args.device,
+                ]
+                # Load from local adapters/ if training ran (adapters freshly saved there);
+                # load from HF Hub if --skip-training (relies on previously uploaded adapters).
+                if not args.skip_training:
+                    val_cmd.append("--local")
+                val_ok = run_subprocess(val_cmd, f"VAL    {label}")
 
-                if args.smoke_test:
-                    # Smoke-test does not save a checkpoint, so skip val eval.
-                    print(f"  [SMOKE] Skipping val eval (no checkpoint saved).")
-                    continue
-
-            # ── Validation eval ───────────────────────────────────────────────
-            val_cmd = [
-                PYTHON,
-                str(EVAL_SCRIPT),
-                "--model",
-                model_key,
-                "--lora-config",
-                cfg,
-                "--dataset-size",
-                args.dataset_size,
-                "--split",
-                "val",
-                "--device",
-                args.device,
-            ]
-            ok = run_subprocess(val_cmd, f"EVAL   {run_tag}  [val]")
-            if not ok:
-                failed.append(f"eval:{run_tag}")
-                continue
-
-            rp = latest_val_report(model_key, cfg, args.dataset_size)
-            if rp:
-                results.append(json.loads(rp.read_text(encoding="utf-8")))
-
-    # ── Summary table ─────────────────────────────────────────────────────────
-    if results:
-        col = max(len(r["model_key"]) for r in results) + 2
-        header = (
-            f"{'Run':<{col + 12}}  {'Acc':>7}  {'Correct':>8}  "
-            f"{'AvgLat(ms)':>11}  {'Tok/s':>7}  {'Mem(MB)':>8}"
-        )
-        sep = "─" * len(header)
-        print(f"\n{'=' * len(header)}")
-        print(f"  VAL RESULTS SUMMARY  (dataset={args.dataset_size})")
-        print(f"{'=' * len(header)}")
-        print(header)
-        print(sep)
-        for r in sorted(results, key=lambda x: x["accuracy"], reverse=True):
-            tag = f"{r['model_key']} / cfg-{r['lora_config']}"
-            print(
-                f"{tag:<{col + 12}}  "
-                f"{r['accuracy']:>6.1%}  "
-                f"{r['n_correct']:>4}/{r['n_examples']:<3}  "
-                f"{r['avg_latency_ms']:>11.1f}  "
-                f"{r['avg_tokens_per_sec']:>7.1f}  "
-                f"{r['peak_memory_mb']:>8.1f}"
+            results.append(
+                {
+                    "run_tag": run_tag,
+                    "train_ok": train_ok,
+                    "val_ok": val_ok,
+                }
             )
-        print(sep)
 
-    if failed:
-        print(f"\n  [FAILED] {len(failed)} run(s):")
-        for f_tag in failed:
-            print(f"    {f_tag}")
-
-    print(
-        "\n  Tip: run lora_validate.py --split test (or --split test_anchor) "
-        "manually to evaluate the locked test set."
-    )
+    # ── Summary ───────────────────────────────────────────────────────────────
+    print(f"\n{'=' * 60}")
+    print(f"  EXPERIMENT RUNNER COMPLETE")
+    print(f"  Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print()
+    for r in results:
+        t = "OK" if r["train_ok"] else "FAIL"
+        v = "OK" if r["val_ok"] else "SKIP" if args.smoke_test else "FAIL"
+        print(f"  {r['run_tag']:35s}  train={t}  val={v}")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":
