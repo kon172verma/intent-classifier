@@ -14,7 +14,7 @@ import re
 # Same two models as finetune_LoRA — now loaded in 4-bit for QLoRA.
 MODEL_REGISTRY: dict[str, str] = {
     "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B-Instruct",
-    "qwen3-0.6b":   "Qwen/Qwen3-0.6B",
+    "qwen3-0.6b": "Qwen/Qwen3-0.6B",
 }
 
 ALL_MODELS: list[str] = list(MODEL_REGISTRY.keys())
@@ -30,7 +30,8 @@ QWEN3_KEYS: frozenset[str] = frozenset({"qwen3-0.6b"})
 #
 # Config A — Light: Q+V only, rank 8.
 # Config B — Standard: full attention, rank 16.
-# Config C — Wide: full attention + MLP, rank 32.
+# Config C — Wide: full attention + MLP, rank 16.
+# Config D — Wide: full attention + MLP, rank 32.
 #
 # lora_alpha = 2 × rank  (standard scaling convention).
 # Effective batch = per_device_train_batch_size × gradient_accumulation_steps = 16.
@@ -58,10 +59,34 @@ LORA_CONFIGS: dict[str, dict] = {
         "num_train_epochs": 3,
     },
     "C": {
+        "description": "Wide — full attention + MLP, rank 16",
+        "target_modules": [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        "r": 16,
+        "lora_alpha": 32,
+        "lora_dropout": 0.05,
+        "per_device_train_batch_size": 8,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 1e-4,
+        "num_train_epochs": 3,
+    },
+    "D": {
         "description": "Wide — full attention + MLP, rank 32",
         "target_modules": [
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
         ],
         "r": 32,
         "lora_alpha": 64,
@@ -89,6 +114,7 @@ SYSTEM_PROMPT: str = (
 )
 
 # ── Prompt helpers ────────────────────────────────────────────────────────────
+
 
 def _tool_block(tools: list[dict]) -> str:
     parts: list[str] = []
@@ -119,7 +145,7 @@ def build_chat_messages(
     """
     messages: list[dict] = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user",   "content": build_user_content(example)},
+        {"role": "user", "content": build_user_content(example)},
     ]
     if include_answer:
         messages.append({"role": "assistant", "content": example["answer"]})
@@ -168,7 +194,7 @@ def extract_prediction(raw_generated: str) -> str:
     for line in text.splitlines():
         line = line.strip().strip("*_`\"'")
         if line.lower().startswith("selected tool:"):
-            line = line[len("selected tool:"):].strip().strip("*_`\"'")
+            line = line[len("selected tool:") :].strip().strip("*_`\"'")
         if line:
             token = line.split()[0].rstrip(".,;:()")
             return token
@@ -176,6 +202,7 @@ def extract_prediction(raw_generated: str) -> str:
 
 
 # ── Metric helpers ────────────────────────────────────────────────────────────
+
 
 def compute_accuracy(predictions: list[str], labels: list[str]) -> float:
     if not predictions:
@@ -195,7 +222,7 @@ def compute_per_tool_metrics(
         fp = sum(p == tool and l != tool for p, l in zip(predictions, labels))
         fn = sum(p != tool and l == tool for p, l in zip(predictions, labels))
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        recall    = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = (
             2 * precision * recall / (precision + recall)
             if (precision + recall) > 0
@@ -203,8 +230,8 @@ def compute_per_tool_metrics(
         )
         metrics[tool] = {
             "precision": round(precision, 4),
-            "recall":    round(recall, 4),
-            "f1":        round(f1, 4),
-            "support":   sum(l == tool for l in labels),
+            "recall": round(recall, 4),
+            "f1": round(f1, 4),
+            "support": sum(l == tool for l in labels),
         }
     return metrics

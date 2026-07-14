@@ -2,7 +2,7 @@
 """
 Batch runner for all QLoRA fine-tuning experiments.
 
-Experiment matrix: 2 models × 3 configs = 6 training runs.
+Experiment matrix: 2 models × 4 configs = 8 training runs.
 For each run it:
   1. Calls qlora_train.py  (skipped with --skip-training)
   2. Calls qlora_validate.py --split val
@@ -39,27 +39,29 @@ from pathlib import Path
 _env_file = Path(__file__).parent.parent.parent / ".env"
 if _env_file.exists():
     from dotenv import load_dotenv
+
     load_dotenv(_env_file)
 
 sys.path.insert(0, str(Path(__file__).parent))
 from common import MODEL_REGISTRY, LORA_CONFIGS
 
-QLORA_DIR    = Path(__file__).parent.parent
+QLORA_DIR = Path(__file__).parent.parent
 TRAIN_SCRIPT = Path(__file__).parent / "qlora_train.py"
-EVAL_SCRIPT  = Path(__file__).parent / "qlora_validate.py"
-PYTHON       = sys.executable
+EVAL_SCRIPT = Path(__file__).parent / "qlora_validate.py"
+PYTHON = sys.executable
 
-DEFAULT_MODELS  = ["qwen2.5-0.5b", "qwen3-0.6b"]
-DEFAULT_CONFIGS = ["A", "B", "C"]
+DEFAULT_MODELS = ["qwen2.5-0.5b", "qwen3-0.6b"]
+DEFAULT_CONFIGS = ["A", "B", "C", "D"]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def run_subprocess(cmd: list[str], label: str) -> bool:
     """Stream subprocess output and return True on success."""
-    print(f"\n{'─'*60}")
+    print(f"\n{'─' * 60}")
     print(f"  {label}")
-    print(f"{'─'*60}")
+    print(f"{'─' * 60}")
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
@@ -72,15 +74,18 @@ def run_subprocess(cmd: list[str], label: str) -> bool:
     return proc.returncode == 0
 
 
-def latest_val_report(model_key: str, lora_config: str, dataset_size: str) -> Path | None:
+def latest_val_report(
+    model_key: str, lora_config: str, dataset_size: str
+) -> Path | None:
     """Return the most recent val report JSON for this run, or None."""
     val_dir = QLORA_DIR / "reports_validation"
-    tag     = f"{model_key}_config_{lora_config}_{dataset_size}_val_"
+    tag = f"{model_key}_config_{lora_config}_{dataset_size}_val_"
     matches = sorted(val_dir.glob(f"{tag}*.json"))
     return matches[-1] if matches else None
 
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -89,24 +94,36 @@ def parse_args() -> argparse.Namespace:
         epilog=__doc__,
     )
     p.add_argument(
-        "--models", nargs="+", default=DEFAULT_MODELS,
+        "--models",
+        nargs="+",
+        default=DEFAULT_MODELS,
         choices=list(MODEL_REGISTRY.keys()),
     )
     p.add_argument(
-        "--configs", nargs="+", default=DEFAULT_CONFIGS, choices=["A", "B", "C"],
+        "--configs",
+        nargs="+",
+        default=DEFAULT_CONFIGS,
+        choices=["A", "B", "C", "D"],
     )
     p.add_argument(
-        "--dataset-size", choices=["1k", "10k"], default="1k", dest="dataset_size",
+        "--dataset-size",
+        choices=["1k", "10k"],
+        default="1k",
+        dest="dataset_size",
     )
     p.add_argument(
-        "--device", default="auto", choices=["auto", "cpu", "cuda"],
+        "--device",
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
     )
     p.add_argument(
-        "--skip-training", action="store_true",
+        "--skip-training",
+        action="store_true",
         help="Skip qlora_train.py and only run val evaluation on existing checkpoints.",
     )
     p.add_argument(
-        "--smoke-test", action="store_true",
+        "--smoke-test",
+        action="store_true",
         help="10 training steps per run only — validates the pipeline without full training.",
     )
     return p.parse_args()
@@ -114,10 +131,11 @@ def parse_args() -> argparse.Namespace:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     args = parse_args()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  QLoRA Experiment Runner")
     print(f"  Models   : {args.models}")
     print(f"  Configs  : {args.configs}")
@@ -125,10 +143,10 @@ def main() -> None:
     print(f"  Device   : {args.device}")
     if args.smoke_test:
         print(f"  Mode     : SMOKE TEST (10 steps per run)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     results: list[dict] = []
-    failed:  list[str]  = []
+    failed: list[str] = []
 
     for model_key in args.models:
         for cfg in args.configs:
@@ -137,11 +155,16 @@ def main() -> None:
             # ── Training ──────────────────────────────────────────────────────
             if not args.skip_training:
                 train_cmd = [
-                    PYTHON, str(TRAIN_SCRIPT),
-                    "--model",        model_key,
-                    "--lora-config",  cfg,
-                    "--dataset-size", args.dataset_size,
-                    "--device",       args.device,
+                    PYTHON,
+                    str(TRAIN_SCRIPT),
+                    "--model",
+                    model_key,
+                    "--lora-config",
+                    cfg,
+                    "--dataset-size",
+                    args.dataset_size,
+                    "--device",
+                    args.device,
                 ]
                 if args.smoke_test:
                     train_cmd.append("--smoke-test")
@@ -157,12 +180,18 @@ def main() -> None:
 
             # ── Validation eval ───────────────────────────────────────────────
             val_cmd = [
-                PYTHON, str(EVAL_SCRIPT),
-                "--model",        model_key,
-                "--lora-config",  cfg,
-                "--dataset-size", args.dataset_size,
-                "--split",        "val",
-                "--device",       args.device,
+                PYTHON,
+                str(EVAL_SCRIPT),
+                "--model",
+                model_key,
+                "--lora-config",
+                cfg,
+                "--dataset-size",
+                args.dataset_size,
+                "--split",
+                "val",
+                "--device",
+                args.device,
             ]
             ok = run_subprocess(val_cmd, f"EVAL   {run_tag}  [val]")
             if not ok:
@@ -175,15 +204,15 @@ def main() -> None:
 
     # ── Summary table ─────────────────────────────────────────────────────────
     if results:
-        col    = max(len(r["model_key"]) for r in results) + 2
+        col = max(len(r["model_key"]) for r in results) + 2
         header = (
             f"{'Run':<{col + 12}}  {'Acc':>7}  {'Correct':>8}  "
             f"{'AvgLat(ms)':>11}  {'Tok/s':>7}  {'Mem(MB)':>8}"
         )
         sep = "─" * len(header)
-        print(f"\n{'='*len(header)}")
+        print(f"\n{'=' * len(header)}")
         print(f"  VAL RESULTS SUMMARY  (dataset={args.dataset_size})")
-        print(f"{'='*len(header)}")
+        print(f"{'=' * len(header)}")
         print(header)
         print(sep)
         for r in sorted(results, key=lambda x: x["accuracy"], reverse=True):
