@@ -72,11 +72,25 @@ def run_subprocess(cmd: list[str], label: str) -> bool:
     print(f"  {label}")
     print(f"{'\u2500' * 60}")
     proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
     )
     assert proc.stdout is not None
-    for line in proc.stdout:
-        print(line, end="", flush=True)
+    _buf: list[str] = []
+    while True:
+        ch = proc.stdout.read(1)
+        if not ch:
+            if _buf:
+                line = "".join(_buf)
+                if not line.startswith("Failed to load "):
+                    print(line, end="", flush=True)
+            break
+        _buf.append(ch)
+        if ch in ("\r", "\n"):
+            line = "".join(_buf)
+            if not line.startswith("Failed to load "):
+                print(line, end="", flush=True)
+            _buf = []
+    proc.stdout.close()
     proc.wait()
     if proc.returncode != 0:
         print(f"\n  [ERROR] Exited with code {proc.returncode}")
@@ -167,6 +181,7 @@ def main() -> None:
             if not args.skip_training:
                 train_cmd = [
                     PYTHON,
+                    "-u",
                     str(TRAIN_SCRIPT),
                     "--model",
                     model,
@@ -188,6 +203,7 @@ def main() -> None:
             if not args.smoke_test:
                 val_cmd = [
                     PYTHON,
+                    "-u",
                     str(EVAL_SCRIPT),
                     "--model",
                     model,
