@@ -123,7 +123,6 @@ def plot_training_curves(
         n_rows,
         n_cols,
         figsize=(fig_w, fig_h),
-        constrained_layout=True,
     )
     if n_rows == 1:
         axes = [axes]  # ensure always 2-D indexable
@@ -248,21 +247,76 @@ def plot_training_curves(
                 f"{model_key} / cfg-{cfg}", fontsize=8.5, fontweight="bold", pad=5
             )
 
-            # Merged legend
-            lines1, labels1 = ax.get_legend_handles_labels()
-            lines2, labels2 = ax2.get_legend_handles_labels()
-            ax.legend(
-                lines1 + lines2, labels1 + labels2, fontsize=6.5, loc="upper right"
-            )
+            # Suppress per-panel legend; one shared legend is added below.
+            ax.legend().set_visible(False)
+            ax2.legend().set_visible(False)
 
         # Row label (model name)
         axes[row_idx][0].set_ylabel(f"{model_key}\nLoss", fontsize=8, fontweight="bold")
+
+    # Reserve top 10% of the figure for title + legend, then lay out panels.
+    fig.tight_layout(rect=(0, 0, 1, 0.90))
+    fig.subplots_adjust(hspace=0.45, wspace=0.35)
 
     fig.suptitle(
         f"{technique} Training Curves — Loss & Accuracy per Model and Config\n"
         "★ = initial model (step 0, before fine-tuning)",
         fontsize=12,
         fontweight="bold",
+        y=0.98,
+    )
+
+    from matplotlib.lines import Line2D
+
+    legend_handles = [
+        Line2D([0], [0], color="#4C72B0", linewidth=1.5, label="Train loss"),
+        Line2D(
+            [0],
+            [0],
+            color="#C44E52",
+            linewidth=1.5,
+            marker="o",
+            markersize=4,
+            label="Val loss",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="#4C72B0",
+            linewidth=1.5,
+            linestyle="--",
+            marker="s",
+            markersize=3,
+            label="Train acc (%)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="#55A868",
+            linewidth=1.5,
+            linestyle="--",
+            marker="^",
+            markersize=3,
+            label="Val acc (%)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="*",
+            color="grey",
+            linestyle="None",
+            markersize=8,
+            label="Step-0 baseline (★)",
+        ),
+    ]
+    fig.legend(
+        handles=legend_handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.92),
+        ncol=5,
+        fontsize=8,
+        frameon=True,
+        framealpha=0.9,
     )
 
     out_path = out_dir / f"{technique.lower()}_training_curves.png"
@@ -301,9 +355,7 @@ def plot_combined_accuracy_memory(
     )
     x = np.arange(n_models)
 
-    fig, axes = plt.subplots(
-        2, 1, figsize=(max(12, n_models * 2.5), 9), constrained_layout=True
-    )
+    fig, axes = plt.subplots(2, 1, figsize=(max(12, n_models * 2.5), 10))
 
     for ax, (metric_key, metric_label, pct) in zip(
         axes,
@@ -351,21 +403,32 @@ def plot_combined_accuracy_memory(
         ax.spines["right"].set_visible(False)
         if pct:
             ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.0f%%"))
-        ax.legend(
-            fontsize=8,
-            loc="upper right",
-            handles=[
-                Patch(facecolor=CONFIG_COLORS[c], label=CONFIG_LABELS[c])
-                for c in all_configs
-                if c in CONFIG_COLORS
-            ],
-        )
+        ax.legend().set_visible(False)
         ax.set_title(metric_label, fontsize=10, fontweight="bold")
+
+    # Reserve top 12% for title + legend.
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
+    fig.subplots_adjust(hspace=0.35)
 
     fig.suptitle(
         f"{technique} — Final Test Accuracy and Peak Inference Memory by Model & Config",
         fontsize=12,
         fontweight="bold",
+        y=0.97,
+    )
+
+    fig.legend(
+        handles=[
+            Patch(facecolor=CONFIG_COLORS[c], label=CONFIG_LABELS[c])
+            for c in all_configs
+            if c in CONFIG_COLORS
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.91),
+        ncol=len(all_configs),
+        fontsize=9,
+        frameon=True,
+        framealpha=0.9,
     )
 
     out_path = out_dir / f"{technique.lower()}_combined.png"
