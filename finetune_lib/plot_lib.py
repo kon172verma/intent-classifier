@@ -325,25 +325,37 @@ def plot_training_curves(
     print(f"  Saved → {out_path}")
 
 
-# ── Plot 2: Combined test accuracy + peak memory ───────────────────────────────
+# ── Plot 2: Combined accuracy + peak memory (per split) ──────────────────────
 
 
 def plot_combined_accuracy_memory(
-    test_reports_dir: Path,
+    reports_dir: Path,
     all_models: list[str],
     all_configs: list[str],
     out_dir: Path,
+    split: str = "val",  # "train", "val", or "test"
     technique: str = "LoRA",
 ) -> None:
     """
-    2 rows: test accuracy (%) and peak inference memory (MB).
+    2 rows: accuracy (%) and peak memory (MB).
     X-axis: all models. 4 grouped bars per model, one per config.
-    Bar values are annotated on top.
+
+    split="train"  → reads training reports, uses final_train_accuracy
+    split="val"    → reads validation reports, uses accuracy
+    split="test"   → reads test reports, uses accuracy
     """
-    eval_reports = load_eval_reports(test_reports_dir)
-    if not eval_reports:
-        print("  [combined] No test reports found — skipping.")
+    if split == "train":
+        reports = load_train_reports(reports_dir)
+        accuracy_key = "final_train_accuracy"
+    else:
+        reports = load_eval_reports(reports_dir)
+        accuracy_key = "accuracy"
+
+    if not reports:
+        print(f"  [combined-{split}] No reports found in {reports_dir} — skipping.")
         return
+
+    split_label = split.capitalize()
 
     n_models = len(all_models)
     n_configs = len(all_configs)
@@ -360,14 +372,14 @@ def plot_combined_accuracy_memory(
     for ax, (metric_key, metric_label, pct) in zip(
         axes,
         [
-            ("accuracy", "Test Accuracy (%)", True),
-            ("peak_memory_mb", "Peak Inference Memory (MB)", False),
+            (accuracy_key, f"{split_label} Accuracy (%)", True),
+            ("peak_memory_mb", "Peak Memory (MB)", False),
         ],
     ):
         for ci, cfg in enumerate(all_configs):
             vals = []
             for model in all_models:
-                r = eval_reports.get((model, cfg))
+                r = reports.get((model, cfg))
                 v = r[metric_key] if r and metric_key in r else 0.0
                 vals.append(v * 100 if pct else v)
 
@@ -411,7 +423,7 @@ def plot_combined_accuracy_memory(
     fig.subplots_adjust(hspace=0.35)
 
     fig.suptitle(
-        f"{technique} — Final Test Accuracy and Peak Inference Memory by Model & Config",
+        f"{technique} — {split_label} Accuracy and Peak Memory by Model & Config",
         fontsize=12,
         fontweight="bold",
         y=0.97,
@@ -431,7 +443,7 @@ def plot_combined_accuracy_memory(
         framealpha=0.9,
     )
 
-    out_path = out_dir / f"{technique.lower()}_combined.png"
+    out_path = out_dir / f"{technique.lower()}_combined_{split}.png"
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved → {out_path}")
