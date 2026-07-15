@@ -57,9 +57,6 @@ from transformers import (  # noqa: E402
     AutoModelForCausalLM,
     AutoTokenizer,
     DataCollatorForSeq2Seq,
-    TrainerCallback,
-    TrainerControl,
-    TrainerState,
     TrainingArguments,
 )
 from peft import AdaLoraConfig, TaskType, get_peft_model  # type: ignore  # noqa: E402
@@ -87,27 +84,33 @@ DEFAULT_REPORT_DIR = ADALORA_DIR / "reports_training"
 _TECHNIQUE = "AdaLoRA"
 
 
-# ── AdaLoRA rank-update callback ─────────────────────────────────────────────
+# ── AdaLoRA-aware trainer ────────────────────────────────────────────────────
 
 
-class AdaLoRAUpdateCallback(TrainerCallback):
-    """Calls model.update_and_allocate(step) after every optimizer step.
+class AdaLoRASFTTrainer(SFTTrainer):
+    """SFTTrainer subclass that calls AdaLoRA's rank-update scheduler correctly.
 
-    This is required for AdaLoRA's rank pruning scheduler to run.
-    Without it, no pruning occurs and the model stays at init_r throughout.
+    The Transformers Trainer fires on_step_end AFTER model.zero_grad(), so
+    p.grad is None and update_and_allocate crashes.  We instead wrap the
+    optimizer's step() to call update_and_allocate() immediately after the
+    parameter update, while gradients are still live.
     """
 
-    def on_step_end(
-        self,
-        args: TrainingArguments,
-        state: TrainerState,
-        control: TrainerControl,
-        model: torch.nn.Module | None = None,
-        **kwargs: Any,
-    ) -> None:
-        if model is not None and hasattr(model, "update_and_allocate"):
-            _m: Any = model
-            _m.update_and_allocate(state.global_step)
+    def create_optimizer(self) -> torch.optim.Optimizer:  # type: ignore[override]
+        optimizer = super().create_optimizer()
+        peft_model = self.model
+        state = self.state
+        original_step = self.optimizer.step
+
+        def _step_and_update(closure=None):  # type: ignore[misc]
+            result = original_step(closure)
+            if hasattr(peft_model, "update_and_allocate"):
+                _m: Any = peft_model
+                _m.update_and_allocate(state.global_step)
+            return result
+
+        self.optimizer.step = _step_and_update  # type: ignore[method-assign]
+        return optimizer
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -309,9 +312,6 @@ def main() -> None:
     )
 
     # ── Callbacks ─────────────────────────────────────────────────────────────
-    # AdaLoRAUpdateCallback must run before accuracy measurement so the rank
-    # allocation is up-to-date when we sample train/val examples.
-    adalora_update_cb = AdaLoRAUpdateCallback()
     accuracy_cb = TrainValAccuracyCallback(
         train_examples=train_examples,
         val_examples=val_examples,
@@ -321,14 +321,15 @@ def main() -> None:
     )
 
     # ── Build trainer ─────────────────────────────────────────────────────────
-    trainer = SFTTrainer(
+    # AdaLoRASFTTrainer wraps optimizer.step() internally — no separate callback.
+    trainer = AdaLoRASFTTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=collator,
         processing_class=tokenizer,
-        callbacks=[adalora_update_cb, accuracy_cb],
+        callbacks=[accuracy_cb],
     )
 
     # ── Step-0 baseline (pre-fine-tuning) ─────────────────────────────────────
