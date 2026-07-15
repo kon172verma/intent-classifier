@@ -153,3 +153,98 @@ LORA_CONFIGS: dict[str, dict] = {
 }
 
 ALL_CONFIGS: list[str] = list(LORA_CONFIGS.keys())
+
+# ── AdaLoRA adapter configs ────────────────────────────────────────────────────
+# AdaLoRA decomposes updates as P·Λ·Q (SVD form) and prunes the least-important
+# singular values during training.
+#
+# Key parameters:
+#   init_r     – starting rank (budget before pruning; ~2–4× target_r)
+#   target_r   – final rank after pruning (analogous to r in LoRA)
+#   beta1/2    – smoothing coefficients for importance sensitivity (default 0.85)
+#   deltaT     – steps between rank updates (default 1)
+#
+# total_step must equal the actual number of training steps and is injected at
+# runtime in adalora_train.py (it depends on dataset size and batch config).
+#
+# Configs are designed for direct comparison with the corresponding LoRA config:
+#   A — same scope as LoRA-A, init 12 → target 4  (67% pruning, lighter final)
+#   B — same scope + same final rank as LoRA-B,    init 24 → target 8
+#   C — same scope + same final rank as LoRA-C,    init 32 → target 8  (75% pruning)
+#   D — same scope + same final rank as LoRA-D,    init 32 → target 16 (50% pruning)
+ADALORA_CONFIGS: dict[str, dict] = {
+    "A": {
+        "description": "Light adaptive — Q/V only, init 12 → target 4",
+        "target_modules": ["q_proj", "v_proj"],
+        "init_r": 12,
+        "target_r": 4,
+        "beta1": 0.85,
+        "beta2": 0.85,
+        "orth_reg_weight": 0.5,
+        "deltaT": 1,
+        "per_device_train_batch_size": 8,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 2e-4,
+        "num_train_epochs": 3,
+    },
+    "B": {
+        "description": "Standard adaptive — full attention, init 24 → target 8",
+        "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        "init_r": 24,
+        "target_r": 8,
+        "beta1": 0.85,
+        "beta2": 0.85,
+        "orth_reg_weight": 0.5,
+        "deltaT": 1,
+        "per_device_train_batch_size": 8,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 1e-4,
+        "num_train_epochs": 3,
+    },
+    "C": {
+        "description": "Wide adaptive — full attention + MLP, init 32 → target 8",
+        "target_modules": [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        "init_r": 32,
+        "target_r": 8,
+        "beta1": 0.85,
+        "beta2": 0.85,
+        "orth_reg_weight": 0.5,
+        "deltaT": 1,
+        "per_device_train_batch_size": 8,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 1e-4,
+        "num_train_epochs": 3,
+    },
+    "D": {
+        "description": "Heavy adaptive — full attention + MLP, init 32 → target 16",
+        "target_modules": [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        "init_r": 32,
+        "target_r": 16,
+        "beta1": 0.85,
+        "beta2": 0.85,
+        "orth_reg_weight": 0.5,
+        "deltaT": 1,
+        "per_device_train_batch_size": 4,
+        "gradient_accumulation_steps": 4,
+        "learning_rate": 5e-5,
+        "num_train_epochs": 3,
+    },
+}
+
+ALL_ADALORA_CONFIGS: list[str] = list(ADALORA_CONFIGS.keys())
