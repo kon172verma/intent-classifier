@@ -163,6 +163,12 @@ ALL_CONFIGS: list[str] = list(LORA_CONFIGS.keys())
 #   target_r   – final rank after pruning (analogous to r in LoRA)
 #   beta1/2    – smoothing coefficients for importance sensitivity (default 0.85)
 #   deltaT     – steps between rank updates (default 1)
+#   orth_reg_weight – orthogonal regularization on P/Q matrices.
+#                     The PEFT default is 0.5 (calibrated for 5k+ step GLUE runs).
+#                     For our 150-step runs, 0.5 drowns the task gradient — the
+#                     penalty scales with n_modules × init_r and is added to BOTH
+#                     train and eval losses.  0.1 gives mild regularisation without
+#                     dominating the gradient.
 #
 # total_step must equal the actual number of training steps and is injected at
 # runtime in adalora_train.py (it depends on dataset size and batch config).
@@ -180,7 +186,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "target_r": 4,
         "beta1": 0.85,
         "beta2": 0.85,
-        "orth_reg_weight": 0.5,
+        "orth_reg_weight": 0.1,
         "deltaT": 1,
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
@@ -194,7 +200,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "target_r": 8,
         "beta1": 0.85,
         "beta2": 0.85,
-        "orth_reg_weight": 0.5,
+        "orth_reg_weight": 0.1,
         "deltaT": 1,
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
@@ -216,7 +222,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "target_r": 8,
         "beta1": 0.85,
         "beta2": 0.85,
-        "orth_reg_weight": 0.5,
+        "orth_reg_weight": 0.1,
         "deltaT": 1,
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
@@ -238,7 +244,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "target_r": 16,
         "beta1": 0.85,
         "beta2": 0.85,
-        "orth_reg_weight": 0.5,
+        "orth_reg_weight": 0.1,
         "deltaT": 1,
         "per_device_train_batch_size": 4,
         "gradient_accumulation_steps": 4,
