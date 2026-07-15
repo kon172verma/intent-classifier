@@ -1,0 +1,597 @@
+
+  Testing smollm2-360m_A_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-360m_A_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-360m_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  45%|████▍     | 130/290 [00:00<00:00, 1291.03it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1469.41it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-360m_A_1k
+  [  20/100]  running_acc=0.600
+  [  40/100]  running_acc=0.625
+  [  60/100]  running_acc=0.583
+  [  80/100]  running_acc=0.600
+  [ 100/100]  running_acc=0.630
+
+  Accuracy   : 0.6300  (63/100)
+  Avg latency: 260.7 ms
+  Peak memory: 762 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-360m_A_1k_test_20260715_080812.json
+  OK in 40s
+
+  Testing smollm2-360m_B_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-360m_B_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-360m_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  60%|██████    | 174/290 [00:00<00:00, 1735.38it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1711.27it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-360m_B_1k
+  [  20/100]  running_acc=0.550
+  [  40/100]  running_acc=0.600
+  [  60/100]  running_acc=0.600
+  [  80/100]  running_acc=0.625
+  [ 100/100]  running_acc=0.650
+
+  Accuracy   : 0.6500  (65/100)
+  Avg latency: 329.2 ms
+  Peak memory: 771 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-360m_B_1k_test_20260715_080859.json
+  OK in 47s
+
+  Testing smollm2-360m_C_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-360m_C_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-360m_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  58%|█████▊    | 169/290 [00:00<00:00, 1682.48it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1685.12it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-360m_C_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.800
+  [  60/100]  running_acc=0.783
+  [  80/100]  running_acc=0.812
+  [ 100/100]  running_acc=0.810
+
+  Accuracy   : 0.8100  (81/100)
+  Avg latency: 404.0 ms
+  Peak memory: 810 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-360m_C_1k_test_20260715_080954.json
+  OK in 55s
+
+  Testing smollm2-360m_D_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-360m_D_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-360m_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  58%|█████▊    | 167/290 [00:00<00:00, 1648.58it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1660.76it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-360m_D_1k
+  [  20/100]  running_acc=0.650
+  [  40/100]  running_acc=0.650
+  [  60/100]  running_acc=0.683
+  [  80/100]  running_acc=0.688
+  [ 100/100]  running_acc=0.700
+
+  Accuracy   : 0.7000  (70/100)
+  Avg latency: 413.7 ms
+  Peak memory: 843 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-360m_D_1k_test_20260715_081049.json
+  OK in 56s
+
+  Testing qwen2.5-0.5b_A_1k...
+
+============================================================
+  LoRA Evaluation — qwen2.5-0.5b_A_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  10%|▉         | 28/290 [00:00<00:00, 268.32it/s]
+Loading weights:  55%|█████▍    | 159/290 [00:00<00:00, 865.16it/s]
+Loading weights:  96%|█████████▌| 277/290 [00:00<00:00, 1003.73it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 926.47it/s] 
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_A_1k
+  [  20/100]  running_acc=0.850
+  [  40/100]  running_acc=0.825
+  [  60/100]  running_acc=0.850
+  [  80/100]  running_acc=0.887
+  [ 100/100]  running_acc=0.890
+
+  Accuracy   : 0.8900  (89/100)
+  Avg latency: 144.8 ms
+  Peak memory: 993 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen2.5-0.5b_A_1k_test_20260715_081118.json
+  OK in 29s
+
+  Testing qwen2.5-0.5b_B_1k...
+
+============================================================
+  LoRA Evaluation — qwen2.5-0.5b_B_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  47%|████▋     | 135/290 [00:00<00:00, 1343.25it/s]
+Loading weights:  93%|█████████▎| 270/290 [00:00<00:00, 1311.22it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1337.60it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_B_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.875
+  [  60/100]  running_acc=0.883
+  [  80/100]  running_acc=0.912
+  [ 100/100]  running_acc=0.920
+
+  Accuracy   : 0.9200  (92/100)
+  Avg latency: 182.1 ms
+  Peak memory: 999 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen2.5-0.5b_B_1k_test_20260715_081151.json
+  OK in 33s
+
+  Testing qwen2.5-0.5b_C_1k...
+
+============================================================
+  LoRA Evaluation — qwen2.5-0.5b_C_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  29%|██▊       | 83/290 [00:00<00:00, 829.94it/s]
+Loading weights:  76%|███████▌  | 220/290 [00:00<00:00, 1127.36it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1158.33it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_C_1k
+  [  20/100]  running_acc=0.900
+  [  40/100]  running_acc=0.925
+  [  60/100]  running_acc=0.950
+  [  80/100]  running_acc=0.963
+  [ 100/100]  running_acc=0.950
+
+  Accuracy   : 0.9500  (95/100)
+  Avg latency: 229.3 ms
+  Peak memory: 1051 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen2.5-0.5b_C_1k_test_20260715_081228.json
+  OK in 37s
+
+  Testing qwen2.5-0.5b_D_1k...
+
+============================================================
+  LoRA Evaluation — qwen2.5-0.5b_D_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  26%|██▌       | 75/290 [00:00<00:00, 704.74it/s]
+Loading weights:  72%|███████▏  | 208/290 [00:00<00:00, 1060.16it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1104.88it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen2.5-0.5b_D_1k
+  [  20/100]  running_acc=0.850
+  [  40/100]  running_acc=0.900
+  [  60/100]  running_acc=0.933
+  [  80/100]  running_acc=0.950
+  [ 100/100]  running_acc=0.950
+
+  Accuracy   : 0.9500  (95/100)
+  Avg latency: 230.7 ms
+  Peak memory: 1085 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen2.5-0.5b_D_1k_test_20260715_081306.json
+  OK in 38s
+
+  Testing qwen3-0.6b_A_1k...
+
+============================================================
+  LoRA Evaluation — qwen3-0.6b_A_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen3-0.6b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/311 [00:00<00:42,  7.29it/s]
+Loading weights:  43%|████▎     | 134/311 [00:00<00:00, 681.37it/s]
+Loading weights:  85%|████████▍ | 263/311 [00:00<00:00, 933.32it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 829.06it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen3-0.6b_A_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=1.000
+
+  Accuracy   : 1.0000  (100/100)
+  Avg latency: 196.0 ms
+  Peak memory: 1265 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen3-0.6b_A_1k_test_20260715_081340.json
+  OK in 34s
+
+  Testing qwen3-0.6b_B_1k...
+
+============================================================
+  LoRA Evaluation — qwen3-0.6b_B_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen3-0.6b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   1%|          | 2/311 [00:00<00:19, 15.78it/s]
+Loading weights:  43%|████▎     | 134/311 [00:00<00:00, 706.20it/s]
+Loading weights:  84%|████████▎ | 260/311 [00:00<00:00, 942.11it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 849.51it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen3-0.6b_B_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.983
+  [  80/100]  running_acc=0.975
+  [ 100/100]  running_acc=0.980
+
+  Accuracy   : 0.9800  (98/100)
+  Avg latency: 241.1 ms
+  Peak memory: 1283 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen3-0.6b_B_1k_test_20260715_081419.json
+  OK in 39s
+
+  Testing qwen3-0.6b_C_1k...
+
+============================================================
+  LoRA Evaluation — qwen3-0.6b_C_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen3-0.6b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/311 [00:00<00:37,  8.16it/s]
+Loading weights:  44%|████▎     | 136/311 [00:00<00:00, 727.63it/s]
+Loading weights:  85%|████████▌ | 265/311 [00:00<00:00, 970.09it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 864.78it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen3-0.6b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=0.990
+
+  Accuracy   : 0.9900  (99/100)
+  Avg latency: 299.4 ms
+  Peak memory: 1317 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen3-0.6b_C_1k_test_20260715_081504.json
+  OK in 45s
+
+  Testing qwen3-0.6b_D_1k...
+
+============================================================
+  LoRA Evaluation — qwen3-0.6b_D_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/qwen3-0.6b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   1%|          | 2/311 [00:00<00:19, 16.22it/s]
+Loading weights:  43%|████▎     | 133/311 [00:00<00:00, 705.47it/s]
+Loading weights:  85%|████████▍ | 263/311 [00:00<00:00, 961.55it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 861.83it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/qwen3-0.6b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=0.990
+
+  Accuracy   : 0.9900  (99/100)
+  Avg latency: 297.4 ms
+  Peak memory: 1356 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/qwen3-0.6b_D_1k_test_20260715_081549.json
+  OK in 45s
+
+  Testing llama3.2-1b_A_1k...
+
+============================================================
+  LoRA Evaluation — llama3.2-1b_A_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/llama3.2-1b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:19,  7.61it/s]
+Loading weights:  21%|██        | 30/146 [00:00<00:00, 151.14it/s]
+Loading weights:  40%|███▉      | 58/146 [00:00<00:00, 202.86it/s]
+Loading weights:  59%|█████▉    | 86/146 [00:00<00:00, 230.25it/s]
+Loading weights:  82%|████████▏ | 119/146 [00:00<00:00, 264.75it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 230.30it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/llama3.2-1b_A_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=1.000
+
+  Accuracy   : 1.0000  (100/100)
+  Avg latency: 105.0 ms
+  Peak memory: 2451 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/llama3.2-1b_A_1k_test_20260715_081615.json
+  OK in 26s
+
+  Testing llama3.2-1b_B_1k...
+
+============================================================
+  LoRA Evaluation — llama3.2-1b_B_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/llama3.2-1b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:17,  8.21it/s]
+Loading weights:  21%|██        | 30/146 [00:00<00:00, 159.48it/s]
+Loading weights:  40%|███▉      | 58/146 [00:00<00:00, 210.60it/s]
+Loading weights:  59%|█████▉    | 86/146 [00:00<00:00, 235.97it/s]
+Loading weights:  82%|████████▏ | 120/146 [00:00<00:00, 265.48it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 236.58it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/llama3.2-1b_B_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=1.000
+
+  Accuracy   : 1.0000  (100/100)
+  Avg latency: 126.5 ms
+  Peak memory: 2461 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/llama3.2-1b_B_1k_test_20260715_081643.json
+  OK in 28s
+
+  Testing llama3.2-1b_C_1k...
+
+============================================================
+  LoRA Evaluation — llama3.2-1b_C_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/llama3.2-1b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:19,  7.53it/s]
+Loading weights:  21%|██        | 30/146 [00:00<00:00, 150.35it/s]
+Loading weights:  40%|███▉      | 58/146 [00:00<00:00, 200.31it/s]
+Loading weights:  59%|█████▉    | 86/146 [00:00<00:00, 228.19it/s]
+Loading weights:  82%|████████▏ | 120/146 [00:00<00:00, 259.58it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 229.05it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/llama3.2-1b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=1.000
+
+  Accuracy   : 1.0000  (100/100)
+  Avg latency: 163.1 ms
+  Peak memory: 2540 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/llama3.2-1b_C_1k_test_20260715_081715.json
+  OK in 32s
+
+  Testing llama3.2-1b_D_1k...
+
+============================================================
+  LoRA Evaluation — llama3.2-1b_D_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/llama3.2-1b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:19,  7.58it/s]
+Loading weights:  21%|██        | 30/146 [00:00<00:00, 154.14it/s]
+Loading weights:  40%|███▉      | 58/146 [00:00<00:00, 206.31it/s]
+Loading weights:  59%|█████▉    | 86/146 [00:00<00:00, 233.61it/s]
+Loading weights:  82%|████████▏ | 120/146 [00:00<00:00, 265.31it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 233.85it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/llama3.2-1b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=1.000
+  [  60/100]  running_acc=1.000
+  [  80/100]  running_acc=1.000
+  [ 100/100]  running_acc=1.000
+
+  Accuracy   : 1.0000  (100/100)
+  Avg latency: 161.1 ms
+  Peak memory: 2583 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/llama3.2-1b_D_1k_test_20260715_081747.json
+  OK in 32s
+
+  Testing smollm2-1.7b_A_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-1.7b_A_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-1.7b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:   9%|▊         | 19/218 [00:00<00:01, 186.14it/s]
+Loading weights:  21%|██        | 45/218 [00:00<00:00, 226.89it/s]
+Loading weights:  33%|███▎      | 73/218 [00:00<00:00, 249.05it/s]
+Loading weights:  46%|████▌     | 100/218 [00:00<00:00, 255.10it/s]
+Loading weights:  58%|█████▊    | 126/218 [00:00<00:00, 255.63it/s]
+Loading weights:  70%|██████▉   | 152/218 [00:00<00:00, 256.98it/s]
+Loading weights:  82%|████████▏ | 179/218 [00:00<00:00, 258.05it/s]
+Loading weights:  94%|█████████▍| 205/218 [00:00<00:00, 258.44it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 255.37it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-1.7b_A_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.950
+  [  80/100]  running_acc=0.950
+  [ 100/100]  running_acc=0.940
+
+  Accuracy   : 0.9400  (94/100)
+  Avg latency: 200.5 ms
+  Peak memory: 3530 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-1.7b_A_1k_test_20260715_081822.json
+  OK in 35s
+
+  Testing smollm2-1.7b_B_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-1.7b_B_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-1.7b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:  10%|▉         | 21/218 [00:00<00:00, 203.34it/s]
+Loading weights:  22%|██▏       | 48/218 [00:00<00:00, 240.45it/s]
+Loading weights:  34%|███▍      | 75/218 [00:00<00:00, 251.71it/s]
+Loading weights:  47%|████▋     | 102/218 [00:00<00:00, 258.01it/s]
+Loading weights:  59%|█████▉    | 129/218 [00:00<00:00, 261.53it/s]
+Loading weights:  72%|███████▏  | 156/218 [00:00<00:00, 263.53it/s]
+Loading weights:  84%|████████▍ | 183/218 [00:00<00:00, 263.56it/s]
+Loading weights:  96%|█████████▋| 210/218 [00:00<00:00, 263.83it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 259.81it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-1.7b_B_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.967
+  [  80/100]  running_acc=0.963
+  [ 100/100]  running_acc=0.950
+
+  Accuracy   : 0.9500  (95/100)
+  Avg latency: 242.0 ms
+  Peak memory: 3548 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-1.7b_B_1k_test_20260715_081901.json
+  OK in 39s
+
+  Testing smollm2-1.7b_C_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-1.7b_C_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-1.7b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:  10%|▉         | 21/218 [00:00<00:00, 197.84it/s]
+Loading weights:  22%|██▏       | 48/218 [00:00<00:00, 237.34it/s]
+Loading weights:  34%|███▍      | 75/218 [00:00<00:00, 249.75it/s]
+Loading weights:  47%|████▋     | 102/218 [00:00<00:00, 256.63it/s]
+Loading weights:  59%|█████▉    | 129/218 [00:00<00:00, 259.85it/s]
+Loading weights:  72%|███████▏  | 156/218 [00:00<00:00, 261.93it/s]
+Loading weights:  84%|████████▍ | 183/218 [00:00<00:00, 263.63it/s]
+Loading weights:  96%|█████████▋| 210/218 [00:00<00:00, 263.98it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 258.82it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-1.7b_C_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.983
+  [  80/100]  running_acc=0.975
+  [ 100/100]  running_acc=0.970
+
+  Accuracy   : 0.9700  (97/100)
+  Avg latency: 324.8 ms
+  Peak memory: 3649 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-1.7b_C_1k_test_20260715_081948.json
+  OK in 48s
+
+  Testing smollm2-1.7b_D_1k...
+
+============================================================
+  LoRA Evaluation — smollm2-1.7b_D_1k
+  Split    : test  (100 examples)
+  Source   : kon172verma/intent-classifier/LoRA/smollm2-1.7b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:   6%|▋         | 14/218 [00:00<00:01, 131.99it/s]
+Loading weights:  19%|█▉        | 41/218 [00:00<00:00, 209.93it/s]
+Loading weights:  31%|███       | 68/218 [00:00<00:00, 235.81it/s]
+Loading weights:  44%|████▎     | 95/218 [00:00<00:00, 247.56it/s]
+Loading weights:  56%|█████▌    | 122/218 [00:00<00:00, 253.93it/s]
+Loading weights:  68%|██████▊   | 149/218 [00:00<00:00, 258.18it/s]
+Loading weights:  81%|████████  | 176/218 [00:00<00:00, 260.13it/s]
+Loading weights:  93%|█████████▎| 203/218 [00:00<00:00, 260.69it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 253.15it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/LoRA/smollm2-1.7b_D_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.983
+  [  80/100]  running_acc=0.975
+  [ 100/100]  running_acc=0.980
+
+  Accuracy   : 0.9800  (98/100)
+  Avg latency: 319.6 ms
+  Peak memory: 3718 MB
+  Report     : /content/intent-classifier/finetune_LoRA/reports_test/smollm2-1.7b_D_1k_test_20260715_082035.json
+  OK in 47s
