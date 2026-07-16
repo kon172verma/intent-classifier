@@ -161,6 +161,12 @@ ALL_CONFIGS: list[str] = list(LORA_CONFIGS.keys())
 # Key parameters:
 #   init_r     – starting rank (budget before pruning; ~2–4× target_r)
 #   target_r   – final rank after pruning (analogous to r in LoRA)
+#   lora_alpha – scaling numerator. PEFT computes AdaLoRA scaling as
+#                lora_alpha / init_r (NOT / target_r).  We set lora_alpha =
+#                2 × init_r so the effective scaling is 2.0, matching every LoRA
+#                config.  Leaving it unset falls back to PEFT's default of 8,
+#                which yields 0.25–0.67 scaling — a 3–8× weaker adapter that
+#                barely shifts greedy predictions (loss drops, accuracy doesn't).
 #   beta1/2    – smoothing coefficients for importance sensitivity (default 0.85)
 #   deltaT     – steps between rank updates (default 1)
 #   orth_reg_weight – orthogonal regularization on P/Q matrices.
@@ -184,6 +190,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "target_modules": ["q_proj", "v_proj"],
         "init_r": 12,
         "target_r": 4,
+        "lora_alpha": 24,
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
@@ -198,6 +205,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
         "init_r": 24,
         "target_r": 8,
+        "lora_alpha": 48,
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
@@ -220,6 +228,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         ],
         "init_r": 32,
         "target_r": 8,
+        "lora_alpha": 64,
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
@@ -242,6 +251,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         ],
         "init_r": 32,
         "target_r": 16,
+        "lora_alpha": 64,
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,

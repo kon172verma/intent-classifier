@@ -250,6 +250,7 @@ def main() -> None:
         target_modules=ada_cfg["target_modules"],
         init_r=ada_cfg["init_r"],
         target_r=ada_cfg["target_r"],
+        lora_alpha=ada_cfg["lora_alpha"],
         beta1=ada_cfg["beta1"],
         beta2=ada_cfg["beta2"],
         orth_reg_weight=ada_cfg["orth_reg_weight"],
