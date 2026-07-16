@@ -66,8 +66,10 @@ from transformers import (  # noqa: E402
     DataCollatorForSeq2Seq,
     TrainingArguments,
 )
-from peft import LoraConfig, TaskType, get_peft_model  # type: ignore  # noqa: E402
+from peft import LoraConfig, PeftModel, TaskType, get_peft_model  # type: ignore  # noqa: E402
+from peft.optimizers import create_loraplus_optimizer  # type: ignore  # noqa: E402
 from trl import SFTTrainer  # type: ignore  # noqa: E402
+from transformers import get_cosine_schedule_with_warmup  # type: ignore  # noqa: E402
 from datasets import Dataset  # type: ignore  # noqa: E402
 from huggingface_hub import HfApi  # type: ignore  # noqa: E402
 
@@ -157,6 +159,7 @@ def train_main(
     technique: str = "LoRA",
     use_dora: bool = False,
     base_dir: Path | None = None,
+    loraplus_lr_ratio: int | None = None,
 ) -> None:
     if base_dir is None:
         base_dir = Path(__file__).parent.parent  # finetune_LoRA/
@@ -266,7 +269,7 @@ def train_main(
     use_bf16 = device.type == "cuda" and torch.cuda.is_bf16_supported()
     use_fp16 = device.type == "cuda" and not use_bf16
 
-    training_args = TrainingArguments(
+    training_args = TrainingArguments(  # type: ignore[call-arg]
         output_dir=str(tmp_dir),
         num_train_epochs=lora_cfg["num_train_epochs"] if not args.smoke_test else 1,
         max_steps=10 if args.smoke_test else -1,
@@ -288,8 +291,39 @@ def train_main(
         # avoids the PyTorch deprecation warning.
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
+        # For LoRA+ we inject a custom optimizer below; plain LoRA/DoRA keep the
+        # default adamw_torch.
         optim="adamw_torch",
     )
+
+    # ── LoRA+ asymmetric optimiser ────────────────────────────────────────────
+    # When loraplus_lr_ratio is set, matrix B parameters use a higher LR than
+    # matrix A parameters (Hayou et al., 2024).  We build the optimizer and a
+    # matching cosine scheduler ourselves and pass them to SFTTrainer so that
+    # the Trainer skips its own optimizer construction.
+    loraplus_optimizers: tuple | None = None
+    if loraplus_lr_ratio is not None:
+        _actual_steps = (10 if args.smoke_test else total_steps) // lora_cfg[
+            "gradient_accumulation_steps"
+        ]
+        _warmup_steps = max(1, int(_actual_steps * 0.05))
+        _lp_optimizer = create_loraplus_optimizer(
+            model=cast(PeftModel, model),
+            optimizer_cls=torch.optim.AdamW,
+            lr=lora_cfg["learning_rate"],
+            loraplus_lr_ratio=loraplus_lr_ratio,
+        )
+        _lp_scheduler = get_cosine_schedule_with_warmup(
+            _lp_optimizer,
+            num_warmup_steps=_warmup_steps,
+            num_training_steps=_actual_steps,
+        )
+        loraplus_optimizers = (_lp_optimizer, _lp_scheduler)
+        print(
+            f"  LoRA+ optimizer  : ratio={loraplus_lr_ratio}  "
+            f"lr_A={lora_cfg['learning_rate']:.1e}  "
+            f"lr_B={lora_cfg['learning_rate'] * loraplus_lr_ratio:.1e}"
+        )
 
     # ── Data collator ─────────────────────────────────────────────────────────
     collator = DataCollatorForSeq2Seq(
@@ -316,6 +350,7 @@ def train_main(
         data_collator=collator,
         processing_class=tokenizer,
         callbacks=[accuracy_cb],
+        optimizers=loraplus_optimizers or (None, None),
     )
 
     # ── Step-0 baseline (pre-fine-tuning) ─────────────────────────────────────

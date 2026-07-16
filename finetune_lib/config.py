@@ -281,3 +281,51 @@ ADALORA_CONFIGS: dict[str, dict] = {
 }
 
 ALL_ADALORA_CONFIGS: list[str] = list(ADALORA_CONFIGS.keys())
+
+# ── LoRA+ model subset ────────────────────────────────────────────────────────
+# LoRA+ is evaluated on two models only (qwen3-0.6b and llama3.2-1b), which
+# already reach 98-100% test accuracy with LoRA — a good base to measure any
+# marginal gain from the asymmetric A/B learning rates.
+_LORAPLUS_KEYS: list[str] = [
+    "qwen3-0.6b",  # small,  600M base+chat,  Qwen/Qwen3-0.6B
+    "llama3.2-1b",  # medium, 1.2B instruct,   meta-llama/Llama-3.2-1B-Instruct (gated)
+]
+
+ALL_LORAPLUS_MODELS: list[str] = _LORAPLUS_KEYS
+
+# ── LoRA+ adapter configs ─────────────────────────────────────────────────────
+# LoRA+ (Hayou et al., 2024) keeps the same LoraConfig as LoRA but uses an
+# asymmetric learning rate: matrix B is trained at a higher rate than matrix A.
+#
+#   η_B  =  loraplus_lr_ratio × η_A
+#
+# The original paper reports the sweet spot at ratio 4–16 depending on task.
+# We use 16 for Configs A/B/C and 8 for Config D (high-rank adapters are less
+# sensitive to the ratio and a large ratio can destabilise training at r=32).
+#
+# All other hyperparameters are identical to LORA_CONFIGS so results are
+# directly comparable.
+LORAPLUS_CONFIGS: dict[str, dict] = {
+    "A": {
+        **LORA_CONFIGS["A"],
+        "description": "LoRA+ Light — attention Q/V only, rank 8",
+        "loraplus_lr_ratio": 16,
+    },
+    "B": {
+        **LORA_CONFIGS["B"],
+        "description": "LoRA+ Standard — full attention, rank 16",
+        "loraplus_lr_ratio": 16,
+    },
+    "C": {
+        **LORA_CONFIGS["C"],
+        "description": "LoRA+ Wide — full attention + MLP, rank 16",
+        "loraplus_lr_ratio": 16,
+    },
+    "D": {
+        **LORA_CONFIGS["D"],
+        "description": "LoRA+ Heavy — full attention + MLP, rank 32",
+        "loraplus_lr_ratio": 8,
+    },
+}
+
+ALL_LORAPLUS_CONFIGS: list[str] = list(LORAPLUS_CONFIGS.keys())
