@@ -167,14 +167,23 @@ ALL_CONFIGS: list[str] = list(LORA_CONFIGS.keys())
 #                config.  Leaving it unset falls back to PEFT's default of 8,
 #                which yields 0.25–0.67 scaling — a 3–8× weaker adapter that
 #                barely shifts greedy predictions (loss drops, accuracy doesn't).
-#   beta1/2    – smoothing coefficients for importance sensitivity (default 0.85)
-#   deltaT     – steps between rank updates (default 1)
-#   orth_reg_weight – orthogonal regularization on P/Q matrices.
-#                     The PEFT default is 0.5 (calibrated for 5k+ step GLUE runs).
-#                     For our 150-step runs, 0.5 drowns the task gradient — the
-#                     penalty scales with n_modules × init_r and is added to BOTH
-#                     train and eval losses.  0.1 gives mild regularisation without
-#                     dominating the gradient.
+#   beta1/2    – EMA smoothing for importance scores S_t = β·S_{t-1} + (1-β)·|∇Λ|·|Λ|.
+#                0.85 ≈ 7-step moving average; balances noise vs. responsiveness.
+#   deltaT     – steps between rank reallocation updates.
+#                The paper used deltaT=10 on 5k-step GLUE runs (500 updates).
+#                deltaT=1 at 300 steps = 300 rank shuffles — far too noisy.
+#                deltaT=10 = 20 updates during the pruning phase (sensible).
+#   orth_reg_weight – weight of the ||PᵀP−I||² + ||QQᵀ−I||² penalty that keeps
+#                     P and Q orthogonal (required by SVD decomposition).
+#                     PEFT default 0.5 was calibrated for 5k+ step runs and
+#                     drowns task gradient at 300 steps. 0.1 is mild enough.
+#   tinit      – warm-up steps: training at full init_r before any pruning.
+#                Set to 1 epoch (50 steps) so the model learns the task before
+#                AdaLoRA starts reorganising rank budget.
+#   tfinal     – fine-tuning steps at the end: rank frozen at target_r.
+#                Set to 1 epoch (50 steps) so the model consolidates at the
+#                final rank after pruning is done.
+#                Pruning phase = total_steps − tinit − tfinal = 200 steps.
 #
 # total_step must equal the actual number of training steps and is injected at
 # runtime in adalora_train.py (it depends on dataset size and batch config).
@@ -194,11 +203,13 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
-        "deltaT": 1,
+        "deltaT": 10,
+        "tinit": 50,
+        "tfinal": 50,
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 2e-4,
-        "num_train_epochs": 3,
+        "num_train_epochs": 6,
     },
     "B": {
         "description": "Standard adaptive — full attention, init 24 → target 8",
@@ -209,11 +220,13 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
-        "deltaT": 1,
+        "deltaT": 10,
+        "tinit": 50,
+        "tfinal": 50,
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
-        "learning_rate": 1e-4,
-        "num_train_epochs": 3,
+        "learning_rate": 2e-4,
+        "num_train_epochs": 6,
     },
     "C": {
         "description": "Wide adaptive — full attention + MLP, init 32 → target 8",
@@ -232,11 +245,13 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
-        "deltaT": 1,
+        "deltaT": 10,
+        "tinit": 50,
+        "tfinal": 50,
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
-        "learning_rate": 1e-4,
-        "num_train_epochs": 3,
+        "learning_rate": 2e-4,
+        "num_train_epochs": 6,
     },
     "D": {
         "description": "Heavy adaptive — full attention + MLP, init 32 → target 16",
@@ -255,11 +270,13 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "beta1": 0.85,
         "beta2": 0.85,
         "orth_reg_weight": 0.1,
-        "deltaT": 1,
-        "per_device_train_batch_size": 4,
-        "gradient_accumulation_steps": 4,
-        "learning_rate": 5e-5,
-        "num_train_epochs": 3,
+        "deltaT": 10,
+        "tinit": 50,
+        "tfinal": 50,
+        "per_device_train_batch_size": 8,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": 1e-4,
+        "num_train_epochs": 6,
     },
 }
 

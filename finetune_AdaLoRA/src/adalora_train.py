@@ -255,6 +255,8 @@ def main() -> None:
         beta2=ada_cfg["beta2"],
         orth_reg_weight=ada_cfg["orth_reg_weight"],
         deltaT=ada_cfg["deltaT"],
+        tinit=ada_cfg["tinit"],
+        tfinal=ada_cfg["tfinal"],
         total_step=total_steps,
         inference_mode=False,
     )
