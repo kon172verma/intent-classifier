@@ -1,0 +1,1035 @@
+Running: /content/intent-classifier/finetune_DoRA/src/run_dora_experiments.py --models smollm2-360m qwen2.5-0.5b qwen3-0.6b llama3.2-1b smollm2-1.7b --configs A B C D --dataset-size 1k --device auto
+
+
+============================================================
+  DoRA Experiment Runner
+  Models   : ['smollm2-360m', 'qwen2.5-0.5b', 'qwen3-0.6b', 'llama3.2-1b', 'smollm2-1.7b']
+  Configs  : ['A', 'B', 'C', 'D']
+  Dataset  : 1k
+  Device   : auto
+  Runs     : 20 training + 20 val eval
+============================================================
+
+────────────────────────────────────────────────────────────
+  TRAIN  [1/20] smollm2-360m_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — smollm2-360m_A_1k
+  Model        : HuggingFaceTB/SmolLM2-360M-Instruct
+  LoRA config  : A — Light — attention Q/V only, rank 8
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_A_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/smollm2-360m_A_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: HuggingFaceTB/SmolLM2-360M-Instruct
+  Loading model:     HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  56%|█████▌    | 162/290 [00:00<00:00, 1618.22it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1622.79it/s]
+
+  Trainable params : 860,160  (0.237%)
+  Total params     : 362,681,280
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  30%|███       | 240/800 [00:00<00:00, 2367.18 examples/s]
+Truncating train dataset:  61%|██████    | 485/800 [00:00<00:00, 2408.58 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 1901.27 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 1992.94 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1844.23 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '1.002', 'eval_model_preparation_time': '0.0101', 'eval_runtime': '4.486', 'eval_samples_per_second': '22.29', 'eval_steps_per_second': '2.898', 'eval_entropy': '0.7161', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8271', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.1800  val=0.1000
+  Step 0 — train_loss=1.0349  val_loss=1.0018466711044312  train_acc=0.18  val_acc=0.1
+
+  Starting training...
+
+{'loss': '0.8474', 'grad_norm': '1.017', 'learning_rate': '0.0002', 'entropy': '0.6954', 'num_tokens': '6.93e+04', 'mean_token_accuracy': '0.8461', 'epoch': '0.2'}
+{'loss': '0.6641', 'grad_norm': '0.9011', 'learning_rate': '0.0001971', 'entropy': '0.7283', 'num_tokens': '1.357e+05', 'mean_token_accuracy': '0.8479', 'epoch': '0.4'}
+{'loss': '0.5161', 'grad_norm': '0.5313', 'learning_rate': '0.0001894', 'entropy': '0.6362', 'num_tokens': '2.084e+05', 'mean_token_accuracy': '0.8649', 'epoch': '0.6'}
+{'loss': '0.3867', 'grad_norm': '0.8648', 'learning_rate': '0.0001774', 'entropy': '0.5665', 'num_tokens': '2.8e+05', 'mean_token_accuracy': '0.89', 'epoch': '0.8'}
+{'loss': '0.3805', 'grad_norm': '0.6937', 'learning_rate': '0.0001616', 'entropy': '0.4738', 'num_tokens': '3.541e+05', 'mean_token_accuracy': '0.8908', 'epoch': '1'}
+{'eval_loss': '0.3762', 'eval_model_preparation_time': '0.0101', 'eval_runtime': '4.338', 'eval_samples_per_second': '23.05', 'eval_steps_per_second': '2.997', 'eval_entropy': '0.5001', 'eval_num_tokens': '3.541e+05', 'eval_mean_token_accuracy': '0.8966', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.4800  val=0.3900
+{'loss': '0.3069', 'grad_norm': '0.6394', 'learning_rate': '0.0001428', 'entropy': '0.4615', 'num_tokens': '4.245e+05', 'mean_token_accuracy': '0.9059', 'epoch': '1.2'}
+{'loss': '0.2708', 'grad_norm': '0.6847', 'learning_rate': '0.0001219', 'entropy': '0.4076', 'num_tokens': '4.949e+05', 'mean_token_accuracy': '0.9167', 'epoch': '1.4'}
+{'loss': '0.2688', 'grad_norm': '1.276', 'learning_rate': '0.0001', 'entropy': '0.3586', 'num_tokens': '5.664e+05', 'mean_token_accuracy': '0.927', 'epoch': '1.6'}
+{'loss': '0.2322', 'grad_norm': '0.5925', 'learning_rate': '7.806e-05', 'entropy': '0.3168', 'num_tokens': '6.371e+05', 'mean_token_accuracy': '0.9423', 'epoch': '1.8'}
+{'loss': '0.2103', 'grad_norm': '0.7789', 'learning_rate': '5.718e-05', 'entropy': '0.3138', 'num_tokens': '7.081e+05', 'mean_token_accuracy': '0.9388', 'epoch': '2'}
+{'eval_loss': '0.264', 'eval_model_preparation_time': '0.0101', 'eval_runtime': '4.415', 'eval_samples_per_second': '22.65', 'eval_steps_per_second': '2.944', 'eval_entropy': '0.3391', 'eval_num_tokens': '7.081e+05', 'eval_mean_token_accuracy': '0.9186', 'epoch': '2'}
+
+  [Accuracy] step=100  train=0.7400  val=0.5200
+{'loss': '0.1916', 'grad_norm': '0.562', 'learning_rate': '3.84e-05', 'entropy': '0.2745', 'num_tokens': '7.791e+05', 'mean_token_accuracy': '0.9446', 'epoch': '2.2'}
+{'loss': '0.1916', 'grad_norm': '0.481', 'learning_rate': '2.261e-05', 'entropy': '0.2847', 'num_tokens': '8.526e+05', 'mean_token_accuracy': '0.9378', 'epoch': '2.4'}
+{'loss': '0.1843', 'grad_norm': '1.372', 'learning_rate': '1.06e-05', 'entropy': '0.2966', 'num_tokens': '9.205e+05', 'mean_token_accuracy': '0.9491', 'epoch': '2.6'}
+{'loss': '0.1919', 'grad_norm': '0.6779', 'learning_rate': '2.947e-06', 'entropy': '0.2667', 'num_tokens': '9.923e+05', 'mean_token_accuracy': '0.9451', 'epoch': '2.8'}
+{'loss': '0.189', 'grad_norm': '0.6485', 'learning_rate': '2.447e-08', 'entropy': '0.2684', 'num_tokens': '1.062e+06', 'mean_token_accuracy': '0.9497', 'epoch': '3'}
+{'eval_loss': '0.2458', 'eval_model_preparation_time': '0.0101', 'eval_runtime': '6.314', 'eval_samples_per_second': '15.84', 'eval_steps_per_second': '2.059', 'eval_entropy': '0.3142', 'eval_num_tokens': '1.062e+06', 'eval_mean_token_accuracy': '0.9292', 'epoch': '3'}
+
+  [Accuracy] step=150  train=0.7400  val=0.5600
+{'train_runtime': '697.4', 'train_samples_per_second': '3.441', 'train_steps_per_second': '0.215', 'train_loss': '0.3355', 'epoch': '3'}
+
+  Training complete in 697.7s  |  Peak VRAM: 1674 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_A_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/smollm2-360m_A_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — smollm2-360m_A_1k
+  Final train loss : 0.3355
+  Final val loss   : 0.2458
+  Final val acc    : 0.5600
+  Final train acc  : 0.7400
+  Training time    : 697.7s
+  Peak VRAM        : 1674 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/smollm2-360m_A_1k_20260716_052029.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_A_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/smollm2-360m_A_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [1/20] smollm2-360m_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_A_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  60%|█████▉    | 173/290 [00:00<00:00, 1728.93it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1709.59it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_A_1k
+  [  20/100]  running_acc=0.650
+  [  40/100]  running_acc=0.600
+  [  60/100]  running_acc=0.600
+  [  80/100]  running_acc=0.537
+  [ 100/100]  running_acc=0.560
+
+  Accuracy   : 0.5600  (56/100)
+  Avg latency: 379.3 ms
+  Peak memory: 771 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_A_1k_val_20260716_052122.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [2/20] smollm2-360m_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — smollm2-360m_B_1k
+  Model        : HuggingFaceTB/SmolLM2-360M-Instruct
+  LoRA config  : B — Standard — full attention, rank 16
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_B_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/smollm2-360m_B_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: HuggingFaceTB/SmolLM2-360M-Instruct
+  Loading model:     HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  41%|████      | 119/290 [00:00<00:00, 1177.24it/s]
+Loading weights:  86%|████████▌ | 248/290 [00:00<00:00, 1235.09it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1243.05it/s]
+
+  Trainable params : 3,358,720  (0.920%)
+  Total params     : 365,179,840
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  27%|██▋       | 213/800 [00:00<00:00, 2103.44 examples/s]
+Truncating train dataset:  55%|█████▌    | 443/800 [00:00<00:00, 2214.19 examples/s]
+Truncating train dataset:  98%|█████████▊| 782/800 [00:00<00:00, 2227.51 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 1882.78 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1749.29 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '1.005', 'eval_model_preparation_time': '0.0148', 'eval_runtime': '7.98', 'eval_samples_per_second': '12.53', 'eval_steps_per_second': '1.629', 'eval_entropy': '0.7147', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8271', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.2200  val=0.1100
+  Step 0 — train_loss=1.0375  val_loss=1.005495548248291  train_acc=0.22  val_acc=0.11
+
+  Starting training...
+
+{'loss': '0.8212', 'grad_norm': '1.137', 'learning_rate': '9.999e-05', 'entropy': '0.7076', 'num_tokens': '6.93e+04', 'mean_token_accuracy': '0.85', 'epoch': '0.2'}
+{'loss': '0.6262', 'grad_norm': '1.054', 'learning_rate': '9.853e-05', 'entropy': '0.6645', 'num_tokens': '1.357e+05', 'mean_token_accuracy': '0.8503', 'epoch': '0.4'}
+{'loss': '0.4595', 'grad_norm': '0.586', 'learning_rate': '9.47e-05', 'entropy': '0.6059', 'num_tokens': '2.084e+05', 'mean_token_accuracy': '0.874', 'epoch': '0.6'}
+{'loss': '0.3646', 'grad_norm': '0.7716', 'learning_rate': '8.869e-05', 'entropy': '0.5246', 'num_tokens': '2.8e+05', 'mean_token_accuracy': '0.9004', 'epoch': '0.8'}
+{'loss': '0.3463', 'grad_norm': '0.7888', 'learning_rate': '8.08e-05', 'entropy': '0.4484', 'num_tokens': '3.541e+05', 'mean_token_accuracy': '0.8917', 'epoch': '1'}
+{'eval_loss': '0.3415', 'eval_model_preparation_time': '0.0148', 'eval_runtime': '8.054', 'eval_samples_per_second': '12.42', 'eval_steps_per_second': '1.614', 'eval_entropy': '0.4671', 'eval_num_tokens': '3.541e+05', 'eval_mean_token_accuracy': '0.9012', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.5800  val=0.3900
+{'loss': '0.2703', 'grad_norm': '0.6315', 'learning_rate': '7.141e-05', 'entropy': '0.4181', 'num_tokens': '4.245e+05', 'mean_token_accuracy': '0.9178', 'epoch': '1.2'}
+{'loss': '0.2356', 'grad_norm': '0.6658', 'learning_rate': '6.097e-05', 'entropy': '0.3632', 'num_tokens': '4.949e+05', 'mean_token_accuracy': '0.9248', 'epoch': '1.4'}
+{'loss': '0.2373', 'grad_norm': '1.15', 'learning_rate': '5e-05', 'entropy': '0.3039', 'num_tokens': '5.664e+05', 'mean_token_accuracy': '0.9404', 'epoch': '1.6'}
+{'loss': '0.2045', 'grad_norm': '0.5892', 'learning_rate': '3.903e-05', 'entropy': '0.265', 'num_tokens': '6.371e+05', 'mean_token_accuracy': '0.9412', 'epoch': '1.8'}
+{'loss': '0.1839', 'grad_norm': '0.7327', 'learning_rate': '2.859e-05', 'entropy': '0.2594', 'num_tokens': '7.081e+05', 'mean_token_accuracy': '0.9463', 'epoch': '2'}
+{'eval_loss': '0.2362', 'eval_model_preparation_time': '0.0148', 'eval_runtime': '5.255', 'eval_samples_per_second': '19.03', 'eval_steps_per_second': '2.474', 'eval_entropy': '0.2943', 'eval_num_tokens': '7.081e+05', 'eval_mean_token_accuracy': '0.9326', 'epoch': '2'}
+
+  [Accuracy] step=100  train=0.7400  val=0.6000
+{'loss': '0.166', 'grad_norm': '0.644', 'learning_rate': '1.92e-05', 'entropy': '0.2312', 'num_tokens': '7.791e+05', 'mean_token_accuracy': '0.9532', 'epoch': '2.2'}
+{'loss': '0.1674', 'grad_norm': '0.4563', 'learning_rate': '1.131e-05', 'entropy': '0.2361', 'num_tokens': '8.526e+05', 'mean_token_accuracy': '0.9504', 'epoch': '2.4'}
+{'loss': '0.1571', 'grad_norm': '1.375', 'learning_rate': '5.3e-06', 'entropy': '0.2477', 'num_tokens': '9.205e+05', 'mean_token_accuracy': '0.9575', 'epoch': '2.6'}
+{'loss': '0.1664', 'grad_norm': '0.6031', 'learning_rate': '1.473e-06', 'entropy': '0.223', 'num_tokens': '9.923e+05', 'mean_token_accuracy': '0.9564', 'epoch': '2.8'}
+{'loss': '0.1686', 'grad_norm': '0.6702', 'learning_rate': '1.224e-08', 'entropy': '0.2205', 'num_tokens': '1.062e+06', 'mean_token_accuracy': '0.9572', 'epoch': '3'}
+{'eval_loss': '0.2212', 'eval_model_preparation_time': '0.0148', 'eval_runtime': '8.059', 'eval_samples_per_second': '12.41', 'eval_steps_per_second': '1.613', 'eval_entropy': '0.2727', 'eval_num_tokens': '1.062e+06', 'eval_mean_token_accuracy': '0.9391', 'epoch': '3'}
+
+  [Accuracy] step=150  train=0.7400  val=0.6500
+{'train_runtime': '910.6', 'train_samples_per_second': '2.636', 'train_steps_per_second': '0.165', 'train_loss': '0.305', 'epoch': '3'}
+
+  Training complete in 910.9s  |  Peak VRAM: 1799 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_B_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/smollm2-360m_B_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — smollm2-360m_B_1k
+  Final train loss : 0.3050
+  Final val loss   : 0.2212
+  Final val acc    : 0.6500
+  Final train acc  : 0.7400
+  Training time    : 910.9s
+  Peak VRAM        : 1799 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/smollm2-360m_B_1k_20260716_053802.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_B_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/smollm2-360m_B_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [2/20] smollm2-360m_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_B_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  44%|████▍     | 128/290 [00:00<00:00, 1265.62it/s]
+Loading weights:  88%|████████▊ | 256/290 [00:00<00:00, 1269.70it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1283.33it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_B_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.725
+  [  60/100]  running_acc=0.700
+  [  80/100]  running_acc=0.650
+  [ 100/100]  running_acc=0.650
+
+  Accuracy   : 0.6500  (65/100)
+  Avg latency: 533.7 ms
+  Peak memory: 786 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_B_1k_val_20260716_053912.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [3/20] smollm2-360m_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — smollm2-360m_C_1k
+  Model        : HuggingFaceTB/SmolLM2-360M-Instruct
+  LoRA config  : C — Wide — full attention + MLP, rank 16
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_C_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/smollm2-360m_C_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: HuggingFaceTB/SmolLM2-360M-Instruct
+  Loading model:     HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  34%|███▍      | 100/290 [00:00<00:00, 969.86it/s]
+Loading weights:  79%|███████▉  | 230/290 [00:00<00:00, 1157.73it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1168.46it/s]
+
+  Trainable params : 8,960,000  (2.417%)
+  Total params     : 370,781,120
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  30%|██▉       | 238/800 [00:00<00:00, 2355.81 examples/s]
+Truncating train dataset:  61%|██████    | 486/800 [00:00<00:00, 2420.92 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 1912.66 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 2002.26 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1785.22 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '1.009', 'eval_model_preparation_time': '0.0223', 'eval_runtime': '16.56', 'eval_samples_per_second': '6.038', 'eval_steps_per_second': '0.785', 'eval_entropy': '0.719', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8258', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.1800  val=0.1000
+  Step 0 — train_loss=1.0455  val_loss=1.008534550666809  train_acc=0.18  val_acc=0.1
+
+  Starting training...
+
+{'loss': '0.7718', 'grad_norm': '0.776', 'learning_rate': '9.999e-05', 'entropy': '0.709', 'num_tokens': '6.93e+04', 'mean_token_accuracy': '0.8563', 'epoch': '0.2'}
+{'loss': '0.5031', 'grad_norm': '0.7851', 'learning_rate': '9.853e-05', 'entropy': '0.561', 'num_tokens': '1.357e+05', 'mean_token_accuracy': '0.8725', 'epoch': '0.4'}
+{'loss': '0.3892', 'grad_norm': '0.8182', 'learning_rate': '9.47e-05', 'entropy': '0.4834', 'num_tokens': '2.084e+05', 'mean_token_accuracy': '0.8911', 'epoch': '0.6'}
+{'loss': '0.3152', 'grad_norm': '0.8071', 'learning_rate': '8.869e-05', 'entropy': '0.4483', 'num_tokens': '2.8e+05', 'mean_token_accuracy': '0.9109', 'epoch': '0.8'}
+{'loss': '0.2644', 'grad_norm': '0.8056', 'learning_rate': '8.08e-05', 'entropy': '0.3512', 'num_tokens': '3.541e+05', 'mean_token_accuracy': '0.9252', 'epoch': '1'}
+{'eval_loss': '0.2571', 'eval_model_preparation_time': '0.0223', 'eval_runtime': '16.67', 'eval_samples_per_second': '6', 'eval_steps_per_second': '0.78', 'eval_entropy': '0.3788', 'eval_num_tokens': '3.541e+05', 'eval_mean_token_accuracy': '0.9261', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.7400  val=0.5500
+{'loss': '0.1815', 'grad_norm': '0.5495', 'learning_rate': '7.141e-05', 'entropy': '0.3', 'num_tokens': '4.245e+05', 'mean_token_accuracy': '0.9525', 'epoch': '1.2'}
+{'loss': '0.1411', 'grad_norm': '0.6246', 'learning_rate': '6.097e-05', 'entropy': '0.2225', 'num_tokens': '4.949e+05', 'mean_token_accuracy': '0.963', 'epoch': '1.4'}
+{'loss': '0.1592', 'grad_norm': '0.662', 'learning_rate': '5e-05', 'entropy': '0.1652', 'num_tokens': '5.664e+05', 'mean_token_accuracy': '0.9593', 'epoch': '1.6'}
+{'loss': '0.1265', 'grad_norm': '0.3932', 'learning_rate': '3.903e-05', 'entropy': '0.1336', 'num_tokens': '6.371e+05', 'mean_token_accuracy': '0.9635', 'epoch': '1.8'}
+{'loss': '0.1285', 'grad_norm': '0.5829', 'learning_rate': '2.859e-05', 'entropy': '0.1352', 'num_tokens': '7.081e+05', 'mean_token_accuracy': '0.9615', 'epoch': '2'}
+{'eval_loss': '0.1532', 'eval_model_preparation_time': '0.0223', 'eval_runtime': '16.68', 'eval_samples_per_second': '5.995', 'eval_steps_per_second': '0.779', 'eval_entropy': '0.1801', 'eval_num_tokens': '7.081e+05', 'eval_mean_token_accuracy': '0.9577', 'epoch': '2'}
+
+  [Accuracy] step=100  train=0.8000  val=0.7400
+{'loss': '0.09581', 'grad_norm': '0.4849', 'learning_rate': '1.92e-05', 'entropy': '0.1273', 'num_tokens': '7.791e+05', 'mean_token_accuracy': '0.975', 'epoch': '2.2'}
+{'loss': '0.09696', 'grad_norm': '0.3441', 'learning_rate': '1.131e-05', 'entropy': '0.1365', 'num_tokens': '8.526e+05', 'mean_token_accuracy': '0.9718', 'epoch': '2.4'}
+{'loss': '0.08434', 'grad_norm': '1.086', 'learning_rate': '5.3e-06', 'entropy': '0.1348', 'num_tokens': '9.205e+05', 'mean_token_accuracy': '0.979', 'epoch': '2.6'}
+{'loss': '0.08921', 'grad_norm': '0.3835', 'learning_rate': '1.473e-06', 'entropy': '0.129', 'num_tokens': '9.923e+05', 'mean_token_accuracy': '0.9739', 'epoch': '2.8'}
+{'loss': '0.09752', 'grad_norm': '0.6218', 'learning_rate': '1.224e-08', 'entropy': '0.1248', 'num_tokens': '1.062e+06', 'mean_token_accuracy': '0.9748', 'epoch': '3'}
+{'eval_loss': '0.1474', 'eval_model_preparation_time': '0.0223', 'eval_runtime': '16.16', 'eval_samples_per_second': '6.188', 'eval_steps_per_second': '0.804', 'eval_entropy': '0.174', 'eval_num_tokens': '1.062e+06', 'eval_mean_token_accuracy': '0.9596', 'epoch': '3'}
+
+  [Accuracy] step=150  train=0.8800  val=0.7600
+{'train_runtime': '1939', 'train_samples_per_second': '1.238', 'train_steps_per_second': '0.077', 'train_loss': '0.2296', 'epoch': '3'}
+
+  Training complete in 1939.7s  |  Peak VRAM: 2447 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_C_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/smollm2-360m_C_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — smollm2-360m_C_1k
+  Final train loss : 0.2296
+  Final val loss   : 0.1474
+  Final val acc    : 0.7600
+  Final train acc  : 0.8800
+  Training time    : 1939.7s
+  Peak VRAM        : 2447 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/smollm2-360m_C_1k_20260716_061340.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_C_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/smollm2-360m_C_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [3/20] smollm2-360m_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_C_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  47%|████▋     | 136/290 [00:00<00:00, 1358.51it/s]
+Loading weights:  94%|█████████▍| 272/290 [00:00<00:00, 1310.45it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1316.77it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_C_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.750
+  [  60/100]  running_acc=0.750
+  [  80/100]  running_acc=0.738
+  [ 100/100]  running_acc=0.760
+
+  Accuracy   : 0.7600  (76/100)
+  Avg latency: 848.4 ms
+  Peak memory: 850 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_C_1k_val_20260716_061522.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [4/20] smollm2-360m_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — smollm2-360m_D_1k
+  Model        : HuggingFaceTB/SmolLM2-360M-Instruct
+  LoRA config  : D — Heavy — full attention + MLP, rank 32
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_D_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/smollm2-360m_D_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: HuggingFaceTB/SmolLM2-360M-Instruct
+  Loading model:     HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  58%|█████▊    | 167/290 [00:00<00:00, 1653.18it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1665.47it/s]
+
+  Trainable params : 17,643,520  (4.650%)
+  Total params     : 379,464,640
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  29%|██▉       | 234/800 [00:00<00:00, 2319.44 examples/s]
+Truncating train dataset:  60%|██████    | 480/800 [00:00<00:00, 2392.55 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 1906.93 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 1991.44 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1818.84 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '1.009', 'eval_model_preparation_time': '0.023', 'eval_runtime': '13.18', 'eval_samples_per_second': '7.587', 'eval_steps_per_second': '0.986', 'eval_entropy': '0.719', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8258', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.1800  val=0.1000
+  Step 0 — train_loss=1.0455  val_loss=1.008534550666809  train_acc=0.18  val_acc=0.1
+
+  Starting training...
+
+{'loss': '0.7782', 'grad_norm': '1.063', 'learning_rate': '4.999e-05', 'entropy': '0.7191', 'num_tokens': '6.93e+04', 'mean_token_accuracy': '0.853', 'epoch': '0.2'}
+{'loss': '0.5292', 'grad_norm': '1.201', 'learning_rate': '4.926e-05', 'entropy': '0.5923', 'num_tokens': '1.357e+05', 'mean_token_accuracy': '0.8613', 'epoch': '0.4'}
+{'loss': '0.3985', 'grad_norm': '0.8982', 'learning_rate': '4.735e-05', 'entropy': '0.5168', 'num_tokens': '2.084e+05', 'mean_token_accuracy': '0.8915', 'epoch': '0.6'}
+{'loss': '0.328', 'grad_norm': '0.9608', 'learning_rate': '4.435e-05', 'entropy': '0.4694', 'num_tokens': '2.8e+05', 'mean_token_accuracy': '0.9023', 'epoch': '0.8'}
+{'loss': '0.2842', 'grad_norm': '1.012', 'learning_rate': '4.04e-05', 'entropy': '0.3846', 'num_tokens': '3.541e+05', 'mean_token_accuracy': '0.9216', 'epoch': '1'}
+{'eval_loss': '0.277', 'eval_model_preparation_time': '0.023', 'eval_runtime': '16.52', 'eval_samples_per_second': '6.054', 'eval_steps_per_second': '0.787', 'eval_entropy': '0.3996', 'eval_num_tokens': '3.541e+05', 'eval_mean_token_accuracy': '0.9198', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.7200  val=0.5300
+{'loss': '0.2016', 'grad_norm': '0.7235', 'learning_rate': '3.57e-05', 'entropy': '0.332', 'num_tokens': '4.245e+05', 'mean_token_accuracy': '0.9475', 'epoch': '1.2'}
+{'loss': '0.1669', 'grad_norm': '0.7827', 'learning_rate': '3.049e-05', 'entropy': '0.268', 'num_tokens': '4.949e+05', 'mean_token_accuracy': '0.9494', 'epoch': '1.4'}
+{'loss': '0.1801', 'grad_norm': '0.9791', 'learning_rate': '2.5e-05', 'entropy': '0.2067', 'num_tokens': '5.664e+05', 'mean_token_accuracy': '0.954', 'epoch': '1.6'}
+{'loss': '0.1473', 'grad_norm': '0.6374', 'learning_rate': '1.951e-05', 'entropy': '0.1713', 'num_tokens': '6.371e+05', 'mean_token_accuracy': '0.9603', 'epoch': '1.8'}
+{'loss': '0.1425', 'grad_norm': '0.7499', 'learning_rate': '1.43e-05', 'entropy': '0.1656', 'num_tokens': '7.081e+05', 'mean_token_accuracy': '0.9557', 'epoch': '2'}
+{'eval_loss': '0.1779', 'eval_model_preparation_time': '0.023', 'eval_runtime': '16.57', 'eval_samples_per_second': '6.033', 'eval_steps_per_second': '0.784', 'eval_entropy': '0.2112', 'eval_num_tokens': '7.081e+05', 'eval_mean_token_accuracy': '0.9521', 'epoch': '2'}
+
+  [Accuracy] step=100  train=0.8000  val=0.7000
+{'loss': '0.1168', 'grad_norm': '0.7495', 'learning_rate': '9.599e-06', 'entropy': '0.1521', 'num_tokens': '7.791e+05', 'mean_token_accuracy': '0.9665', 'epoch': '2.2'}
+{'loss': '0.1161', 'grad_norm': '0.43', 'learning_rate': '5.653e-06', 'entropy': '0.1584', 'num_tokens': '8.526e+05', 'mean_token_accuracy': '0.9674', 'epoch': '2.4'}
+{'loss': '0.1043', 'grad_norm': '1.381', 'learning_rate': '2.65e-06', 'entropy': '0.1665', 'num_tokens': '9.205e+05', 'mean_token_accuracy': '0.9749', 'epoch': '2.6'}
+{'loss': '0.1128', 'grad_norm': '0.5405', 'learning_rate': '7.367e-07', 'entropy': '0.1524', 'num_tokens': '9.923e+05', 'mean_token_accuracy': '0.9663', 'epoch': '2.8'}
+{'loss': '0.1177', 'grad_norm': '0.793', 'learning_rate': '6.118e-09', 'entropy': '0.1508', 'num_tokens': '1.062e+06', 'mean_token_accuracy': '0.9661', 'epoch': '3'}
+{'eval_loss': '0.1711', 'eval_model_preparation_time': '0.023', 'eval_runtime': '15.31', 'eval_samples_per_second': '6.53', 'eval_steps_per_second': '0.849', 'eval_entropy': '0.2025', 'eval_num_tokens': '1.062e+06', 'eval_mean_token_accuracy': '0.9533', 'epoch': '3'}
+
+  [Accuracy] step=150  train=0.8200  val=0.7200
+{'train_runtime': '1596', 'train_samples_per_second': '1.504', 'train_steps_per_second': '0.094', 'train_loss': '0.2483', 'epoch': '3'}
+
+  Training complete in 1596.2s  |  Peak VRAM: 1804 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_D_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/smollm2-360m_D_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — smollm2-360m_D_1k
+  Final train loss : 0.2483
+  Final val loss   : 0.1711
+  Final val acc    : 0.7200
+  Final train acc  : 0.8200
+  Training time    : 1596.2s
+  Peak VRAM        : 1804 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/smollm2-360m_D_1k_20260716_064400.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_D_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/smollm2-360m_D_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [4/20] smollm2-360m_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_D_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  58%|█████▊    | 167/290 [00:00<00:00, 1654.22it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1674.63it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/smollm2-360m_D_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.750
+  [  60/100]  running_acc=0.717
+  [  80/100]  running_acc=0.688
+  [ 100/100]  running_acc=0.720
+
+  Accuracy   : 0.7200  (72/100)
+  Avg latency: 812.4 ms
+  Peak memory: 883 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_D_1k_val_20260716_064537.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [5/20] qwen2.5-0.5b_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — qwen2.5-0.5b_A_1k
+  Model        : Qwen/Qwen2.5-0.5B-Instruct
+  LoRA config  : A — Light — attention Q/V only, rank 8
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_A_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_A_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: Qwen/Qwen2.5-0.5B-Instruct
+  Loading model:     Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  17%|█▋        | 50/290 [00:00<00:00, 494.60it/s]
+Loading weights:  52%|█████▏    | 150/290 [00:00<00:00, 784.40it/s]
+Loading weights:  81%|████████  | 234/290 [00:00<00:00, 804.66it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 798.73it/s]
+
+  Trainable params : 565,248  (0.114%)
+  Total params     : 494,598,016
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  30%|███       | 243/800 [00:00<00:00, 2404.67 examples/s]
+Truncating train dataset:  63%|██████▎   | 501/800 [00:00<00:00, 2501.92 examples/s]
+Truncating train dataset:  94%|█████████▍| 753/800 [00:00<00:00, 2506.50 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 2112.38 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 2037.58 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '0.4467', 'eval_model_preparation_time': '0.008', 'eval_runtime': '5.239', 'eval_samples_per_second': '19.09', 'eval_steps_per_second': '2.482', 'eval_entropy': '0.3363', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8851', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.6200  val=0.5000
+  Step 0 — train_loss=0.4132  val_loss=0.4467444121837616  train_acc=0.62  val_acc=0.5
+
+  Starting training...
+
+{'loss': '0.3192', 'grad_norm': '1.855', 'learning_rate': '0.0002', 'entropy': '0.2611', 'num_tokens': '5.898e+04', 'mean_token_accuracy': '0.9143', 'epoch': '0.2'}
+{'loss': '0.2548', 'grad_norm': '3.71', 'learning_rate': '0.0001971', 'entropy': '0.2504', 'num_tokens': '1.155e+05', 'mean_token_accuracy': '0.9325', 'epoch': '0.4'}
+{'loss': '0.244', 'grad_norm': '2.297', 'learning_rate': '0.0001894', 'entropy': '0.1867', 'num_tokens': '1.773e+05', 'mean_token_accuracy': '0.9365', 'epoch': '0.6'}
+{'loss': '0.1666', 'grad_norm': '1.016', 'learning_rate': '0.0001774', 'entropy': '0.1887', 'num_tokens': '2.384e+05', 'mean_token_accuracy': '0.9547', 'epoch': '0.8'}
+{'loss': '0.1165', 'grad_norm': '1.977', 'learning_rate': '0.0001616', 'entropy': '0.1445', 'num_tokens': '3.013e+05', 'mean_token_accuracy': '0.9637', 'epoch': '1'}
+{'eval_loss': '0.2044', 'eval_model_preparation_time': '0.008', 'eval_runtime': '3.187', 'eval_samples_per_second': '31.38', 'eval_steps_per_second': '4.079', 'eval_entropy': '0.1452', 'eval_num_tokens': '3.013e+05', 'eval_mean_token_accuracy': '0.9563', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.8600  val=0.7600
+{'loss': '0.101', 'grad_norm': '2.447', 'learning_rate': '0.0001428', 'entropy': '0.11', 'num_tokens': '3.612e+05', 'mean_token_accuracy': '0.9726', 'epoch': '1.2'}
+{'loss': '0.06108', 'grad_norm': '2.574', 'learning_rate': '0.0001219', 'entropy': '0.07647', 'num_tokens': '4.212e+05', 'mean_token_accuracy': '0.9871', 'epoch': '1.4'}
+{'loss': '0.06011', 'grad_norm': '1.341', 'learning_rate': '0.0001', 'entropy': '0.07414', 'num_tokens': '4.82e+05', 'mean_token_accuracy': '0.9817', 'epoch': '1.6'}
+{'loss': '0.0635', 'grad_norm': '2.899', 'learning_rate': '7.806e-05', 'entropy': '0.0724', 'num_tokens': '5.422e+05', 'mean_token_accuracy': '0.9762', 'epoch': '1.8'}
+{'loss': '0.0617', 'grad_norm': '0.4718', 'learning_rate': '5.718e-05', 'entropy': '0.06923', 'num_tokens': '6.027e+05', 'mean_token_accuracy': '0.9847', 'epoch': '2'}
+{'eval_loss': '0.1559', 'eval_model_preparation_time': '0.008', 'eval_runtime': '5.201', 'eval_samples_per_second': '19.23', 'eval_steps_per_second': '2.5', 'eval_entropy': '0.09601', 'eval_num_tokens': '6.027e+05', 'eval_mean_token_accuracy': '0.9562', 'epoch': '2'}
+
+  [Accuracy] step=100  train=0.9200  val=0.7900
+{'loss': '0.03631', 'grad_norm': '0.8457', 'learning_rate': '3.84e-05', 'entropy': '0.05907', 'num_tokens': '6.631e+05', 'mean_token_accuracy': '0.9902', 'epoch': '2.2'}
+{'loss': '0.03483', 'grad_norm': '2.187', 'learning_rate': '2.261e-05', 'entropy': '0.05894', 'num_tokens': '7.256e+05', 'mean_token_accuracy': '0.9905', 'epoch': '2.4'}
+{'loss': '0.02979', 'grad_norm': '0.4366', 'learning_rate': '1.06e-05', 'entropy': '0.05316', 'num_tokens': '7.835e+05', 'mean_token_accuracy': '0.9916', 'epoch': '2.6'}
+{'loss': '0.01162', 'grad_norm': '0.2291', 'learning_rate': '2.947e-06', 'entropy': '0.0421', 'num_tokens': '8.445e+05', 'mean_token_accuracy': '0.9974', 'epoch': '2.8'}
+{'loss': '0.02881', 'grad_norm': '2.139', 'learning_rate': '2.447e-08', 'entropy': '0.04889', 'num_tokens': '9.04e+05', 'mean_token_accuracy': '0.9923', 'epoch': '3'}
+{'eval_loss': '0.1431', 'eval_model_preparation_time': '0.008', 'eval_runtime': '5.209', 'eval_samples_per_second': '19.2', 'eval_steps_per_second': '2.496', 'eval_entropy': '0.08339', 'eval_num_tokens': '9.04e+05', 'eval_mean_token_accuracy': '0.966', 'epoch': '3'}
+
+  [Accuracy] step=150  train=0.9200  val=0.8100
+{'train_runtime': '432.1', 'train_samples_per_second': '5.554', 'train_steps_per_second': '0.347', 'train_loss': '0.106', 'epoch': '3'}
+
+  Training complete in 432.4s  |  Peak VRAM: 2162 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_A_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_A_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — qwen2.5-0.5b_A_1k
+  Final train loss : 0.1060
+  Final val loss   : 0.1431
+  Final val acc    : 0.8100
+  Final train acc  : 0.9200
+  Training time    : 432.4s
+  Peak VRAM        : 2162 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/qwen2.5-0.5b_A_1k_20260716_065355.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_A_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_A_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [5/20] qwen2.5-0.5b_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_A_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  21%|██        | 60/290 [00:00<00:00, 590.91it/s]
+Loading weights:  54%|█████▍    | 158/290 [00:00<00:00, 811.69it/s]
+Loading weights:  89%|████████▊ | 257/290 [00:00<00:00, 886.59it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 857.01it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_A_1k
+  [  20/100]  running_acc=0.850
+  [  40/100]  running_acc=0.775
+  [  60/100]  running_acc=0.800
+  [  80/100]  running_acc=0.800
+  [ 100/100]  running_acc=0.810
+
+  Accuracy   : 0.8100  (81/100)
+  Avg latency: 224.7 ms
+  Peak memory: 993 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_A_1k_val_20260716_065434.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [6/20] qwen2.5-0.5b_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — qwen2.5-0.5b_B_1k
+  Model        : Qwen/Qwen2.5-0.5B-Instruct
+  LoRA config  : B — Standard — full attention, rank 16
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_B_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_B_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: Qwen/Qwen2.5-0.5B-Instruct
+  Loading model:     Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  27%|██▋       | 77/290 [00:00<00:00, 763.13it/s]
+Loading weights:  72%|███████▏  | 209/290 [00:00<00:00, 1076.24it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1106.98it/s]
+
+  Trainable params : 2,211,840  (0.446%)
+  Total params     : 496,244,608
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  31%|███▏      | 251/800 [00:00<00:00, 2479.18 examples/s]
+Truncating train dataset:  63%|██████▎   | 503/800 [00:00<00:00, 2500.05 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 2016.28 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 2108.63 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1983.79 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '0.4461', 'eval_model_preparation_time': '0.0117', 'eval_runtime': '3.776', 'eval_samples_per_second': '26.49', 'eval_steps_per_second': '3.443', 'eval_entropy': '0.3395', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8851', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.6200  val=0.4900
+  Step 0 — train_loss=0.4137  val_loss=0.44606083631515503  train_acc=0.62  val_acc=0.49
+
+  Starting training...
+
+{'loss': '0.3093', 'grad_norm': '3.287', 'learning_rate': '9.999e-05', 'entropy': '0.2533', 'num_tokens': '5.898e+04', 'mean_token_accuracy': '0.9219', 'epoch': '0.2'}
+{'loss': '0.2288', 'grad_norm': '4.671', 'learning_rate': '9.853e-05', 'entropy': '0.2209', 'num_tokens': '1.155e+05', 'mean_token_accuracy': '0.9368', 'epoch': '0.4'}
+{'loss': '0.1998', 'grad_norm': '2.936', 'learning_rate': '9.47e-05', 'entropy': '0.1965', 'num_tokens': '1.773e+05', 'mean_token_accuracy': '0.9434', 'epoch': '0.6'}
+{'loss': '0.1245', 'grad_norm': '1.271', 'learning_rate': '8.869e-05', 'entropy': '0.1528', 'num_tokens': '2.384e+05', 'mean_token_accuracy': '0.9714', 'epoch': '0.8'}
+{'loss': '0.08333', 'grad_norm': '3.7', 'learning_rate': '8.08e-05', 'entropy': '0.1201', 'num_tokens': '3.013e+05', 'mean_token_accuracy': '0.9727', 'epoch': '1'}
+{'eval_loss': '0.1748', 'eval_model_preparation_time': '0.0117', 'eval_runtime': '3.782', 'eval_samples_per_second': '26.44', 'eval_steps_per_second': '3.437', 'eval_entropy': '0.119', 'eval_num_tokens': '3.013e+05', 'eval_mean_token_accuracy': '0.9553', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.8600  val=0.7800
+{'loss': '0.07507', 'grad_norm': '0.4014', 'learning_rate': '7.141e-05', 'entropy': '0.06944', 'num_tokens': '3.612e+05', 'mean_token_accuracy': '0.9795', 'epoch': '1.2'}
+{'loss': '0.04305', 'grad_norm': '3.669', 'learning_rate': '6.097e-05', 'entropy': '0.04305', 'num_tokens': '4.212e+05', 'mean_token_accuracy': '0.99', 'epoch': '1.4'}
+{'loss': '0.03018', 'grad_norm': '0.5324', 'learning_rate': '5e-05', 'entropy': '0.03435', 'num_tokens': '4.82e+05', 'mean_token_accuracy': '0.9927', 'epoch': '1.6'}
+{'loss': '0.03178', 'grad_norm': '5.373', 'learning_rate': '3.903e-05', 'entropy': '0.03744', 'num_tokens': '5.422e+05', 'mean_token_accuracy': '0.9889', 'epoch': '1.8'}
+{'loss': '0.03994', 'grad_norm': '0.7489', 'learning_rate': '2.859e-05', 'entropy': '0.03545', 'num_tokens': '6.027e+05', 'mean_token_accuracy': '0.9851', 'epoch': '2'}
+{'eval_loss': '0.1363', 'eval_model_preparation_time': '0.0117', 'eval_runtime': '5.373', 'eval_samples_per_second': '18.61', 'eval_steps_per_second': '2.42', 'eval_entropy': '0.06351', 'eval_num_tokens': '6.027e+05', 'eval_mean_token_accuracy': '0.9721', 'epoch': '2'}
+
+  [Accuracy] step=100  train=0.9600  val=0.8700
+{'loss': '0.01164', 'grad_norm': '0.2423', 'learning_rate': '1.92e-05', 'entropy': '0.02654', 'num_tokens': '6.631e+05', 'mean_token_accuracy': '0.9951', 'epoch': '2.2'}
+{'loss': '0.007063', 'grad_norm': '0.5479', 'learning_rate': '1.131e-05', 'entropy': '0.0271', 'num_tokens': '7.256e+05', 'mean_token_accuracy': '1', 'epoch': '2.4'}
+{'loss': '0.01709', 'grad_norm': '0.114', 'learning_rate': '5.3e-06', 'entropy': '0.02041', 'num_tokens': '7.835e+05', 'mean_token_accuracy': '0.9957', 'epoch': '2.6'}
+{'loss': '0.003341', 'grad_norm': '0.4966', 'learning_rate': '1.473e-06', 'entropy': '0.01451', 'num_tokens': '8.445e+05', 'mean_token_accuracy': '0.9987', 'epoch': '2.8'}
+{'loss': '0.01378', 'grad_norm': '1.237', 'learning_rate': '1.224e-08', 'entropy': '0.02349', 'num_tokens': '9.04e+05', 'mean_token_accuracy': '0.9974', 'epoch': '3'}
+{'eval_loss': '0.1346', 'eval_model_preparation_time': '0.0117', 'eval_runtime': '5.923', 'eval_samples_per_second': '16.88', 'eval_steps_per_second': '2.195', 'eval_entropy': '0.04963', 'eval_num_tokens': '9.04e+05', 'eval_mean_token_accuracy': '0.9774', 'epoch': '3'}
+
+  [Accuracy] step=150  train=0.9800  val=0.9000
+{'train_runtime': '608.1', 'train_samples_per_second': '3.947', 'train_steps_per_second': '0.247', 'train_loss': '0.08124', 'epoch': '3'}
+
+  Training complete in 608.4s  |  Peak VRAM: 2195 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_B_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_B_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — qwen2.5-0.5b_B_1k
+  Final train loss : 0.0812
+  Final val loss   : 0.1346
+  Final val acc    : 0.9000
+  Final train acc  : 0.9800
+  Training time    : 608.4s
+  Peak VRAM        : 2195 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/qwen2.5-0.5b_B_1k_20260716_070603.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_B_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_B_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [6/20] qwen2.5-0.5b_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_B_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  22%|██▏       | 63/290 [00:00<00:00, 617.86it/s]
+Loading weights:  56%|█████▌    | 161/290 [00:00<00:00, 822.03it/s]
+Loading weights:  88%|████████▊ | 255/290 [00:00<00:00, 859.35it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 875.77it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_B_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.900
+  [  60/100]  running_acc=0.900
+  [  80/100]  running_acc=0.900
+  [ 100/100]  running_acc=0.900
+
+  Accuracy   : 0.9000  (90/100)
+  Avg latency: 331.4 ms
+  Peak memory: 999 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_B_1k_val_20260716_070653.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [7/20] qwen2.5-0.5b_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — qwen2.5-0.5b_C_1k
+  Model        : Qwen/Qwen2.5-0.5B-Instruct
+  LoRA config  : C — Wide — full attention + MLP, rank 16
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_C_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_C_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: Qwen/Qwen2.5-0.5B-Instruct
+  Loading model:     Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  21%|██        | 60/290 [00:00<00:00, 589.89it/s]
+Loading weights:  55%|█████▌    | 160/290 [00:00<00:00, 822.53it/s]
+Loading weights:  91%|█████████ | 264/290 [00:00<00:00, 913.89it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 879.79it/s]
+
+  Trainable params : 9,102,336  (1.809%)
+  Total params     : 503,135,104
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  33%|███▎      | 261/800 [00:00<00:00, 2393.56 examples/s]
+Truncating train dataset:  65%|██████▌   | 523/800 [00:00<00:00, 2513.97 examples/s]
+Truncating train dataset:  97%|█████████▋| 776/800 [00:00<00:00, 2518.52 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 2139.85 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1989.74 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '0.4407', 'eval_model_preparation_time': '0.0174', 'eval_runtime': '16.65', 'eval_samples_per_second': '6.005', 'eval_steps_per_second': '0.781', 'eval_entropy': '0.3412', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8851', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.6200  val=0.5000
+  Step 0 — train_loss=0.4095  val_loss=0.44073837995529175  train_acc=0.62  val_acc=0.5
+
+  Starting training...
+
+{'loss': '0.2892', 'grad_norm': '7.245', 'learning_rate': '9.999e-05', 'entropy': '0.238', 'num_tokens': '5.898e+04', 'mean_token_accuracy': '0.9325', 'epoch': '0.2'}
+{'loss': '0.2063', 'grad_norm': '7.188', 'learning_rate': '9.853e-05', 'entropy': '0.1973', 'num_tokens': '1.155e+05', 'mean_token_accuracy': '0.9457', 'epoch': '0.4'}
+{'loss': '0.1276', 'grad_norm': '2.653', 'learning_rate': '9.47e-05', 'entropy': '0.1327', 'num_tokens': '1.773e+05', 'mean_token_accuracy': '0.968', 'epoch': '0.6'}
+{'loss': '0.07144', 'grad_norm': '2.591', 'learning_rate': '8.869e-05', 'entropy': '0.07567', 'num_tokens': '2.384e+05', 'mean_token_accuracy': '0.9743', 'epoch': '0.8'}
+{'loss': '0.03666', 'grad_norm': '2.85', 'learning_rate': '8.08e-05', 'entropy': '0.0428', 'num_tokens': '3.013e+05', 'mean_token_accuracy': '0.9888', 'epoch': '1'}
+{'eval_loss': '0.171', 'eval_model_preparation_time': '0.0174', 'eval_runtime': '16.68', 'eval_samples_per_second': '5.997', 'eval_steps_per_second': '0.78', 'eval_entropy': '0.04607', 'eval_num_tokens': '3.013e+05', 'eval_mean_token_accuracy': '0.9686', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.8600  val=0.8400
+{'loss': '0.03237', 'grad_norm': '2.919', 'learning_rate': '7.141e-05', 'entropy': '0.02671', 'num_tokens': '3.612e+05', 'mean_token_accuracy': '0.9911', 'epoch': '1.2'}
+{'loss': '0.01018', 'grad_norm': '6.98', 'learning_rate': '6.097e-05', 'entropy': '0.01753', 'num_tokens': '4.212e+05', 'mean_token_accuracy': '0.9975', 'epoch': '1.4'}
+{'loss': '0.005324', 'grad_norm': '0.03711', 'learning_rate': '5e-05', 'entropy': '0.009089', 'num_tokens': '4.82e+05', 'mean_token_accuracy': '0.9986', 'epoch': '1.6'}
+{'loss': '0.0189', 'grad_norm': '0.1558', 'learning_rate': '3.903e-05', 'entropy': '0.0138', 'num_tokens': '5.422e+05', 'mean_token_accuracy': '0.9962', 'epoch': '1.8'}
+{'loss': '0.02886', 'grad_norm': '2.796', 'learning_rate': '2.859e-05', 'entropy': '0.01353', 'num_tokens': '6.027e+05', 'mean_token_accuracy': '0.9936', 'epoch': '2'}
+{'eval_loss': '0.07467', 'eval_model_preparation_time': '0.0174', 'eval_runtime': '16.61', 'eval_samples_per_second': '6.019', 'eval_steps_per_second': '0.783', 'eval_entropy': '0.02237', 'eval_num_tokens': '6.027e+05', 'eval_mean_token_accuracy': '0.9838', 'epoch': '2'}
+
+  [Accuracy] step=100  train=1.0000  val=0.9100
+{'loss': '0.003044', 'grad_norm': '0.02098', 'learning_rate': '1.92e-05', 'entropy': '0.008149', 'num_tokens': '6.631e+05', 'mean_token_accuracy': '0.9987', 'epoch': '2.2'}
+{'loss': '0.001176', 'grad_norm': '0.009005', 'learning_rate': '1.131e-05', 'entropy': '0.006594', 'num_tokens': '7.256e+05', 'mean_token_accuracy': '1', 'epoch': '2.4'}
+{'loss': '0.0007132', 'grad_norm': '0.07709', 'learning_rate': '5.3e-06', 'entropy': '0.005139', 'num_tokens': '7.835e+05', 'mean_token_accuracy': '1', 'epoch': '2.6'}
+{'loss': '0.001088', 'grad_norm': '0.2016', 'learning_rate': '1.473e-06', 'entropy': '0.005709', 'num_tokens': '8.445e+05', 'mean_token_accuracy': '1', 'epoch': '2.8'}
+{'loss': '0.0005334', 'grad_norm': '0.01625', 'learning_rate': '1.224e-08', 'entropy': '0.004691', 'num_tokens': '9.04e+05', 'mean_token_accuracy': '1', 'epoch': '3'}
+{'eval_loss': '0.08063', 'eval_model_preparation_time': '0.0174', 'eval_runtime': '16.3', 'eval_samples_per_second': '6.134', 'eval_steps_per_second': '0.797', 'eval_entropy': '0.01674', 'eval_num_tokens': '9.04e+05', 'eval_mean_token_accuracy': '0.9857', 'epoch': '3'}
+
+  [Accuracy] step=150  train=1.0000  val=0.9300
+{'train_runtime': '1838', 'train_samples_per_second': '1.306', 'train_steps_per_second': '0.082', 'train_loss': '0.05556', 'epoch': '3'}
+
+  Training complete in 1838.5s  |  Peak VRAM: 2807 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_C_1k
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_C_1k
+  Adapter pushed successfully.
+
+============================================================
+  TRAINING COMPLETE — qwen2.5-0.5b_C_1k
+  Final train loss : 0.0556
+  Final val loss   : 0.0806
+  Final val acc    : 0.9300
+  Final train acc  : 1.0000
+  Training time    : 1838.5s
+  Peak VRAM        : 2807 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/qwen2.5-0.5b_C_1k_20260716_073959.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_C_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_C_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [7/20] qwen2.5-0.5b_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_C_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  22%|██▏       | 63/290 [00:00<00:00, 607.61it/s]
+Loading weights:  59%|█████▉    | 171/290 [00:00<00:00, 873.21it/s]
+Loading weights:  91%|█████████ | 264/290 [00:00<00:00, 890.66it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 861.08it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.925
+  [ 100/100]  running_acc=0.930
+
+  Accuracy   : 0.9300  (93/100)
+  Avg latency: 682.6 ms
+  Peak memory: 1134 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_C_1k_val_20260716_074125.json
+
+────────────────────────────────────────────────────────────
+  TRAIN  [8/20] qwen2.5-0.5b_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Training — qwen2.5-0.5b_D_1k
+  Model        : Qwen/Qwen2.5-0.5B-Instruct
+  LoRA config  : D — Heavy — full attention + MLP, rank 32
+  Dataset      : 1k
+  Device       : cuda
+  Adapter dest : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_D_1k
+  HF repo      : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_D_1k
+============================================================
+
+  Train : 800 examples
+  Val   : 100 examples
+
+  Loading tokenizer: Qwen/Qwen2.5-0.5B-Instruct
+  Loading model:     Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  18%|█▊        | 51/290 [00:00<00:00, 502.98it/s]
+Loading weights:  48%|████▊     | 138/290 [00:00<00:00, 711.23it/s]
+Loading weights:  84%|████████▍ | 243/290 [00:00<00:00, 842.20it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 831.61it/s]
+
+  Trainable params : 17,900,544  (3.497%)
+  Total params     : 511,933,312
+
+  Tokenizing datasets...
+
+  Effective batch  : 16
+  Steps / epoch    : 50
+  Total steps      : 150
+  Eval every       : 50 steps
+
+Truncating train dataset:   0%|          | 0/800 [00:00<?, ? examples/s]
+Truncating train dataset:  33%|███▎      | 261/800 [00:00<00:00, 2369.55 examples/s]
+Truncating train dataset:  65%|██████▍   | 519/800 [00:00<00:00, 2481.80 examples/s]
+Truncating train dataset:  97%|█████████▋| 775/800 [00:00<00:00, 2508.76 examples/s]
+Truncating train dataset: 100%|██████████| 800/800 [00:00<00:00, 2128.71 examples/s]
+
+Truncating eval dataset:   0%|          | 0/100 [00:00<?, ? examples/s]
+Truncating eval dataset: 100%|██████████| 100/100 [00:00<00:00, 1918.13 examples/s]
+
+  Computing step-0 baseline (pre-fine-tuning)...
+{'eval_loss': '0.4407', 'eval_model_preparation_time': '0.0176', 'eval_runtime': '16.4', 'eval_samples_per_second': '6.097', 'eval_steps_per_second': '0.793', 'eval_entropy': '0.3412', 'eval_num_tokens': '0', 'eval_mean_token_accuracy': '0.8851', 'epoch': 0}
+
+  [Accuracy] step=0  train=0.6200  val=0.5000
+  Step 0 — train_loss=0.4095  val_loss=0.44073837995529175  train_acc=0.62  val_acc=0.5
+
+  Starting training...
+
+{'loss': '0.2964', 'grad_norm': '7.812', 'learning_rate': '4.999e-05', 'entropy': '0.2398', 'num_tokens': '5.898e+04', 'mean_token_accuracy': '0.9286', 'epoch': '0.2'}
+{'loss': '0.2024', 'grad_norm': '10.38', 'learning_rate': '4.926e-05', 'entropy': '0.2054', 'num_tokens': '1.155e+05', 'mean_token_accuracy': '0.9442', 'epoch': '0.4'}
+{'loss': '0.132', 'grad_norm': '3.651', 'learning_rate': '4.735e-05', 'entropy': '0.137', 'num_tokens': '1.773e+05', 'mean_token_accuracy': '0.9682', 'epoch': '0.6'}
+{'loss': '0.08066', 'grad_norm': '5.378', 'learning_rate': '4.435e-05', 'entropy': '0.0845', 'num_tokens': '2.384e+05', 'mean_token_accuracy': '0.9699', 'epoch': '0.8'}
+{'loss': '0.03729', 'grad_norm': '2.707', 'learning_rate': '4.04e-05', 'entropy': '0.04333', 'num_tokens': '3.013e+05', 'mean_token_accuracy': '0.9856', 'epoch': '1'}
+{'eval_loss': '0.1582', 'eval_model_preparation_time': '0.0176', 'eval_runtime': '16.47', 'eval_samples_per_second': '6.073', 'eval_steps_per_second': '0.79', 'eval_entropy': '0.03726', 'eval_num_tokens': '3.013e+05', 'eval_mean_token_accuracy': '0.9692', 'epoch': '1'}
+
+  [Accuracy] step=50  train=0.9200  val=0.8500
+{'loss': '0.02944', 'grad_norm': '4.608', 'learning_rate': '3.57e-05', 'entropy': '0.0253', 'num_tokens': '3.612e+05', 'mean_token_accuracy': '0.9941', 'epoch': '1.2'}
+{'loss': '0.01452', 'grad_norm': '0.3738', 'learning_rate': '3.049e-05', 'entropy': '0.0184', 'num_tokens': '4.212e+05', 'mean_token_accuracy': '0.9951', 'epoch': '1.4'}
+{'loss': '0.0105', 'grad_norm': '0.09685', 'learning_rate': '2.5e-05', 'entropy': '0.008643', 'num_tokens': '4.82e+05', 'mean_token_accuracy': '0.9974', 'epoch': '1.6'}
+{'loss': '0.01976', 'grad_norm': '0.4399', 'learning_rate': '1.951e-05', 'entropy': '0.01595', 'num_tokens': '5.422e+05', 'mean_token_accuracy': '0.9961', 'epoch': '1.8'}
+{'loss': '0.02176', 'grad_norm': '0.8922', 'learning_rate': '1.43e-05', 'entropy': '0.01832', 'num_tokens': '6.027e+05', 'mean_token_accuracy': '0.9937', 'epoch': '2'}
+{'eval_loss': '0.07334', 'eval_model_preparation_time': '0.0176', 'eval_runtime': '16.39', 'eval_samples_per_second': '6.1', 'eval_steps_per_second': '0.793', 'eval_entropy': '0.01824', 'eval_num_tokens': '6.027e+05', 'eval_mean_token_accuracy': '0.9836', 'epoch': '2'}
+
+  [Accuracy] step=100  train=1.0000  val=0.9200
+{'loss': '0.007032', 'grad_norm': '0.02253', 'learning_rate': '9.599e-06', 'entropy': '0.006393', 'num_tokens': '6.631e+05', 'mean_token_accuracy': '0.9985', 'epoch': '2.2'}
+{'loss': '0.0009049', 'grad_norm': '0.009286', 'learning_rate': '5.653e-06', 'entropy': '0.005807', 'num_tokens': '7.256e+05', 'mean_token_accuracy': '1', 'epoch': '2.4'}
+{'loss': '0.002807', 'grad_norm': '0.02419', 'learning_rate': '2.65e-06', 'entropy': '0.005881', 'num_tokens': '7.835e+05', 'mean_token_accuracy': '0.9985', 'epoch': '2.6'}
+{'loss': '0.00116', 'grad_norm': '1.596', 'learning_rate': '7.367e-07', 'entropy': '0.00547', 'num_tokens': '8.445e+05', 'mean_token_accuracy': '1', 'epoch': '2.8'}
+{'loss': '0.001033', 'grad_norm': '0.03694', 'learning_rate': '6.118e-09', 'entropy': '0.006282', 'num_tokens': '9.04e+05', 'mean_token_accuracy': '1', 'epoch': '3'}
+{'eval_loss': '0.07599', 'eval_model_preparation_time': '0.0176', 'eval_runtime': '15.73', 'eval_samples_per_second': '6.358', 'eval_steps_per_second': '0.827', 'eval_entropy': '0.01453', 'eval_num_tokens': '9.04e+05', 'eval_mean_token_accuracy': '0.9879', 'epoch': '3'}
+
+  [Accuracy] step=150  train=1.0000  val=0.9300
+{'train_runtime': '1511', 'train_samples_per_second': '1.588', 'train_steps_per_second': '0.099', 'train_loss': '0.05718', 'epoch': '3'}
+
+  Training complete in 1511.5s  |  Peak VRAM: 2293 MB
+
+  Saving adapter locally → /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_D_1k
+/usr/local/lib/python3.12/dist-packages/peft/utils/other.py:1419: UserWarning: Unable to fetch remote file due to the following error The read operation timed out - silently ignoring the lookup for the file config.json in Qwen/Qwen2.5-0.5B-Instruct.
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/peft/utils/save_and_load.py:372: UserWarning: Could not find a config file in Qwen/Qwen2.5-0.5B-Instruct - will assume that the vocabulary was not modified.
+  warnings.warn(
+  Pushing adapter to HF → kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_D_1k
+  WARNING: HF push failed: Server error '504 Gateway Timeout' for url 'https://huggingface.co/api/repos/create' (Amz CF ID: sMTXPwMLoOr1NbRIKrRKD2VbXys48qpDbYWyy37dCDjT3xIzfNBQww==)
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
+           Adapter saved locally at /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_D_1k
+
+============================================================
+  TRAINING COMPLETE — qwen2.5-0.5b_D_1k
+  Final train loss : 0.0572
+  Final val loss   : 0.0760
+  Final val acc    : 0.9300
+  Final train acc  : 1.0000
+  Training time    : 1511.5s
+  Peak VRAM        : 2293 MB
+  Training report  : /content/intent-classifier/finetune_DoRA/reports_training/qwen2.5-0.5b_D_1k_20260716_080935.json
+  Local adapter    : /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_D_1k
+  HF adapter       : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_D_1k
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  VAL    [8/20] qwen2.5-0.5b_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_D_1k
+  Split    : val  (100 examples)
+  Source   : local /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  30%|███       | 87/290 [00:00<00:00, 847.42it/s]
+Loading weights:  76%|███████▌  | 220/290 [00:00<00:00, 1106.92it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1148.82it/s]
+  Loading adapter (local): /content/intent-classifier/finetune_DoRA/adapters/qwen2.5-0.5b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.925
+  [ 100/100]  running_acc=0.930
+
+  Accuracy   : 0.9300  (93/100)
+  Avg latency: 466.1 ms
+  Peak memory: 1168 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_D_1k_val_20260716_081256.json

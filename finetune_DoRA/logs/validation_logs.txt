@@ -1,0 +1,657 @@
+Running validation: /content/intent-classifier/finetune_DoRA/src/run_dora_experiments.py --models smollm2-360m qwen2.5-0.5b qwen3-0.6b llama3.2-1b smollm2-1.7b --configs A B C D --dataset-size 1k --device auto --skip-training
+
+
+============================================================
+  DoRA Experiment Runner
+  Models   : ['smollm2-360m', 'qwen2.5-0.5b', 'qwen3-0.6b', 'llama3.2-1b', 'smollm2-1.7b']
+  Configs  : ['A', 'B', 'C', 'D']
+  Dataset  : 1k
+  Device   : auto
+  Runs     : 20 training + 20 val eval
+  Training : SKIPPED
+============================================================
+
+────────────────────────────────────────────────────────────
+  VAL    [1/20] smollm2-360m_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_A_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-360m_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  48%|████▊     | 140/290 [00:00<00:00, 1396.20it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1551.32it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-360m_A_1k
+  [  20/100]  running_acc=0.650
+  [  40/100]  running_acc=0.600
+  [  60/100]  running_acc=0.600
+  [  80/100]  running_acc=0.537
+  [ 100/100]  running_acc=0.560
+
+  Accuracy   : 0.5600  (56/100)
+  Avg latency: 354.9 ms
+  Peak memory: 771 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_A_1k_val_20260716_155652.json
+
+────────────────────────────────────────────────────────────
+  VAL    [2/20] smollm2-360m_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_B_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-360m_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  56%|█████▌    | 162/290 [00:00<00:00, 1610.98it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1649.96it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-360m_B_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.725
+  [  60/100]  running_acc=0.700
+  [  80/100]  running_acc=0.650
+  [ 100/100]  running_acc=0.650
+
+  Accuracy   : 0.6500  (65/100)
+  Avg latency: 510.4 ms
+  Peak memory: 786 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_B_1k_val_20260716_155803.json
+
+────────────────────────────────────────────────────────────
+  VAL    [3/20] smollm2-360m_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_C_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-360m_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  59%|█████▉    | 172/290 [00:00<00:00, 1719.43it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1696.65it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-360m_C_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.750
+  [  60/100]  running_acc=0.750
+  [  80/100]  running_acc=0.738
+  [ 100/100]  running_acc=0.760
+
+  Accuracy   : 0.7600  (76/100)
+  Avg latency: 801.7 ms
+  Peak memory: 850 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_C_1k_val_20260716_155946.json
+
+────────────────────────────────────────────────────────────
+  VAL    [4/20] smollm2-360m_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-360m_D_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-360m_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-360M-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  54%|█████▍    | 157/290 [00:00<00:00, 1550.06it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1631.46it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-360m_D_1k
+  [  20/100]  running_acc=0.800
+  [  40/100]  running_acc=0.750
+  [  60/100]  running_acc=0.717
+  [  80/100]  running_acc=0.688
+  [ 100/100]  running_acc=0.720
+
+  Accuracy   : 0.7200  (72/100)
+  Avg latency: 783.3 ms
+  Peak memory: 883 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-360m_D_1k_val_20260716_160127.json
+
+────────────────────────────────────────────────────────────
+  VAL    [5/20] qwen2.5-0.5b_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_A_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  19%|█▊        | 54/290 [00:00<00:00, 539.83it/s]
+Loading weights:  67%|██████▋   | 195/290 [00:00<00:00, 1025.54it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1072.54it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_A_1k
+  [  20/100]  running_acc=0.850
+  [  40/100]  running_acc=0.775
+  [  60/100]  running_acc=0.800
+  [  80/100]  running_acc=0.800
+  [ 100/100]  running_acc=0.810
+
+  Accuracy   : 0.8100  (81/100)
+  Avg latency: 207.7 ms
+  Peak memory: 993 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_A_1k_val_20260716_160208.json
+
+────────────────────────────────────────────────────────────
+  VAL    [6/20] qwen2.5-0.5b_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_B_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  30%|███       | 88/290 [00:00<00:00, 843.26it/s]
+Loading weights:  80%|███████▉  | 231/290 [00:00<00:00, 1165.67it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1173.64it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_B_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.900
+  [  60/100]  running_acc=0.900
+  [  80/100]  running_acc=0.900
+  [ 100/100]  running_acc=0.900
+
+  Accuracy   : 0.9000  (90/100)
+  Avg latency: 303.9 ms
+  Peak memory: 999 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_B_1k_val_20260716_160259.json
+
+────────────────────────────────────────────────────────────
+  VAL    [7/20] qwen2.5-0.5b_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_C_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  22%|██▏       | 63/290 [00:00<00:00, 628.21it/s]
+Loading weights:  68%|██████▊   | 196/290 [00:00<00:00, 1028.05it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1077.70it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.925
+  [ 100/100]  running_acc=0.930
+
+  Accuracy   : 0.9300  (93/100)
+  Avg latency: 458.7 ms
+  Peak memory: 1134 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_C_1k_val_20260716_160407.json
+
+────────────────────────────────────────────────────────────
+  VAL    [8/20] qwen2.5-0.5b_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen2.5-0.5b_D_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen2.5-0.5B-Instruct
+
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]
+Loading weights:  30%|███       | 88/290 [00:00<00:00, 864.99it/s]
+Loading weights:  79%|███████▉  | 230/290 [00:00<00:00, 1160.13it/s]
+Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1183.93it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen2.5-0.5b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.925
+  [ 100/100]  running_acc=0.930
+
+  Accuracy   : 0.9300  (93/100)
+  Avg latency: 456.0 ms
+  Peak memory: 1168 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen2.5-0.5b_D_1k_val_20260716_160517.json
+
+────────────────────────────────────────────────────────────
+  VAL    [9/20] qwen3-0.6b_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen3-0.6b_A_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen3-0.6b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   1%|          | 2/311 [00:00<00:29, 10.61it/s]
+Loading weights:  36%|███▌      | 112/311 [00:00<00:00, 478.66it/s]
+Loading weights:  68%|██████▊   | 211/311 [00:00<00:00, 672.78it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 657.58it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen3-0.6b_A_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.950
+  [  80/100]  running_acc=0.963
+  [ 100/100]  running_acc=0.960
+
+  Accuracy   : 0.9600  (96/100)
+  Avg latency: 275.6 ms
+  Peak memory: 1294 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen3-0.6b_A_1k_val_20260716_160605.json
+
+────────────────────────────────────────────────────────────
+  VAL    [10/20] qwen3-0.6b_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen3-0.6b_B_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen3-0.6b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/311 [00:00<00:38,  8.13it/s]
+Loading weights:  44%|████▎     | 136/311 [00:00<00:00, 724.03it/s]
+Loading weights:  86%|████████▌ | 266/311 [00:00<00:00, 973.01it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 865.92it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen3-0.6b_B_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.933
+  [  80/100]  running_acc=0.950
+  [ 100/100]  running_acc=0.950
+
+  Accuracy   : 0.9500  (95/100)
+  Avg latency: 376.3 ms
+  Peak memory: 1308 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen3-0.6b_B_1k_val_20260716_160702.json
+
+────────────────────────────────────────────────────────────
+  VAL    [11/20] qwen3-0.6b_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen3-0.6b_C_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen3-0.6b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   1%|          | 2/311 [00:00<00:19, 16.21it/s]
+Loading weights:  43%|████▎     | 133/311 [00:00<00:00, 709.53it/s]
+Loading weights:  83%|████████▎ | 259/311 [00:00<00:00, 946.10it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 858.42it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen3-0.6b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.925
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.938
+  [ 100/100]  running_acc=0.940
+
+  Accuracy   : 0.9400  (94/100)
+  Avg latency: 561.0 ms
+  Peak memory: 1362 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen3-0.6b_C_1k_val_20260716_160821.json
+
+────────────────────────────────────────────────────────────
+  VAL    [12/20] qwen3-0.6b_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — qwen3-0.6b_D_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/qwen3-0.6b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: Qwen/Qwen3-0.6B
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/311 [00:00<01:00,  5.09it/s]
+Loading weights:  38%|███▊      | 119/311 [00:00<00:00, 499.01it/s]
+Loading weights:  73%|███████▎  | 226/311 [00:00<00:00, 709.55it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 665.22it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/qwen3-0.6b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.938
+  [ 100/100]  running_acc=0.950
+
+  Accuracy   : 0.9500  (95/100)
+  Avg latency: 556.2 ms
+  Peak memory: 1400 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/qwen3-0.6b_D_1k_val_20260716_160941.json
+
+────────────────────────────────────────────────────────────
+  VAL    [13/20] llama3.2-1b_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — llama3.2-1b_A_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/llama3.2-1b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:22,  6.58it/s]
+Loading weights:  18%|█▊        | 26/146 [00:00<00:00, 123.84it/s]
+Loading weights:  39%|███▉      | 57/146 [00:00<00:00, 195.72it/s]
+Loading weights:  58%|█████▊    | 85/146 [00:00<00:00, 225.27it/s]
+Loading weights:  77%|███████▋  | 113/146 [00:00<00:00, 242.56it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 221.37it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/llama3.2-1b_A_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.933
+  [  80/100]  running_acc=0.925
+  [ 100/100]  running_acc=0.940
+
+  Accuracy   : 0.9400  (94/100)
+  Avg latency: 146.8 ms
+  Peak memory: 2480 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/llama3.2-1b_A_1k_val_20260716_161015.json
+
+────────────────────────────────────────────────────────────
+  VAL    [14/20] llama3.2-1b_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — llama3.2-1b_B_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/llama3.2-1b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:19,  7.26it/s]
+Loading weights:  21%|██        | 31/146 [00:00<00:00, 154.01it/s]
+Loading weights:  40%|████      | 59/146 [00:00<00:00, 204.76it/s]
+Loading weights:  64%|██████▎   | 93/146 [00:00<00:00, 248.42it/s]
+Loading weights:  83%|████████▎ | 121/146 [00:00<00:00, 257.84it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 232.59it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/llama3.2-1b_B_1k
+  [  20/100]  running_acc=0.950
+  [  40/100]  running_acc=0.950
+  [  60/100]  running_acc=0.950
+  [  80/100]  running_acc=0.950
+  [ 100/100]  running_acc=0.950
+
+  Accuracy   : 0.9500  (95/100)
+  Avg latency: 215.6 ms
+  Peak memory: 2498 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/llama3.2-1b_B_1k_val_20260716_161059.json
+
+────────────────────────────────────────────────────────────
+  VAL    [15/20] llama3.2-1b_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — llama3.2-1b_C_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/llama3.2-1b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:18,  7.95it/s]
+Loading weights:  21%|██        | 31/146 [00:00<00:00, 161.70it/s]
+Loading weights:  40%|████      | 59/146 [00:00<00:00, 211.25it/s]
+Loading weights:  64%|██████▎   | 93/146 [00:00<00:00, 254.23it/s]
+Loading weights:  83%|████████▎ | 121/146 [00:00<00:00, 261.74it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 238.54it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/llama3.2-1b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.967
+  [  80/100]  running_acc=0.975
+  [ 100/100]  running_acc=0.980
+
+  Accuracy   : 0.9800  (98/100)
+  Avg latency: 807.0 ms
+  Peak memory: 2816 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/llama3.2-1b_C_1k_val_20260716_161243.json
+
+────────────────────────────────────────────────────────────
+  VAL    [16/20] llama3.2-1b_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — llama3.2-1b_D_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/llama3.2-1b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: meta-llama/Llama-3.2-1B-Instruct
+
+Loading weights:   0%|          | 0/146 [00:00<?, ?it/s]
+Loading weights:   1%|          | 1/146 [00:00<00:19,  7.61it/s]
+Loading weights:  21%|██        | 30/146 [00:00<00:00, 149.82it/s]
+Loading weights:  40%|███▉      | 58/146 [00:00<00:00, 202.44it/s]
+Loading weights:  58%|█████▊    | 85/146 [00:00<00:00, 226.55it/s]
+Loading weights:  82%|████████▏ | 120/146 [00:00<00:00, 263.09it/s]
+Loading weights: 100%|██████████| 146/146 [00:00<00:00, 231.02it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/llama3.2-1b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.967
+  [  80/100]  running_acc=0.963
+  [ 100/100]  running_acc=0.970
+
+  Accuracy   : 0.9700  (97/100)
+  Avg latency: 817.0 ms
+  Peak memory: 2859 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/llama3.2-1b_D_1k_val_20260716_161431.json
+
+────────────────────────────────────────────────────────────
+  VAL    [17/20] smollm2-1.7b_A_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-1.7b_A_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-1.7b_A_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:   6%|▋         | 14/218 [00:00<00:01, 129.18it/s]
+Loading weights:  19%|█▉        | 41/218 [00:00<00:00, 204.71it/s]
+Loading weights:  31%|███       | 68/218 [00:00<00:00, 231.24it/s]
+Loading weights:  44%|████▎     | 95/218 [00:00<00:00, 244.33it/s]
+Loading weights:  56%|█████▌    | 122/218 [00:00<00:00, 251.29it/s]
+Loading weights:  68%|██████▊   | 149/218 [00:00<00:00, 256.30it/s]
+Loading weights:  81%|████████  | 176/218 [00:00<00:00, 259.16it/s]
+Loading weights:  93%|█████████▎| 203/218 [00:00<00:00, 260.37it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 251.20it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-1.7b_A_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.933
+  [  80/100]  running_acc=0.950
+  [ 100/100]  running_acc=0.940
+
+  Accuracy   : 0.9400  (94/100)
+  Avg latency: 292.2 ms
+  Peak memory: 3558 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-1.7b_A_1k_val_20260716_161520.json
+
+────────────────────────────────────────────────────────────
+  VAL    [18/20] smollm2-1.7b_B_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-1.7b_B_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-1.7b_B_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:  10%|▉         | 21/218 [00:00<00:01, 195.05it/s]
+Loading weights:  22%|██▏       | 48/218 [00:00<00:00, 230.90it/s]
+Loading weights:  34%|███▍      | 75/218 [00:00<00:00, 242.69it/s]
+Loading weights:  47%|████▋     | 102/218 [00:00<00:00, 250.03it/s]
+Loading weights:  59%|█████▉    | 129/218 [00:00<00:00, 253.89it/s]
+Loading weights:  72%|███████▏  | 156/218 [00:00<00:00, 255.80it/s]
+Loading weights:  84%|████████▍ | 183/218 [00:00<00:00, 256.61it/s]
+Loading weights:  96%|█████████▋| 210/218 [00:00<00:00, 257.08it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 252.34it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-1.7b_B_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.938
+  [ 100/100]  running_acc=0.930
+
+  Accuracy   : 0.9300  (93/100)
+  Avg latency: 425.2 ms
+  Peak memory: 3584 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-1.7b_B_1k_val_20260716_161624.json
+
+────────────────────────────────────────────────────────────
+  VAL    [19/20] smollm2-1.7b_C_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-1.7b_C_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-1.7b_C_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:  10%|▉         | 21/218 [00:00<00:00, 198.00it/s]
+Loading weights:  22%|██▏       | 48/218 [00:00<00:00, 233.63it/s]
+Loading weights:  34%|███▍      | 75/218 [00:00<00:00, 246.09it/s]
+Loading weights:  47%|████▋     | 102/218 [00:00<00:00, 251.00it/s]
+Loading weights:  59%|█████▉    | 129/218 [00:00<00:00, 255.04it/s]
+Loading weights:  72%|███████▏  | 156/218 [00:00<00:00, 257.96it/s]
+Loading weights:  84%|████████▍ | 183/218 [00:00<00:00, 260.07it/s]
+Loading weights:  96%|█████████▋| 210/218 [00:00<00:00, 261.54it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 255.46it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-1.7b_C_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.938
+  [ 100/100]  running_acc=0.940
+
+  Accuracy   : 0.9400  (94/100)
+  Avg latency: 1748.9 ms
+  Peak memory: 3915 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-1.7b_C_1k_val_20260716_161944.json
+
+────────────────────────────────────────────────────────────
+  VAL    [20/20] smollm2-1.7b_D_1k
+────────────────────────────────────────────────────────────
+
+============================================================
+  DoRA Evaluation — smollm2-1.7b_D_1k
+  Split    : val  (100 examples)
+  Source   : kon172verma/intent-classifier/DoRA/smollm2-1.7b_D_1k
+  Device   : cuda
+============================================================
+
+  Loading base model: HuggingFaceTB/SmolLM2-1.7B-Instruct
+
+Loading weights:   0%|          | 0/218 [00:00<?, ?it/s]
+Loading weights:   6%|▋         | 14/218 [00:00<00:01, 128.99it/s]
+Loading weights:  19%|█▉        | 41/218 [00:00<00:00, 202.38it/s]
+Loading weights:  31%|███       | 68/218 [00:00<00:00, 227.79it/s]
+Loading weights:  44%|████▎     | 95/218 [00:00<00:00, 240.99it/s]
+Loading weights:  56%|█████▌    | 122/218 [00:00<00:00, 247.95it/s]
+Loading weights:  68%|██████▊   | 149/218 [00:00<00:00, 254.12it/s]
+Loading weights:  81%|████████  | 176/218 [00:00<00:00, 257.70it/s]
+Loading weights:  93%|█████████▎| 203/218 [00:00<00:00, 260.49it/s]
+Loading weights: 100%|██████████| 218/218 [00:00<00:00, 249.88it/s]
+  Loading adapter from HF: kon172verma/intent-classifier/DoRA/smollm2-1.7b_D_1k
+  [  20/100]  running_acc=1.000
+  [  40/100]  running_acc=0.975
+  [  60/100]  running_acc=0.917
+  [  80/100]  running_acc=0.938
+  [ 100/100]  running_acc=0.940
+
+  Accuracy   : 0.9400  (94/100)
+  Avg latency: 1765.8 ms
+  Peak memory: 3985 MB
+  Report     : /content/intent-classifier/finetune_DoRA/reports_validation/smollm2-1.7b_D_1k_val_20260716_162305.json
+
+============================================================
+  EXPERIMENT RUNNER COMPLETE
+  Completed at: 2026-07-16 16:23:07
+
+  smollm2-360m_A_1k                    train=OK  val=OK
+  smollm2-360m_B_1k                    train=OK  val=OK
+  smollm2-360m_C_1k                    train=OK  val=OK
+  smollm2-360m_D_1k                    train=OK  val=OK
+  qwen2.5-0.5b_A_1k                    train=OK  val=OK
+  qwen2.5-0.5b_B_1k                    train=OK  val=OK
+  qwen2.5-0.5b_C_1k                    train=OK  val=OK
+  qwen2.5-0.5b_D_1k                    train=OK  val=OK
+  qwen3-0.6b_A_1k                      train=OK  val=OK
+  qwen3-0.6b_B_1k                      train=OK  val=OK
+  qwen3-0.6b_C_1k                      train=OK  val=OK
+  qwen3-0.6b_D_1k                      train=OK  val=OK
+  llama3.2-1b_A_1k                     train=OK  val=OK
+  llama3.2-1b_B_1k                     train=OK  val=OK
+  llama3.2-1b_C_1k                     train=OK  val=OK
+  llama3.2-1b_D_1k                     train=OK  val=OK
+  smollm2-1.7b_A_1k                    train=OK  val=OK
+  smollm2-1.7b_B_1k                    train=OK  val=OK
+  smollm2-1.7b_C_1k                    train=OK  val=OK
+  smollm2-1.7b_D_1k                    train=OK  val=OK
+============================================================
+
+
+Validation complete in 1642s
