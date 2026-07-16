@@ -172,14 +172,30 @@ def parse_args() -> argparse.Namespace:
 # ── Main ───────────────────────────────────────────────────────────────
 
 
-def main() -> None:
+def validate_main(
+    technique: str = "LoRA",
+    base_dir: Path | None = None,
+) -> None:
+    if base_dir is None:
+        base_dir = Path(__file__).parent.parent  # finetune_LoRA/
+
     args = parse_args()
+
+    # Override directory defaults when called from a different technique's script
+    if args.val_report_dir == DEFAULT_VAL_DIR:
+        args.val_report_dir = base_dir / "reports_validation"
+    if args.test_report_dir == DEFAULT_TEST_DIR:
+        args.test_report_dir = base_dir / "reports_test"
+
     device = resolve_device(args.device)
     model_id = FINETUNE_MODEL_REGISTRY[args.model]
     run_tag = f"{args.model}_{args.lora_config}_{args.dataset_size}"
+    hf_sub = hf_adapter_subfolder(
+        technique, args.model, args.lora_config, args.dataset_size
+    )
 
-    data_dir = (args.data_dir or DEFAULT_DATA_DIR) / args.dataset_size
-    adapter_dir = (args.adapter_dir or DEFAULT_ADAPTER_DIR) / run_tag
+    data_dir = (args.data_dir or base_dir / "data") / args.dataset_size
+    adapter_dir = (args.adapter_dir or base_dir / "adapters") / run_tag
 
     is_test = args.split in ("test", "test_anchor")
     out_dir = args.test_report_dir if is_test else args.val_report_dir
@@ -202,10 +218,10 @@ def main() -> None:
         examples = examples[: args.limit]
 
     print(f"\n{'=' * 60}")
-    print(f"  LoRA Evaluation — {run_tag}")
+    print(f"  {technique} Evaluation — {run_tag}")
     print(f"  Split    : {args.split}  ({len(examples)} examples)")
     print(
-        f"  Source   : {'local ' + str(adapter_dir) if args.local else HF_HUB_REPO + '/LoRA/' + run_tag}"
+        f"  Source   : {'local ' + str(adapter_dir) if args.local else HF_HUB_REPO + '/' + hf_sub}"
     )
     print(f"  Device   : {device}")
     print(f"{'=' * 60}\n")
@@ -226,9 +242,6 @@ def main() -> None:
     )
 
     # Load adapter: HF Hub (default) or local
-    hf_sub = hf_adapter_subfolder(
-        _TECHNIQUE, args.model, args.lora_config, args.dataset_size
-    )
     if args.local:
         print(f"  Loading adapter (local): {adapter_dir}")
         model = PeftModel.from_pretrained(base_model, str(adapter_dir))
@@ -293,7 +306,7 @@ def main() -> None:
         "model_id": model_id,
         "lora_config": args.lora_config,
         "dataset_size": args.dataset_size,
-        "technique": _TECHNIQUE,
+        "technique": technique,
         "split": args.split,
         "timestamp": ts,
         "n_examples": len(results),
@@ -330,6 +343,10 @@ def main() -> None:
     gc.collect()
     if device.type == "cuda":
         torch.cuda.empty_cache()
+
+
+def main() -> None:
+    validate_main("LoRA", Path(__file__).parent.parent)
 
 
 if __name__ == "__main__":

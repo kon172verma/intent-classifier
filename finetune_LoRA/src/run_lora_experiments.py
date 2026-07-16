@@ -48,7 +48,7 @@ if _env_file.exists():
 
     load_dotenv(_env_file)
 
-from finetune_lib import (
+from finetune_lib import (  # noqa: E402
     FINETUNE_MODEL_REGISTRY,
     ALL_FINETUNE_MODELS,
     LORA_CONFIGS,
@@ -150,21 +150,30 @@ def parse_args() -> argparse.Namespace:
 # ── Main ───────────────────────────────────────────────────────────────
 
 
-def main() -> None:
+def run_experiments_main(
+    technique: str = "LoRA",
+    train_script: Path | None = None,
+    eval_script: Path | None = None,
+) -> None:
+    if train_script is None:
+        train_script = TRAIN_SCRIPT
+    if eval_script is None:
+        eval_script = EVAL_SCRIPT
+
     args = parse_args()
 
     total_runs = len(args.models) * len(args.configs)
     print(f"\n{'=' * 60}")
-    print(f"  LoRA Experiment Runner")
+    print(f"  {technique} Experiment Runner")
     print(f"  Models   : {args.models}")
     print(f"  Configs  : {args.configs}")
     print(f"  Dataset  : {args.dataset_size}")
     print(f"  Device   : {args.device}")
     print(f"  Runs     : {total_runs} training + {total_runs} val eval")
     if args.smoke_test:
-        print(f"  Mode     : SMOKE TEST (10 steps per run)")
+        print("  Mode     : SMOKE TEST (10 steps per run)")
     if args.skip_training:
-        print(f"  Training : SKIPPED")
+        print("  Training : SKIPPED")
     print(f"{'=' * 60}")
 
     results: list[dict] = []
@@ -182,7 +191,7 @@ def main() -> None:
                 train_cmd = [
                     PYTHON,
                     "-u",
-                    str(TRAIN_SCRIPT),
+                    str(train_script),
                     "--model",
                     model,
                     "--lora-config",
@@ -204,7 +213,7 @@ def main() -> None:
                 val_cmd = [
                     PYTHON,
                     "-u",
-                    str(EVAL_SCRIPT),
+                    str(eval_script),
                     "--model",
                     model,
                     "--lora-config",
@@ -232,7 +241,7 @@ def main() -> None:
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"  EXPERIMENT RUNNER COMPLETE")
+    print("  EXPERIMENT RUNNER COMPLETE")
     print(f"  Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     for r in results:
@@ -240,6 +249,10 @@ def main() -> None:
         v = "OK" if r["val_ok"] else "SKIP" if args.smoke_test else "FAIL"
         print(f"  {r['run_tag']:35s}  train={t}  val={v}")
     print(f"{'=' * 60}\n")
+
+
+def main() -> None:
+    run_experiments_main("LoRA", TRAIN_SCRIPT, EVAL_SCRIPT)
 
 
 if __name__ == "__main__":

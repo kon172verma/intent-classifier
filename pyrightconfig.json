@@ -3,7 +3,8 @@
   "venvPath": ".",
   "venv": ".venv",
   "extraPaths": [
-    "dataset_sample"
+    "dataset_sample",
+    "finetune_LoRA/src"
   ],
   "reportMissingModuleSource": "none"
 }

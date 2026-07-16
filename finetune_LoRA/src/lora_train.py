@@ -153,29 +153,42 @@ def parse_args() -> argparse.Namespace:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
-def main() -> None:
+def train_main(
+    technique: str = "LoRA",
+    use_dora: bool = False,
+    base_dir: Path | None = None,
+) -> None:
+    if base_dir is None:
+        base_dir = Path(__file__).parent.parent  # finetune_LoRA/
+
     args = parse_args()
+
+    # Override directory defaults when called from a different technique's script
+    # (parse_args bakes in LORA_DIR-based defaults at import time)
+    if args.report_dir == DEFAULT_REPORT_DIR:
+        args.report_dir = base_dir / "reports_training"
+
     device = resolve_device(args.device)
     lora_cfg = LORA_CONFIGS[args.lora_config]
     model_id = FINETUNE_MODEL_REGISTRY[args.model]
     run_tag = f"{args.model}_{args.lora_config}_{args.dataset_size}"
 
-    data_dir = (args.data_dir or DEFAULT_DATA_DIR) / args.dataset_size
-    adapter_dir = (args.adapter_dir or DEFAULT_ADAPTER_DIR) / run_tag
+    data_dir = (args.data_dir or base_dir / "data") / args.dataset_size
+    adapter_dir = (args.adapter_dir or base_dir / "adapters") / run_tag
     # TrainingArguments requires an output_dir even when save_strategy="no".
-    tmp_dir = LORA_DIR / "tmp" / run_tag
+    tmp_dir = base_dir / "tmp" / run_tag
     args.report_dir.mkdir(parents=True, exist_ok=True)
     adapter_dir.mkdir(parents=True, exist_ok=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'=' * 60}")
-    print(f"  LoRA Training — {run_tag}")
+    print(f"  {technique} Training — {run_tag}")
     print(f"  Model        : {model_id}")
     print(f"  LoRA config  : {args.lora_config} — {lora_cfg['description']}")
     print(f"  Dataset      : {args.dataset_size}")
     print(f"  Device       : {device}")
     print(f"  Adapter dest : {adapter_dir}")
-    print(f"  HF repo      : {HF_HUB_REPO}/LoRA/{run_tag}")
+    print(f"  HF repo      : {HF_HUB_REPO}/{technique}/{run_tag}")
     if args.smoke_test:
         print("  Mode         : SMOKE TEST (10 steps only)")
     print(f"{'=' * 60}")
@@ -213,6 +226,7 @@ def main() -> None:
         lora_alpha=lora_cfg["lora_alpha"],
         lora_dropout=lora_cfg["lora_dropout"],
         bias="none",
+        use_dora=use_dora,
         inference_mode=False,
     )
     model = cast(Any, get_peft_model(model, lora_peft_config))
@@ -354,7 +368,7 @@ def main() -> None:
 
         # ── Push to HuggingFace Hub ───────────────────────────────────────────
         hf_sub = hf_adapter_subfolder(
-            _TECHNIQUE, args.model, args.lora_config, args.dataset_size
+            technique, args.model, args.lora_config, args.dataset_size
         )
         if not args.no_push:
             hf_token = os.environ.get("HF_TOKEN")
@@ -368,7 +382,7 @@ def main() -> None:
                     folder_path=str(adapter_dir),
                     repo_id=HF_HUB_REPO,
                     path_in_repo=hf_sub,
-                    commit_message=f"Add LoRA adapter: {run_tag}",
+                    commit_message=f"Add {technique} adapter: {run_tag}",
                 )
                 print("  Adapter pushed successfully.")
             except Exception as e:
@@ -395,7 +409,7 @@ def main() -> None:
         "lora_config": args.lora_config,
         "lora_config_desc": lora_cfg["description"],
         "dataset_size": args.dataset_size,
-        "technique": _TECHNIQUE,
+        "technique": technique,
         "device": str(device),
         "dtype": str(dtype).replace("torch.", ""),
         "timestamp": ts,
@@ -453,6 +467,10 @@ def main() -> None:
     gc.collect()
     if device.type == "cuda":
         torch.cuda.empty_cache()
+
+
+def main() -> None:
+    train_main("LoRA", False, Path(__file__).parent.parent)
 
 
 if __name__ == "__main__":
