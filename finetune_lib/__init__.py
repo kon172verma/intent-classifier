@@ -10,6 +10,7 @@ Quick imports:
     from finetune_lib import build_chat_messages, tokenize_with_labels
     from finetune_lib import TrainValAccuracyCallback, compute_initial_train_loss
     from finetune_lib import resolve_device, peak_memory_mb, extract_prediction
+    from finetune_lib import hf_adapter_subfolder, hf_merged_subfolder
 """
 
 from .config import (  # noqa: F401
@@ -27,6 +28,7 @@ from .config import (  # noqa: F401
     MAX_SEQ_LENGTH,
     HF_HUB_REPO,
     hf_adapter_subfolder,
+    hf_merged_subfolder,
 )
 from .lib import (  # noqa: F401
     build_chat_messages,

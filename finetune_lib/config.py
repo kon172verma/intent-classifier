@@ -12,7 +12,8 @@ Exports
   LORA_CONFIGS             – shared A/B/C/D adapter configs
   MAX_SEQ_LENGTH           – tokenisation context cap
   HF_HUB_REPO              – target HuggingFace repo for all adapter uploads
-  hf_adapter_subfolder()   – helper to build the per-run subfolder path
+  hf_adapter_subfolder()   – helper to build the per-run adapter subfolder path
+  hf_merged_subfolder()    – helper to build the per-run merged-model subfolder path
 """
 
 from __future__ import annotations
@@ -71,6 +72,23 @@ def hf_adapter_subfolder(
              → "LoRA/qwen2.5-0.5b_B_1k"
     """
     return f"{technique}/{model_key}_{lora_config}_{dataset_size}"
+
+
+def hf_merged_subfolder(
+    technique: str,
+    model_key: str,
+    lora_config: str,
+    dataset_size: str,
+) -> str:
+    """Return the HF subfolder path for a merged (adapter-unloaded) model.
+
+    Merged models live alongside adapters but in a separate top-level folder
+    so they are easy to distinguish and can be loaded without PEFT.
+
+    Example: hf_merged_subfolder("LoRA", "qwen2.5-0.5b", "B", "1k")
+             → "LoRA_merged/qwen2.5-0.5b_B_1k"
+    """
+    return f"{technique}_merged/{model_key}_{lora_config}_{dataset_size}"
 
 
 # ── Tokenisation ───────────────────────────────────────────────────────────────
