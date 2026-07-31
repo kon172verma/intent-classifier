@@ -65,7 +65,7 @@ from datasets import Dataset  # type: ignore  # noqa: E402
 from huggingface_hub import HfApi  # type: ignore  # noqa: E402
 
 from finetune_lib import (  # noqa: E402
-    FINETUNE_MODEL_REGISTRY,
+    ADALORA_MODEL_REGISTRY,
     ADALORA_CONFIGS,
     HF_HUB_REPO,
     hf_adapter_subfolder,
@@ -131,8 +131,8 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--model",
-        choices=list(FINETUNE_MODEL_REGISTRY.keys()),
-        default="qwen2.5-0.5b",
+        choices=list(ADALORA_MODEL_REGISTRY.keys()),
+        default="qwen3-0.6b",
     )
     p.add_argument(
         "--adalora-config",
@@ -179,7 +179,7 @@ def main() -> None:
     args = parse_args()
     device = resolve_device(args.device)
     ada_cfg = ADALORA_CONFIGS[args.adalora_config]
-    model_id = FINETUNE_MODEL_REGISTRY[args.model]
+    model_id = ADALORA_MODEL_REGISTRY[args.model]
     run_tag = f"{args.model}_{args.adalora_config}_{args.dataset_size}"
 
     data_dir = (args.data_dir or DEFAULT_DATA_DIR) / args.dataset_size

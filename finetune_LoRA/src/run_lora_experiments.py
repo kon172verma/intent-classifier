@@ -100,7 +100,12 @@ def run_subprocess(cmd: list[str], label: str) -> bool:
 # ── Argument parsing ─────────────────────────────────────────────────────────
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(
+    model_registry: dict[str, str] | None = None,
+    default_models: list[str] | None = None,
+) -> argparse.Namespace:
+    model_registry = model_registry or FINETUNE_MODEL_REGISTRY
+    default_models = default_models or DEFAULT_MODELS
     p = argparse.ArgumentParser(
         description="Run all LoRA fine-tuning experiments.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -109,8 +114,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--models",
         nargs="+",
-        default=DEFAULT_MODELS,
-        choices=list(FINETUNE_MODEL_REGISTRY.keys()),
+        default=default_models,
+        choices=list(model_registry.keys()),
     )
     p.add_argument(
         "--configs",
@@ -154,13 +159,15 @@ def run_experiments_main(
     technique: str = "LoRA",
     train_script: Path | None = None,
     eval_script: Path | None = None,
+    model_registry: dict[str, str] | None = None,
+    default_models: list[str] | None = None,
 ) -> None:
     if train_script is None:
         train_script = TRAIN_SCRIPT
     if eval_script is None:
         eval_script = EVAL_SCRIPT
 
-    args = parse_args()
+    args = parse_args(model_registry=model_registry, default_models=default_models)
 
     total_runs = len(args.models) * len(args.configs)
     print(f"\n{'=' * 60}")

@@ -42,8 +42,8 @@ if _env_file.exists():
     load_dotenv(_env_file)
 
 from finetune_lib import (
-    FINETUNE_MODEL_REGISTRY,
-    ALL_FINETUNE_MODELS,
+    ADALORA_MODEL_REGISTRY,
+    ALL_ADALORA_MODELS,
     ADALORA_CONFIGS,
     ALL_ADALORA_CONFIGS,
 )
@@ -53,7 +53,7 @@ TRAIN_SCRIPT = Path(__file__).parent / "adalora_train.py"
 EVAL_SCRIPT = Path(__file__).parent / "adalora_validate.py"
 PYTHON = sys.executable
 
-DEFAULT_MODELS = ALL_FINETUNE_MODELS
+DEFAULT_MODELS = ALL_ADALORA_MODELS
 DEFAULT_CONFIGS = ALL_ADALORA_CONFIGS
 
 
@@ -103,7 +103,7 @@ def parse_args() -> argparse.Namespace:
         "--models",
         nargs="+",
         default=DEFAULT_MODELS,
-        choices=list(FINETUNE_MODEL_REGISTRY.keys()),
+        choices=list(ADALORA_MODEL_REGISTRY.keys()),
     )
     p.add_argument(
         "--configs",

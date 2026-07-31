@@ -39,6 +39,24 @@ FINETUNE_MODEL_REGISTRY: dict[str, str] = {k: _EVAL_REGISTRY[k] for k in _FINETU
 
 ALL_FINETUNE_MODELS: list[str] = _FINETUNE_KEYS
 
+# ── Restricted model subset (QLoRA, AdaLoRA) ──────────────────────────────────
+# QLoRA and AdaLoRA are limited to 2 models: the small Qwen3 base+chat model
+# and the gated Llama-3.2 instruct model. QLoRA needs a CUDA + bitsandbytes
+# host to exercise real NF4 quantization; AdaLoRA's rank-reallocation loop is
+# expensive, so 2 representative models are enough to compare against LoRA.
+_RESTRICTED_KEYS: list[str] = [
+    "qwen3-0.6b",  # small,  600M base+chat,  Qwen/Qwen3-0.6B
+    "llama3.2-1b",  # medium, 1.2B instruct,   meta-llama/Llama-3.2-1B-Instruct (gated)
+]
+
+QLORA_MODEL_REGISTRY: dict[str, str] = {k: _EVAL_REGISTRY[k] for k in _RESTRICTED_KEYS}
+ALL_QLORA_MODELS: list[str] = _RESTRICTED_KEYS
+
+ADALORA_MODEL_REGISTRY: dict[str, str] = {
+    k: _EVAL_REGISTRY[k] for k in _RESTRICTED_KEYS
+}
+ALL_ADALORA_MODELS: list[str] = _RESTRICTED_KEYS
+
 # ── Chat-template quirks ───────────────────────────────────────────────────────
 # Qwen3 unified base+chat defaults to thinking mode — always disable for
 # deterministic, single-token routing output.
@@ -95,6 +113,19 @@ def hf_merged_subfolder(
 # Worst-case prompt (30 tools × ~30 tok + system + request) ≈ 975 tokens.
 MAX_SEQ_LENGTH: int = 1024
 
+# ── Early stopping (patience) ─────────────────────────────────────────────────
+# Applies to every technique that shares finetune_LoRA/src/lora_train.py's
+# train_main() — LoRA, DoRA, LoRA+, DoRA+, and QLoRA. Patience is counted in
+# *evaluation calls* (eval_strategy="steps"), not epochs: with num_train_epochs=4
+# and ~2 evals/epoch that's ~8 evals per run, so a patience of 2 stops training
+# once a full epoch's worth of evals shows no val_loss improvement.
+#
+# AdaLoRA intentionally does NOT use early stopping: its rank-reallocation
+# schedule (tinit/deltaT/tfinal) makes eval_loss noisy mid-training, and it
+# needs to run its full epoch budget to reach target_r and consolidate.
+EARLY_STOPPING_PATIENCE: int = 2
+EARLY_STOPPING_THRESHOLD: float = 0.001
+
 # ── LoRA / QLoRA / AdaLoRA adapter configs ────────────────────────────────────
 # Shared across all finetune techniques for direct cross-technique comparisons.
 # target_modules tested on: Qwen2.5, Qwen3, SmolLM2 (Llama-2 arch),
@@ -117,7 +148,7 @@ LORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 2e-4,
-        "num_train_epochs": 3,
+        "num_train_epochs": 4,
     },
     "B": {
         "description": "Standard — full attention, rank 16",
@@ -128,7 +159,7 @@ LORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 1e-4,
-        "num_train_epochs": 3,
+        "num_train_epochs": 4,
     },
     "C": {
         "description": "Wide — full attention + MLP, rank 16",
@@ -147,7 +178,7 @@ LORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 1e-4,
-        "num_train_epochs": 3,
+        "num_train_epochs": 4,
     },
     "D": {
         "description": "Heavy — full attention + MLP, rank 32",
@@ -166,7 +197,7 @@ LORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 4,
         "gradient_accumulation_steps": 4,
         "learning_rate": 5e-5,
-        "num_train_epochs": 3,
+        "num_train_epochs": 4,
     },
 }
 
@@ -227,7 +258,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 2e-4,
-        "num_train_epochs": 6,
+        "num_train_epochs": 10,
     },
     "B": {
         "description": "Standard adaptive — full attention, init 24 → target 8",
@@ -244,7 +275,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 2e-4,
-        "num_train_epochs": 6,
+        "num_train_epochs": 10,
     },
     "C": {
         "description": "Wide adaptive — full attention + MLP, init 32 → target 8",
@@ -269,7 +300,7 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 2e-4,
-        "num_train_epochs": 6,
+        "num_train_epochs": 10,
     },
     "D": {
         "description": "Heavy adaptive — full attention + MLP, init 32 → target 16",
@@ -294,22 +325,16 @@ ADALORA_CONFIGS: dict[str, dict] = {
         "per_device_train_batch_size": 8,
         "gradient_accumulation_steps": 2,
         "learning_rate": 1e-4,
-        "num_train_epochs": 6,
+        "num_train_epochs": 10,
     },
 }
 
 ALL_ADALORA_CONFIGS: list[str] = list(ADALORA_CONFIGS.keys())
 
 # ── LoRA+ model subset ────────────────────────────────────────────────────────
-# LoRA+ is evaluated on two models only (qwen3-0.6b and llama3.2-1b), which
-# already reach 98-100% test accuracy with LoRA — a good base to measure any
-# marginal gain from the asymmetric A/B learning rates.
-_LORAPLUS_KEYS: list[str] = [
-    "qwen3-0.6b",  # small,  600M base+chat,  Qwen/Qwen3-0.6B
-    "llama3.2-1b",  # medium, 1.2B instruct,   meta-llama/Llama-3.2-1B-Instruct (gated)
-]
-
-ALL_LORAPLUS_MODELS: list[str] = _LORAPLUS_KEYS
+# LoRA+ (and DoRA+) run on all 5 fine-tune models — same lineup as LoRA/DoRA —
+# so the asymmetric-learning-rate gain can be compared model-for-model.
+ALL_LORAPLUS_MODELS: list[str] = ALL_FINETUNE_MODELS
 
 # ── LoRA+ adapter configs ─────────────────────────────────────────────────────
 # LoRA+ (Hayou et al., 2024) keeps the same LoraConfig as LoRA but uses an

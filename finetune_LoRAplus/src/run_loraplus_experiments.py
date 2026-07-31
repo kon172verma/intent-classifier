@@ -4,13 +4,12 @@ finetune_LoRAplus/src/run_loraplus_experiments.py
 ==================================================
 Batch runner for all LoRA+ fine-tuning experiments.
 
-Experiment matrix: 2 models × 4 configs × 2 modes (train + val) = 16 runs.
-Models: qwen3-0.6b, llama3.2-1b.
+Experiment matrix: 5 models × 4 configs × 2 modes (train + val) = 40 runs.
 
 All orchestration logic lives in finetune_LoRA/src/run_lora_experiments.py
 (run_experiments_main); this script is a thin wrapper that passes the LoRA+
-train/eval scripts, the "LoRA+" technique label, and restricts the default
-model list to the LoRA+ subset.
+train/eval scripts and the "LoRA+" technique label. No model restriction is
+applied — LoRA+ runs on the full 5-model matrix.
 
 Usage (identical flags to run_lora_experiments.py):
     python run_loraplus_experiments.py

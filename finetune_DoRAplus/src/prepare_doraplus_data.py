@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-finetune_QLoRA/src/prepare_qlora_data.py
-==========================================
-Prepare train / val / test JSONL splits for QLoRA fine-tuning.
+finetune_DoRAplus/src/prepare_doraplus_data.py
+================================================
+Prepare train / val / test JSONL splits for DoRA+ fine-tuning.
 
 The split logic is identical to LoRA — this script is a thin wrapper around
 finetune_LoRA/src/prepare_lora_data.py that redirects the default output
-directory to finetune_QLoRA/data/.
+directory to finetune_DoRAplus/data/.
 
 Usage:
-    python prepare_qlora_data.py --dataset-size 1k
-    python prepare_qlora_data.py --dataset-size 10k
+    python prepare_doraplus_data.py --dataset-size 1k
+    python prepare_doraplus_data.py --dataset-size 10k
 """
 
 import sys
@@ -24,7 +24,7 @@ for _p in (_REPO_ROOT, _LORA_SRC):
 
 import prepare_lora_data as _prep  # type: ignore  # noqa: E402
 
-# Redirect default output to finetune_QLoRA/data/ instead of finetune_LoRA/data/
+# Redirect default output to finetune_DoRAplus/data/ instead of finetune_LoRA/data/
 _prep.DEFAULT_OUT_DIR = Path(__file__).parent.parent / "data"
 
 if __name__ == "__main__":

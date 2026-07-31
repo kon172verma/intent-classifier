@@ -7,11 +7,20 @@ LoRA fine-tuning for MCP tool-selection (intent classification).
 Key design choices
 ------------------
 * Shared configuration, prompt building, and callbacks live in finetune_lib/
-  so QLoRA and AdaLoRA experiments use identical hyperparameters and utilities.
-* Gradient checkpointing is always enabled (saves ~30-40% VRAM with minimal
-  throughput cost; `use_reentrant=False` avoids the deprecation warning).
-* No intermediate checkpoints are saved.  After training completes the final
-  adapter is:
+  so DoRA, LoRA+, DoRA+, and QLoRA all share this exact training loop
+  (technique differences are toggled via use_dora / loraplus_lr_ratio /
+  quantize_4bit) and use identical hyperparameters and utilities.
+* Gradient checkpointing is enabled for full-precision runs (saves ~30-40%
+  VRAM with minimal throughput cost; `use_reentrant=False` avoids the
+  deprecation warning). Disabled automatically when quantize_4bit=True
+  (QLoRA) since BNB 4-bit + gradient checkpointing is known to NaN.
+* Early stopping: eval/logging both run every `eval_steps` (aligned so
+  train_loss and val_loss are always compared at the same checkpoint), and
+  training stops once val_loss (eval_loss) fails to improve by at least
+  EARLY_STOPPING_THRESHOLD for EARLY_STOPPING_PATIENCE consecutive evals
+  (see finetune_lib/config.py). Checkpoints are written to a scratch tmp_dir
+  every eval_steps (save_total_limit=2) purely so load_best_model_at_end can
+  restore the best weights; the adapter actually shipped is:
     1. Saved locally  → finetune_LoRA/adapters/{model}_{config}_{size}/
     2. Pushed to HF   → {HF_HUB_REPO}/LoRA/{model}_{config}_{size}/
   Loading for inference / merge_and_unload:
@@ -63,10 +72,18 @@ import torch  # noqa: E402
 from transformers import (  # noqa: E402
     AutoModelForCausalLM,
     AutoTokenizer,
+    BitsAndBytesConfig,
     DataCollatorForSeq2Seq,
+    EarlyStoppingCallback,
     TrainingArguments,
 )
-from peft import LoraConfig, PeftModel, TaskType, get_peft_model  # type: ignore  # noqa: E402
+from peft import (  # type: ignore  # noqa: E402
+    LoraConfig,
+    PeftModel,
+    TaskType,
+    get_peft_model,
+    prepare_model_for_kbit_training,
+)
 from peft.optimizers import create_loraplus_optimizer  # type: ignore  # noqa: E402
 from trl import SFTTrainer  # type: ignore  # noqa: E402
 from transformers import get_cosine_schedule_with_warmup  # type: ignore  # noqa: E402
@@ -77,6 +94,8 @@ from finetune_lib import (  # noqa: E402
     FINETUNE_MODEL_REGISTRY,
     LORA_CONFIGS,
     HF_HUB_REPO,
+    EARLY_STOPPING_PATIENCE,
+    EARLY_STOPPING_THRESHOLD,
     hf_adapter_subfolder,
     tokenize_with_labels,
     load_jsonl,
@@ -105,14 +124,20 @@ def count_trainable(model: Any) -> tuple[int, int]:
 # ── Argument parsing ──────────────────────────────────────────────────────────
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(model_registry: dict[str, str] | None = None) -> argparse.Namespace:
+    model_registry = model_registry or FINETUNE_MODEL_REGISTRY
+    default_model = (
+        "qwen2.5-0.5b"
+        if "qwen2.5-0.5b" in model_registry
+        else next(iter(model_registry))
+    )
     p = argparse.ArgumentParser(
         description="LoRA fine-tuning for intent classification."
     )
     p.add_argument(
         "--model",
-        choices=list(FINETUNE_MODEL_REGISTRY.keys()),
-        default="qwen2.5-0.5b",
+        choices=list(model_registry.keys()),
+        default=default_model,
     )
     p.add_argument(
         "--lora-config",
@@ -160,11 +185,14 @@ def train_main(
     use_dora: bool = False,
     base_dir: Path | None = None,
     loraplus_lr_ratio: int | None = None,
+    quantize_4bit: bool = False,
+    model_registry: dict[str, str] | None = None,
 ) -> None:
     if base_dir is None:
         base_dir = Path(__file__).parent.parent  # finetune_LoRA/
 
-    args = parse_args()
+    model_registry = model_registry or FINETUNE_MODEL_REGISTRY
+    args = parse_args(model_registry=model_registry)
 
     # Override directory defaults when called from a different technique's script
     # (parse_args bakes in LORA_DIR-based defaults at import time)
@@ -172,8 +200,14 @@ def train_main(
         args.report_dir = base_dir / "reports_training"
 
     device = resolve_device(args.device)
+    if quantize_4bit and device.type != "cuda":
+        raise RuntimeError(
+            f"{technique} requires CUDA for 4-bit NF4 quantization "
+            "(bitsandbytes has no CPU/MPS 4-bit kernels) — "
+            f"got device={device}. Re-run on a CUDA host."
+        )
     lora_cfg = LORA_CONFIGS[args.lora_config]
-    model_id = FINETUNE_MODEL_REGISTRY[args.model]
+    model_id = model_registry[args.model]
     run_tag = f"{args.model}_{args.lora_config}_{args.dataset_size}"
 
     data_dir = (args.data_dir or base_dir / "data") / args.dataset_size
@@ -212,13 +246,31 @@ def train_main(
     # ── Load base model ───────────────────────────────────────────────────────
     print(f"  Loading model:     {model_id}")
     dtype = torch.bfloat16 if device.type in ("cuda", "mps") else torch.float32
+    bnb_config: BitsAndBytesConfig | None = None
+    if quantize_4bit:
+        # NF4 (Normal Float 4-bit) is the quantization dtype from the QLoRA
+        # paper — never fp4. Double-quant further compresses the quantization
+        # constants; compute stays bfloat16 for numerically stable forward passes.
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
+        print("  Quantization:      NF4 (4-bit, double-quant, bf16 compute)")
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
+        quantization_config=bnb_config,
         torch_dtype=dtype,
         device_map={"": device},
         trust_remote_code=False,
     )
-    model.enable_input_require_grads()  # gradient flow through frozen base layers
+    if quantize_4bit:
+        # kbit-training prep enables gradient flow through frozen 4-bit layers.
+        # Replaces enable_input_require_grads() used for full-precision LoRA.
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=False)
+    else:
+        model.enable_input_require_grads()  # gradient flow through frozen base layers
     model.config.use_cache = False  # incompatible with gradient checkpointing
 
     # ── Apply LoRA ────────────────────────────────────────────────────────────
@@ -280,20 +332,34 @@ def train_main(
         warmup_ratio=0.05,
         bf16=use_bf16,
         fp16=use_fp16,
-        logging_steps=10,
+        # Train loss (logging) and val loss (eval) are measured at the same
+        # cadence so patience is evaluated on aligned, comparable checkpoints.
+        logging_steps=eval_steps,
         eval_strategy="steps",
         eval_steps=eval_steps,
-        # No intermediate checkpoints — only the final adapter is saved.
-        save_strategy="no",
+        # Checkpoint every eval — required so load_best_model_at_end can
+        # restore the best (lowest val_loss) weights once early stopping
+        # or training fires. save_total_limit keeps disk usage bounded to
+        # the current + best checkpoint; these live in tmp_dir and are not
+        # the adapter we ship (that's saved separately below).
+        save_strategy="steps",
+        save_steps=eval_steps,
+        save_total_limit=2,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         report_to="none",
         dataloader_pin_memory=(device.type == "cuda"),
         # Gradient checkpointing: ~30-40% VRAM saving; use_reentrant=False
-        # avoids the PyTorch deprecation warning.
-        gradient_checkpointing=True,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
-        # For LoRA+ we inject a custom optimizer below; plain LoRA/DoRA keep the
-        # default adamw_torch.
-        optim="adamw_torch",
+        # avoids the PyTorch deprecation warning. Disabled under 4-bit NF4
+        # (QLoRA) — BNB 4-bit + gradient checkpointing is known to NaN.
+        gradient_checkpointing=not quantize_4bit,
+        gradient_checkpointing_kwargs=(
+            {"use_reentrant": False} if not quantize_4bit else None
+        ),
+        # For LoRA+/DoRA+ we inject a custom optimizer below; QLoRA uses a
+        # paged optimizer to save VRAM; plain LoRA/DoRA keep adamw_torch.
+        optim="paged_adamw_8bit" if quantize_4bit else "adamw_torch",
     )
 
     # ── LoRA+ asymmetric optimiser ────────────────────────────────────────────
@@ -349,7 +415,13 @@ def train_main(
         eval_dataset=val_dataset,
         data_collator=collator,
         processing_class=tokenizer,
-        callbacks=[accuracy_cb],
+        callbacks=[
+            accuracy_cb,
+            EarlyStoppingCallback(
+                early_stopping_patience=EARLY_STOPPING_PATIENCE,
+                early_stopping_threshold=EARLY_STOPPING_THRESHOLD,
+            ),
+        ],
         optimizers=loraplus_optimizers or (None, None),
     )
 
@@ -395,6 +467,9 @@ def train_main(
     trainer.model.config.use_cache = True  # restore for subsequent inference
 
     # ── Save final adapter locally ────────────────────────────────────────────
+    # load_best_model_at_end=True already restored the best (lowest val_loss)
+    # checkpoint into trainer.model before we get here, so this saves the
+    # best weights, not necessarily the last-step weights.
     hf_sub = ""
     if not args.smoke_test:
         print(f"\n  Saving adapter locally → {adapter_dir}")
@@ -453,6 +528,7 @@ def train_main(
         "trainable_pct": round(trainable / total * 100, 4),
         "steps_per_epoch": steps_per_epoch,
         "total_steps_trained": trainer.state.global_step,
+        "early_stopped": trainer.state.global_step < total_steps,
         "peak_memory_mb": round(mem_mb, 1),
         "total_training_time_s": round(t_elapsed, 1),
         "final_train_loss": round(final_train_loss, 6),

@@ -50,7 +50,7 @@ warnings.filterwarnings("ignore", message=".*max_new_tokens.*")
 warnings.filterwarnings("ignore", message=".*torch_dtype.*deprecated.*")
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from peft import PeftModel
 
 from finetune_lib import (
@@ -112,12 +112,18 @@ def run_inference(
 # ── Argument parsing ─────────────────────────────────────────────────────────
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(model_registry: dict[str, str] | None = None) -> argparse.Namespace:
+    model_registry = model_registry or FINETUNE_MODEL_REGISTRY
+    default_model = (
+        "qwen2.5-0.5b"
+        if "qwen2.5-0.5b" in model_registry
+        else next(iter(model_registry))
+    )
     p = argparse.ArgumentParser(description="Evaluate a fine-tuned LoRA adapter.")
     p.add_argument(
         "--model",
-        choices=list(FINETUNE_MODEL_REGISTRY.keys()),
-        default="qwen2.5-0.5b",
+        choices=list(model_registry.keys()),
+        default=default_model,
     )
     p.add_argument(
         "--lora-config",
@@ -175,11 +181,14 @@ def parse_args() -> argparse.Namespace:
 def validate_main(
     technique: str = "LoRA",
     base_dir: Path | None = None,
+    quantize_4bit: bool = False,
+    model_registry: dict[str, str] | None = None,
 ) -> None:
     if base_dir is None:
         base_dir = Path(__file__).parent.parent  # finetune_LoRA/
 
-    args = parse_args()
+    model_registry = model_registry or FINETUNE_MODEL_REGISTRY
+    args = parse_args(model_registry=model_registry)
 
     # Override directory defaults when called from a different technique's script
     if args.val_report_dir == DEFAULT_VAL_DIR:
@@ -188,7 +197,13 @@ def validate_main(
         args.test_report_dir = base_dir / "reports_test"
 
     device = resolve_device(args.device)
-    model_id = FINETUNE_MODEL_REGISTRY[args.model]
+    if quantize_4bit and device.type != "cuda":
+        raise RuntimeError(
+            f"{technique} requires CUDA for 4-bit NF4 quantization "
+            "(bitsandbytes has no CPU/MPS 4-bit kernels) — "
+            f"got device={device}. Re-run on a CUDA host."
+        )
+    model_id = model_registry[args.model]
     run_tag = f"{args.model}_{args.lora_config}_{args.dataset_size}"
     hf_sub = hf_adapter_subfolder(
         technique, args.model, args.lora_config, args.dataset_size
@@ -234,8 +249,19 @@ def validate_main(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    bnb_config: BitsAndBytesConfig | None = None
+    if quantize_4bit:
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
+        print("  Quantization:       NF4 (4-bit, double-quant, bf16 compute)")
+
     base_model = AutoModelForCausalLM.from_pretrained(
         model_id,
+        quantization_config=bnb_config,
         torch_dtype=dtype,
         device_map={"": device},
         trust_remote_code=False,

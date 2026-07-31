@@ -33,7 +33,7 @@ _REPO_ROOT = Path(__file__).parent.parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from finetune_lib import ALL_FINETUNE_MODELS, ALL_ADALORA_CONFIGS
+from finetune_lib import ALL_ADALORA_MODELS, ALL_ADALORA_CONFIGS
 from finetune_lib.plot_lib import plot_training_curves, plot_combined_accuracy_memory
 
 ADALORA_DIR = Path(__file__).parent.parent
@@ -63,10 +63,10 @@ def main() -> None:
     print(f"  Test reports       : {args.test_reports_dir}")
     print()
 
-    print("  [1/4] Training curves (5 models × 4 configs)...")
+    print("  [1/4] Training curves (2 models × 4 configs)...")
     plot_training_curves(
         train_reports_dir=args.train_reports_dir,
-        all_models=ALL_FINETUNE_MODELS,
+        all_models=ALL_ADALORA_MODELS,
         all_configs=ALL_ADALORA_CONFIGS,
         out_dir=args.out_dir,
         technique=_TECHNIQUE,
@@ -75,7 +75,7 @@ def main() -> None:
     print("  [2/4] Combined chart — train split...")
     plot_combined_accuracy_memory(
         reports_dir=args.train_reports_dir,
-        all_models=ALL_FINETUNE_MODELS,
+        all_models=ALL_ADALORA_MODELS,
         all_configs=ALL_ADALORA_CONFIGS,
         out_dir=args.out_dir,
         split="train",
@@ -85,7 +85,7 @@ def main() -> None:
     print("  [3/4] Combined chart — val split...")
     plot_combined_accuracy_memory(
         reports_dir=args.val_reports_dir,
-        all_models=ALL_FINETUNE_MODELS,
+        all_models=ALL_ADALORA_MODELS,
         all_configs=ALL_ADALORA_CONFIGS,
         out_dir=args.out_dir,
         split="val",
@@ -95,7 +95,7 @@ def main() -> None:
     print("  [4/4] Combined chart — test split (skips if no reports)...")
     plot_combined_accuracy_memory(
         reports_dir=args.test_reports_dir,
-        all_models=ALL_FINETUNE_MODELS,
+        all_models=ALL_ADALORA_MODELS,
         all_configs=ALL_ADALORA_CONFIGS,
         out_dir=args.out_dir,
         split="test",
