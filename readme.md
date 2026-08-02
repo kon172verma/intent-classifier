@@ -1,5 +1,20 @@
 # Project: Edge Tool Selection using SLM + QLoRA/AdaLoRA
 
+## Related Repositories
+
+- **This repo** (GitHub, [kon172verma/intent-classifier](https://github.com/kon172verma/intent-classifier)): fine-tuning code, configs, reports, charts, and the release pipeline (merge/unload/tag).
+- **Experiments** (Hugging Face, [kon172verma/intent-classifier-experiments](https://huggingface.co/kon172verma/intent-classifier-experiments)): every adapter produced during experimentation, organized by version folder. Written to by this repo's training scripts.
+- **Release** (Hugging Face, [kon172verma/intent-classifier](https://huggingface.co/kon172verma/intent-classifier)): only the 2 best merged/unloaded models per release, plus GGUF and ONNX exports. Written to only by this repo's `release.py`.
+- **Inference** (GitHub, [kon172verma/intent-classifier-inference](https://github.com/kon172verma/intent-classifier-inference)): downloads models from the release repo and benchmarks them on edge hardware (Raspberry Pi, Jetson, Qualcomm, Mac).
+
+## Versioning and Release Workflow
+
+- `VERSION` (this repo) holds the version folder that new experiments are pushed under, e.g. `v1.0`. Bump it to start a new round of experiments — the next training push will automatically create a new folder in the experiments repo.
+- `EXPERIMENTS.jsonl` (this repo) is an append-only log of every adapter pushed to the experiments repo, written automatically by the training scripts (`finetune_lib/registry.py`).
+- `RELEASES.md` (this repo) documents each finalized release: which experiments were chosen, their merged/GGUF/ONNX locations, and the GitHub tag.
+- Adapter naming convention in the experiments repo: `{version}/{model}_{technique}_{config}_{dataset_size}_{timestamp}`, e.g. `v1.0/qwen3-0.6b_LoRA_C_1k_20260715-044041`.
+- To publish a release: pick the 2 best experiments, run `release.py` (merges + pushes to the release repo, optionally publishes GGUF/ONNX, then creates a local git tag — review and `git push origin <version>` yourself).
+
 ## Project Goal
 
 Build a complete research and engineering project that trains a Small Language Model (SLM) to perform dynamic MCP tool selection on an edge device.

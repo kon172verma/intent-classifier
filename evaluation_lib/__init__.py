@@ -8,42 +8,42 @@ Re-exports commonly used symbols so callers can do:
 """
 
 from .config import (
-    MODEL_REGISTRY,
     ALL_MODELS,
+    MODEL_REGISTRY,
     QWEN3_KEYS,
-    SYSTEM_PROMPT_ZERO_SHOT,
-    SYSTEM_PROMPT_FEW_SHOT,
     SYSTEM_PROMPT,
+    SYSTEM_PROMPT_FEW_SHOT,
+    SYSTEM_PROMPT_ZERO_SHOT,
 )
 from .eval_core import (
-    ExampleResult,
     BenchmarkReport,
+    ExampleResult,
     build_chat_messages,
     build_raw_prompt,
+    compute_prefix_kv_cache,
+    evaluate,
     extract_prediction,
     run_example,
-    evaluate,
-    compute_prefix_kv_cache,
-)
-from .model_utils import (
-    resolve_device,
-    dtype_for_device,
-    load_model_and_tokenizer,
-    reset_peak_memory,
-    peak_memory_mb,
-    free_model_memory,
 )
 from .model_info import (
-    MODEL_PARAMS_B,
-    MODEL_CTX_LENGTH,
     MODEL_ARCHITECTURE,
-    MODEL_LICENSE,
-    MODEL_IS_BASE,
+    MODEL_CTX_LENGTH,
     MODEL_DISPLAY_LABELS,
-    model_size_category,
+    MODEL_IS_BASE,
+    MODEL_LICENSE,
+    MODEL_PARAMS_B,
     SIZE_CATEGORY_COLORS,
     display_label,
+    model_size_category,
     print_comparison_table,
+)
+from .model_utils import (
+    dtype_for_device,
+    free_model_memory,
+    load_model_and_tokenizer,
+    peak_memory_mb,
+    reset_peak_memory,
+    resolve_device,
 )
 
 __all__ = [

@@ -18,7 +18,7 @@ be called after every optimizer step.  This is handled by `AdaLoRAUpdateCallback
 Adapter locations
 -----------------
   Local   → finetune_AdaLoRA/adapters/{model}_{config}_{size}/
-  HF Hub  → kon172verma/intent-classifier/AdaLoRA/{model}_{config}_{size}/
+  HF Hub  → kon172verma/intent-classifier-experiments/{version}/{model}_AdaLoRA_{config}_{size}_{timestamp}/
 
 Usage
 -----
@@ -52,30 +52,33 @@ os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 warnings.filterwarnings("ignore", message=".*max_new_tokens.*")
 warnings.filterwarnings("ignore", message=".*torch_dtype.*deprecated.*")
 
-import torch  # noqa: E402
-from transformers import (  # noqa: E402
+import torch
+from datasets import Dataset
+from huggingface_hub import HfApi
+from peft import AdaLoraConfig, TaskType, get_peft_model
+from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     DataCollatorForSeq2Seq,
     TrainingArguments,
 )
-from peft import AdaLoraConfig, TaskType, get_peft_model  # type: ignore  # noqa: E402
-from trl import SFTTrainer  # type: ignore  # noqa: E402
-from datasets import Dataset  # type: ignore  # noqa: E402
-from huggingface_hub import HfApi  # type: ignore  # noqa: E402
+from trl.trainer.sft_trainer import SFTTrainer
 
-from finetune_lib import (  # noqa: E402
-    ADALORA_MODEL_REGISTRY,
+from finetune_lib import (
     ADALORA_CONFIGS,
-    HF_HUB_REPO,
-    hf_adapter_subfolder,
-    tokenize_with_labels,
-    load_jsonl,
+    ADALORA_MODEL_REGISTRY,
+    CURRENT_VERSION,
+    HF_EXPERIMENTS_REPO,
     TrainValAccuracyCallback,
     compute_initial_train_loss,
-    resolve_device,
+    generate_experiment_timestamp,
+    hf_adapter_subfolder,
+    load_jsonl,
     peak_memory_mb,
+    resolve_device,
+    tokenize_with_labels,
 )
+from finetune_lib.registry import log_experiment
 
 ADALORA_DIR = Path(__file__).parent.parent
 DEFAULT_DATA_DIR = ADALORA_DIR / "data"
@@ -98,9 +101,11 @@ class AdaLoRASFTTrainer(SFTTrainer):
 
     def create_optimizer(self) -> torch.optim.Optimizer:  # type: ignore[override]
         optimizer = super().create_optimizer()
+        if optimizer is None:
+            raise RuntimeError("Trainer returned no optimizer")
         peft_model = self.model
         state = self.state
-        original_step = self.optimizer.step
+        original_step = optimizer.step
 
         def _step_and_update(closure=None):  # type: ignore[misc]
             result = original_step(closure)
@@ -109,7 +114,8 @@ class AdaLoRASFTTrainer(SFTTrainer):
                 _m.update_and_allocate(state.global_step)
             return result
 
-        self.optimizer.step = _step_and_update  # type: ignore[method-assign]
+        optimizer.step = _step_and_update  # type: ignore[method-assign]
+        self.optimizer = optimizer
         return optimizer
 
 
@@ -126,9 +132,7 @@ def count_trainable(model: Any) -> tuple[int, int]:
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        description="AdaLoRA fine-tuning for intent classification."
-    )
+    p = argparse.ArgumentParser(description="AdaLoRA fine-tuning for intent classification.")
     p.add_argument(
         "--model",
         choices=list(ADALORA_MODEL_REGISTRY.keys()),
@@ -196,7 +200,10 @@ def main() -> None:
     print(f"  Dataset      : {args.dataset_size}")
     print(f"  Device       : {device}")
     print(f"  Adapter dest : {adapter_dir}")
-    print(f"  HF repo      : {HF_HUB_REPO}/AdaLoRA/{run_tag}")
+    print(
+        f"  HF repo      : {HF_EXPERIMENTS_REPO}/{CURRENT_VERSION}/"
+        f"{args.model}_AdaLoRA_{args.adalora_config}_{args.dataset_size}_<timestamp>"
+    )
     if args.smoke_test:
         print("  Mode         : SMOKE TEST (10 steps only)")
     print(f"{'=' * 60}")
@@ -227,20 +234,14 @@ def main() -> None:
     model.config.use_cache = False
 
     # ── Step counts (needed for AdaLoraConfig.total_step) ────────────────────
-    eff_batch = (
-        ada_cfg["per_device_train_batch_size"] * ada_cfg["gradient_accumulation_steps"]
-    )
+    eff_batch = ada_cfg["per_device_train_batch_size"] * ada_cfg["gradient_accumulation_steps"]
     steps_per_epoch = max(1, len(train_examples) // eff_batch)
-    total_steps = (
-        10 if args.smoke_test else steps_per_epoch * ada_cfg["num_train_epochs"]
-    )
+    total_steps = 10 if args.smoke_test else steps_per_epoch * ada_cfg["num_train_epochs"]
     eval_steps = 10 if args.smoke_test else max(50, steps_per_epoch // 2)
 
     print(f"\n  Effective batch  : {eff_batch}")
     print(f"  Steps / epoch    : {steps_per_epoch}")
-    print(
-        f"  Total steps      : {total_steps if not args.smoke_test else '10 (smoke)'}"
-    )
+    print(f"  Total steps      : {total_steps if not args.smoke_test else '10 (smoke)'}")
     print(f"  Eval every       : {eval_steps} steps")
 
     # ── Apply AdaLoRA ─────────────────────────────────────────────────────────
@@ -263,20 +264,14 @@ def main() -> None:
     model = cast(Any, get_peft_model(model, adalora_peft_config))
 
     trainable, total = count_trainable(model)
-    print(
-        f"\n  Trainable params (init) : {trainable:,}  ({trainable / total * 100:.3f}%)"
-    )
+    print(f"\n  Trainable params (init) : {trainable:,}  ({trainable / total * 100:.3f}%)")
     print(f"  Total params            : {total:,}")
     print(f"  init_r → target_r       : {ada_cfg['init_r']} → {ada_cfg['target_r']}")
 
     # ── Tokenise datasets ─────────────────────────────────────────────────────
     print("\n  Tokenizing datasets...")
-    train_records = [
-        tokenize_with_labels(ex, tokenizer, args.model) for ex in train_examples
-    ]
-    val_records = [
-        tokenize_with_labels(ex, tokenizer, args.model) for ex in val_examples
-    ]
+    train_records = [tokenize_with_labels(ex, tokenizer, args.model) for ex in train_examples]
+    val_records = [tokenize_with_labels(ex, tokenizer, args.model) for ex in val_examples]
     train_dataset = Dataset.from_list(train_records)
     val_dataset = Dataset.from_list(val_records)
 
@@ -337,9 +332,7 @@ def main() -> None:
 
     # ── Step-0 baseline (pre-fine-tuning) ─────────────────────────────────────
     print("\n  Computing step-0 baseline (pre-fine-tuning)...")
-    initial_train_loss = compute_initial_train_loss(
-        model, train_dataset, collator, device
-    )
+    initial_train_loss = compute_initial_train_loss(model, train_dataset, collator, device)
     trainer.evaluate()
     for entry in trainer.state.log_history:
         if "eval_loss" in entry and entry.get("step", -1) == 0:
@@ -357,9 +350,7 @@ def main() -> None:
     )
 
     # ── Train ─────────────────────────────────────────────────────────────────
-    print(
-        f"\n  Starting training{' (smoke-test: 10 steps)' if args.smoke_test else ''}...\n"
-    )
+    print(f"\n  Starting training{' (smoke-test: 10 steps)' if args.smoke_test else ''}...\n")
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
 
@@ -370,33 +361,57 @@ def main() -> None:
 
     print(f"\n  Training complete in {t_elapsed:.1f}s  |  Peak VRAM: {mem_mb:.0f} MB")
 
-    trainer.model.config.use_cache = True
+    trained_model = cast(Any, trainer.model)
+    if trained_model is None:
+        raise RuntimeError("Trainer model is unavailable after training")
+    trained_model.config.use_cache = True
 
     # ── Save final adapter locally ────────────────────────────────────────────
     hf_sub = ""
+    experiment_timestamp = ""
     if not args.smoke_test:
         print(f"\n  Saving adapter locally → {adapter_dir}")
-        trainer.model.save_pretrained(str(adapter_dir))
+        trained_model.save_pretrained(str(adapter_dir))
         tokenizer.save_pretrained(str(adapter_dir))
 
+        experiment_timestamp = generate_experiment_timestamp()
         hf_sub = hf_adapter_subfolder(
-            _TECHNIQUE, args.model, args.adalora_config, args.dataset_size
+            _TECHNIQUE,
+            args.model,
+            args.adalora_config,
+            args.dataset_size,
+            timestamp=experiment_timestamp,
         )
         if not args.no_push:
             hf_token = os.environ.get("HF_TOKEN")
             try:
-                print(f"  Pushing adapter to HF → {HF_HUB_REPO}/{hf_sub}")
+                print(f"  Pushing adapter to HF → {HF_EXPERIMENTS_REPO}/{hf_sub}")
                 api = HfApi(token=hf_token)
                 api.create_repo(
-                    repo_id=HF_HUB_REPO, repo_type="model", exist_ok=True, private=True
+                    repo_id=HF_EXPERIMENTS_REPO,
+                    repo_type="model",
+                    exist_ok=True,
+                    private=True,
                 )
                 api.upload_folder(
                     folder_path=str(adapter_dir),
-                    repo_id=HF_HUB_REPO,
+                    repo_id=HF_EXPERIMENTS_REPO,
                     path_in_repo=hf_sub,
-                    commit_message=f"Add AdaLoRA adapter: {run_tag}",
+                    commit_message=f"Add AdaLoRA adapter: {run_tag} [{experiment_timestamp}]",
                 )
                 print("  Adapter pushed successfully.")
+                log_experiment(
+                    version=CURRENT_VERSION,
+                    technique=_TECHNIQUE,
+                    model_key=args.model,
+                    base_model_id=model_id,
+                    lora_config=args.adalora_config,
+                    dataset_size=args.dataset_size,
+                    timestamp=experiment_timestamp,
+                    run_tag=run_tag,
+                    hf_repo=HF_EXPERIMENTS_REPO,
+                    hf_subfolder=hf_sub,
+                )
             except Exception as e:
                 print(f"  WARNING: HF push failed: {e}")
                 print(f"           Adapter saved locally at {adapter_dir}")
@@ -408,11 +423,7 @@ def main() -> None:
     final_train_loss = train_result.training_loss
     eval_entries = [e for e in trainer.state.log_history if "eval_loss" in e]
     trained_evals = [e for e in eval_entries if e.get("step", 0) > 0]
-    last_eval = (
-        trained_evals[-1]
-        if trained_evals
-        else (eval_entries[-1] if eval_entries else {})
-    )
+    last_eval = trained_evals[-1] if trained_evals else (eval_entries[-1] if eval_entries else {})
 
     report = {
         "model_key": args.model,
@@ -443,8 +454,9 @@ def main() -> None:
         "final_train_accuracy": round(last_eval.get("train_accuracy", 0), 4)
         if "train_accuracy" in last_eval
         else None,
-        "hf_repo": HF_HUB_REPO if not args.smoke_test else None,
+        "hf_repo": HF_EXPERIMENTS_REPO if not args.smoke_test else None,
         "hf_subfolder": hf_sub if not args.smoke_test else None,
+        "version": CURRENT_VERSION if not args.smoke_test else None,
         "log_history": trainer.state.log_history,
     }
 
@@ -452,9 +464,7 @@ def main() -> None:
     report["lora_config"] = args.adalora_config
 
     report_path = args.report_dir / f"{run_tag}_{ts}.json"
-    report_path.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
@@ -472,7 +482,7 @@ def main() -> None:
     if not args.smoke_test:
         print(f"  Local adapter    : {adapter_dir}")
         if not args.no_push:
-            print(f"  HF adapter       : {HF_HUB_REPO}/{hf_sub}")
+            print(f"  HF adapter       : {HF_EXPERIMENTS_REPO}/{hf_sub}")
     print(f"{'=' * 60}\n")
 
     del model

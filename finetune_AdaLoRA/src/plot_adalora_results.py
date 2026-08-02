@@ -33,8 +33,8 @@ _REPO_ROOT = Path(__file__).parent.parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from finetune_lib import ALL_ADALORA_MODELS, ALL_ADALORA_CONFIGS
-from finetune_lib.plot_lib import plot_training_curves, plot_combined_accuracy_memory
+from finetune_lib import ALL_ADALORA_CONFIGS, ALL_ADALORA_MODELS
+from finetune_lib.plot_lib import plot_combined_accuracy_memory, plot_training_curves
 
 ADALORA_DIR = Path(__file__).parent.parent
 DEFAULT_TRAIN_DIR = ADALORA_DIR / "reports_training"

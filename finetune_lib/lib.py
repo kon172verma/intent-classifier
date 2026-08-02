@@ -32,14 +32,13 @@ from transformers import (
 )
 
 # ── Re-export shared utilities from evaluation_lib ────────────────────────────
-from evaluation_lib.eval_core import extract_prediction  # noqa: F401
+from evaluation_lib.eval_core import extract_prediction
 from evaluation_lib.model_utils import (  # noqa: F401
     peak_memory_mb,
     resolve_device,
 )
 
-from .config import QWEN3_FINETUNE_KEYS, SYSTEM_PROMPT, MAX_SEQ_LENGTH
-
+from .config import MAX_SEQ_LENGTH, QWEN3_FINETUNE_KEYS, SYSTEM_PROMPT
 
 # ── Helpers imported from evaluation_lib ──────────────────────────────────────
 

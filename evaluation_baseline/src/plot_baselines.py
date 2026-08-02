@@ -26,24 +26,28 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+from matplotlib.axes import Axes
 from matplotlib.patches import Patch
 
 _REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
 
-from evaluation_lib.model_info import (  # noqa: E402
+from evaluation_lib.model_info import (
     MODEL_PARAMS_B,
-    SIZE_CATEGORY_COLORS as CAT_COLORS,
-    model_size_category,
     display_label,
+    model_size_category,
+)
+from evaluation_lib.model_info import (
+    SIZE_CATEGORY_COLORS as CAT_COLORS,
 )
 
-
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 def lighten(hex_color: str, factor: float = 0.45) -> str:
     """Return hex_color blended toward white by `factor` (0 = unchanged, 1 = white)."""
@@ -87,8 +91,9 @@ def _split_by_size(keys: list[str]) -> tuple[list[str], list[str]]:
 
 # ── Graph 1 — Accuracy & Garbage Rate ─────────────────────────────────────────
 
+
 def _acc_garbage_row(
-    ax: plt.Axes,
+    ax: Axes,
     keys: list[str],
     zs_by_key: dict,
     fs_by_key: dict,
@@ -100,12 +105,12 @@ def _acc_garbage_row(
         ax.set_visible(False)
         return
 
-    bar_w   = 0.18
+    bar_w = 0.18
     offsets = [-1.5 * bar_w, -0.5 * bar_w, 0.5 * bar_w, 1.5 * bar_w]
-    x       = np.arange(n)
+    x = np.arange(n)
 
     for i, key in enumerate(keys):
-        cat   = model_size_category(key)
+        cat = model_size_category(key)
         solid = CAT_COLORS[cat][1]
         light = lighten(solid, 0.50)
 
@@ -113,30 +118,42 @@ def _acc_garbage_row(
         fs = fs_by_key.get(key, {})
 
         # accuracy is 0-1 fraction; garbage_pct is already in %
-        vals    = [
+        vals = [
             zs.get("accuracy", 0.0) * 100,
             zs.get("garbage_pct", 0.0),
             fs.get("accuracy", 0.0) * 100,
             fs.get("garbage_pct", 0.0),
         ]
-        colors  = [solid, solid, light, light]
+        colors = [solid, solid, light, light]
         hatches = ["", "//", "", "//"]
 
         for val, col, hatch, off in zip(vals, colors, hatches, offsets):
             ax.bar(
-                i + off, val, bar_w,
-                color=col, hatch=hatch, edgecolor="white",
-                linewidth=0.5, zorder=3,
+                i + off,
+                val,
+                bar_w,
+                color=col,
+                hatch=hatch,
+                edgecolor="white",
+                linewidth=0.5,
+                zorder=3,
             )
             ax.text(
-                i + off, val + 1.0, f"{val:.0f}%",
-                ha="center", va="bottom", fontsize=6.5, fontweight="bold",
+                i + off,
+                val + 1.0,
+                f"{val:.0f}%",
+                ha="center",
+                va="bottom",
+                fontsize=6.5,
+                fontweight="bold",
             )
 
     ax.set_xticks(x)
     ax.set_xticklabels(
         [display_label(k) for k in keys],
-        rotation=30, ha="right", fontsize=8.5,
+        rotation=30,
+        ha="right",
+        fontsize=8.5,
     )
     ax.tick_params(axis="x", length=0)
     ax.set_ylim(0, 120)
@@ -149,9 +166,7 @@ def _acc_garbage_row(
     ax.set_title(row_title, fontsize=10, fontweight="bold", pad=8)
 
 
-def plot_accuracy_garbage(
-    zs_by_key: dict, fs_by_key: dict, out_dir: Path
-) -> None:
+def plot_accuracy_garbage(zs_by_key: dict, fs_by_key: dict, out_dir: Path) -> None:
     """Graph 1: Accuracy & Garbage% — ZS vs FS, 2 rows by model size."""
     common = sorted(
         zs_by_key.keys() & fs_by_key.keys(),
@@ -163,10 +178,10 @@ def plot_accuracy_garbage(
     fig, axes = plt.subplots(2, 1, figsize=(fig_w, 13))
     fig.subplots_adjust(hspace=0.55, bottom=0.15)
 
-    _acc_garbage_row(axes[0], top_keys, zs_by_key, fs_by_key,
-                     "Tiny & Small Models  (< 1 B params)")
-    _acc_garbage_row(axes[1], bot_keys, zs_by_key, fs_by_key,
-                     "Medium & Large Models  (1 B – 3.2 B params)")
+    _acc_garbage_row(axes[0], top_keys, zs_by_key, fs_by_key, "Tiny & Small Models  (< 1 B params)")
+    _acc_garbage_row(
+        axes[1], bot_keys, zs_by_key, fs_by_key, "Medium & Large Models  (1 B – 3.2 B params)"
+    )
 
     # Legend
     cat_handles = [
@@ -174,15 +189,18 @@ def plot_accuracy_garbage(
         for k in ("tiny", "small", "medium", "large")
     ]
     metric_handles = [
-        Patch(facecolor="#666666", hatch="",   label="Zero-shot accuracy"),
+        Patch(facecolor="#666666", hatch="", label="Zero-shot accuracy"),
         Patch(facecolor="#666666", hatch="//", label="Zero-shot garbage %"),
-        Patch(facecolor="#bbbbbb", hatch="",   label="Few-shot accuracy"),
+        Patch(facecolor="#bbbbbb", hatch="", label="Few-shot accuracy"),
         Patch(facecolor="#bbbbbb", hatch="//", label="Few-shot garbage %"),
     ]
     fig.legend(
         handles=cat_handles + metric_handles,
-        ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.01),
-        fontsize=8.5, frameon=True,
+        ncol=4,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.01),
+        fontsize=8.5,
+        frameon=True,
         title="Color = model-size category  |  Shade + hatch = metric type",
         title_fontsize=8,
     )
@@ -190,7 +208,9 @@ def plot_accuracy_garbage(
     fig.suptitle(
         "Accuracy & Garbage Rate — Zero-Shot vs Few-Shot\n"
         "Bars (left→right) per model: ZS accuracy, ZS garbage%, FS accuracy, FS garbage%",
-        fontsize=12, fontweight="bold", y=1.01,
+        fontsize=12,
+        fontweight="bold",
+        y=1.01,
     )
 
     out_path = out_dir / "graph1_accuracy_garbage.png"
@@ -201,8 +221,9 @@ def plot_accuracy_garbage(
 
 # ── Graph 2 — Performance Metrics ─────────────────────────────────────────────
 
+
 def _perf_row(
-    ax: plt.Axes,
+    ax: Axes,
     keys: list[str],
     data_by_key: dict,
     row_title: str,
@@ -217,22 +238,22 @@ def _perf_row(
         ax.set_visible(False)
         return
 
-    mem_vals = [data_by_key[k]["peak_memory_mb"]    for k in keys]
-    lat_vals = [data_by_key[k]["avg_latency_ms"]     for k in keys]
+    mem_vals = [data_by_key[k]["peak_memory_mb"] for k in keys]
+    lat_vals = [data_by_key[k]["avg_latency_ms"] for k in keys]
     tps_vals = [data_by_key[k]["avg_tokens_per_sec"] for k in keys]
 
     max_mem = max(mem_vals) or 1.0
     max_lat = max(lat_vals) or 1.0
     max_tps = max(tps_vals) or 1.0
 
-    bar_w   = 0.22
+    bar_w = 0.22
     offsets = [-bar_w, 0.0, bar_w]
-    x       = np.arange(n)
+    x = np.arange(n)
 
     for i, key in enumerate(keys):
-        cat   = model_size_category(key)
+        cat = model_size_category(key)
         solid = CAT_COLORS[cat][1]
-        mid   = lighten(solid, 0.30)
+        mid = lighten(solid, 0.30)
         light = lighten(solid, 0.60)
 
         norm_mem = mem_vals[i] / max_mem * 100
@@ -240,27 +261,38 @@ def _perf_row(
         norm_tps = tps_vals[i] / max_tps * 100
 
         configs = [
-            (norm_mem, f"{mem_vals[i]:.0f} MB",  solid, ""),
-            (norm_lat, f"{lat_vals[i]:.0f} ms",  mid,   "//"),
+            (norm_mem, f"{mem_vals[i]:.0f} MB", solid, ""),
+            (norm_lat, f"{lat_vals[i]:.0f} ms", mid, "//"),
             (norm_tps, f"{tps_vals[i]:.1f} t/s", light, "xx"),
         ]
 
         for (norm_val, label, col, hatch), off in zip(configs, offsets):
             ax.bar(
-                i + off, norm_val, bar_w,
-                color=col, hatch=hatch, edgecolor="white",
-                linewidth=0.5, zorder=3,
+                i + off,
+                norm_val,
+                bar_w,
+                color=col,
+                hatch=hatch,
+                edgecolor="white",
+                linewidth=0.5,
+                zorder=3,
             )
             ax.text(
-                i + off, norm_val + 1.0, label,
-                ha="center", va="bottom", fontsize=6.0,
+                i + off,
+                norm_val + 1.0,
+                label,
+                ha="center",
+                va="bottom",
+                fontsize=6.0,
                 fontweight="bold",
             )
 
     ax.set_xticks(x)
     ax.set_xticklabels(
         [display_label(k) for k in keys],
-        rotation=30, ha="right", fontsize=8.5,
+        rotation=30,
+        ha="right",
+        fontsize=8.5,
     )
     ax.tick_params(axis="x", length=0)
     ax.set_ylim(0, 125)
@@ -273,9 +305,7 @@ def _perf_row(
     ax.set_title(row_title, fontsize=10, fontweight="bold", pad=8)
 
 
-def plot_performance(
-    zs_by_key: dict, fs_by_key: dict, out_dir: Path
-) -> None:
+def plot_performance(zs_by_key: dict, fs_by_key: dict, out_dir: Path) -> None:
     """
     Graph 2: Performance metrics — peak memory, avg latency, token throughput.
     Latency & throughput are averaged over ZS + FS; peak memory uses max of both.
@@ -290,9 +320,9 @@ def plot_performance(
         zs = zs_by_key[k]
         fs = fs_by_key[k]
         merged[k] = {
-            "peak_memory_mb":    max(zs["peak_memory_mb"], fs["peak_memory_mb"]),
-            "avg_latency_ms":    (zs["avg_latency_ms"] + fs["avg_latency_ms"]) / 2,
-            "avg_tokens_per_sec":(zs["avg_tokens_per_sec"] + fs["avg_tokens_per_sec"]) / 2,
+            "peak_memory_mb": max(zs["peak_memory_mb"], fs["peak_memory_mb"]),
+            "avg_latency_ms": (zs["avg_latency_ms"] + fs["avg_latency_ms"]) / 2,
+            "avg_tokens_per_sec": (zs["avg_tokens_per_sec"] + fs["avg_tokens_per_sec"]) / 2,
         }
 
     top_keys, bot_keys = _split_by_size(common)
@@ -310,14 +340,17 @@ def plot_performance(
         for k in ("tiny", "small", "medium", "large")
     ]
     metric_handles = [
-        Patch(facecolor="#555555", hatch="",   label="Peak memory (MB)"),
+        Patch(facecolor="#555555", hatch="", label="Peak memory (MB)"),
         Patch(facecolor="#999999", hatch="//", label="Avg latency (ms)"),
         Patch(facecolor="#cccccc", hatch="xx", label="Token throughput (tok/s)"),
     ]
     fig.legend(
         handles=cat_handles + metric_handles,
-        ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.01),
-        fontsize=8.5, frameon=True,
+        ncol=4,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.01),
+        fontsize=8.5,
+        frameon=True,
         title=(
             "Color = model-size category  |  Hatch = metric type  |  "
             "Bar height normalized to row max; actual values labeled"
@@ -328,7 +361,9 @@ def plot_performance(
     fig.suptitle(
         "Performance Metrics — Peak Memory, Avg Latency & Token Throughput\n"
         "Latency & throughput: average of ZS + FS runs.  Memory: max of the two runs.",
-        fontsize=12, fontweight="bold", y=1.01,
+        fontsize=12,
+        fontweight="bold",
+        y=1.01,
     )
 
     out_path = out_dir / "graph2_performance.png"
@@ -339,9 +374,8 @@ def plot_performance(
 
 # ── Table — Combined Summary ───────────────────────────────────────────────────
 
-def plot_table_combined(
-    zs_by_key: dict, fs_by_key: dict, out_dir: Path
-) -> None:
+
+def plot_table_combined(zs_by_key: dict, fs_by_key: dict, out_dir: Path) -> None:
     """Styled summary table saved as table_combined.png."""
     common = sorted(
         zs_by_key.keys() & fs_by_key.keys(),
@@ -367,17 +401,19 @@ def plot_table_combined(
     for key in common:
         zs = zs_by_key[key]
         fs = fs_by_key[key]
-        rows.append([
-            display_label(key),
-            f"{MODEL_PARAMS_B.get(key, 0.0):.3f}",
-            f"{zs['accuracy'] * 100:.1f}",
-            f"{zs.get('garbage_pct', 0.0):.1f}",
-            f"{fs['accuracy'] * 100:.1f}",
-            f"{fs.get('garbage_pct', 0.0):.1f}",
-            f"{(zs['avg_latency_ms']     + fs['avg_latency_ms'])     / 2:.1f}",
-            f"{(zs['avg_tokens_per_sec'] + fs['avg_tokens_per_sec']) / 2:.1f}",
-            f"{max(zs['peak_memory_mb'], fs['peak_memory_mb']):.1f}",
-        ])
+        rows.append(
+            [
+                display_label(key),
+                f"{MODEL_PARAMS_B.get(key, 0.0):.3f}",
+                f"{zs['accuracy'] * 100:.1f}",
+                f"{zs.get('garbage_pct', 0.0):.1f}",
+                f"{fs['accuracy'] * 100:.1f}",
+                f"{fs.get('garbage_pct', 0.0):.1f}",
+                f"{(zs['avg_latency_ms'] + fs['avg_latency_ms']) / 2:.1f}",
+                f"{(zs['avg_tokens_per_sec'] + fs['avg_tokens_per_sec']) / 2:.1f}",
+                f"{max(zs['peak_memory_mb'], fs['peak_memory_mb']):.1f}",
+            ]
+        )
 
     n_rows = len(rows)
     n_cols = len(col_headers)
@@ -385,14 +421,17 @@ def plot_table_combined(
     fig, ax = plt.subplots(figsize=(17, max(4, 0.55 * (n_rows + 3))))
     ax.axis("off")
     ax.set_title(
-        "Baseline Evaluation Summary  —  Zero-Shot vs Few-Shot"
-        "  (sorted by parameter count)",
-        fontsize=12, fontweight="bold", pad=14,
+        "Baseline Evaluation Summary  —  Zero-Shot vs Few-Shot  (sorted by parameter count)",
+        fontsize=12,
+        fontweight="bold",
+        pad=14,
     )
 
     tbl = ax.table(
-        cellText=rows, colLabels=col_headers,
-        loc="center", cellLoc="center",
+        cellText=rows,
+        colLabels=col_headers,
+        loc="center",
+        cellLoc="center",
     )
     tbl.auto_set_font_size(False)
     tbl.set_fontsize(8.5)
@@ -405,13 +444,11 @@ def plot_table_combined(
         cell.set_text_props(color="white", fontweight="bold")
 
     # Data rows: pastel tints by category, alternating lighter / darker shade
-    _CAT_LIGHT = {"tiny": "#dde8f7", "small": "#d8f0e0",
-                  "medium": "#fde9d8", "large": "#fdeaea"}
-    _CAT_DARK  = {"tiny": "#c8d8ef", "small": "#c5e4d0",
-                  "medium": "#f5d9c5", "large": "#f5d8d8"}
+    _CAT_LIGHT = {"tiny": "#dde8f7", "small": "#d8f0e0", "medium": "#fde9d8", "large": "#fdeaea"}
+    _CAT_DARK = {"tiny": "#c8d8ef", "small": "#c5e4d0", "medium": "#f5d9c5", "large": "#f5d8d8"}
 
     for row_idx, key in enumerate(common, start=1):
-        cat   = model_size_category(key)
+        cat = model_size_category(key)
         shade = _CAT_DARK[cat] if row_idx % 2 == 0 else _CAT_LIGHT[cat]
         for col_idx in range(n_cols):
             tbl[row_idx, col_idx].set_facecolor(shade)
@@ -427,21 +464,25 @@ def plot_table_combined(
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Plot baseline evaluation results.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--reports-dir", type=Path,
+        "--reports-dir",
+        type=Path,
         default=Path(__file__).parent.parent / "reports_zero_shot",
     )
     parser.add_argument(
-        "--few-shot-reports-dir", type=Path,
+        "--few-shot-reports-dir",
+        type=Path,
         default=Path(__file__).parent.parent / "reports_few_shot",
     )
     parser.add_argument(
-        "--out-dir", type=Path,
+        "--out-dir",
+        type=Path,
         default=Path(__file__).parent.parent / "analysis",
     )
     args = parser.parse_args()
@@ -468,18 +509,15 @@ def main() -> None:
         zs_by_key.keys() & fs_by_key.keys(),
         key=lambda k: MODEL_PARAMS_B.get(k, 0.0),
     )
-    print(
-        f"\nLoaded {len(zs_by_key)} ZS + {len(fs_by_key)} FS reports, "
-        f"{len(common)} in common:\n"
-    )
+    print(f"\nLoaded {len(zs_by_key)} ZS + {len(fs_by_key)} FS reports, {len(common)} in common:\n")
     for k in common:
-        zs  = zs_by_key[k]
-        fs  = fs_by_key[k]
+        zs = zs_by_key[k]
+        fs = fs_by_key[k]
         cat = model_size_category(k)
         print(
             f"  {k:20s}  {CAT_COLORS[cat][0]:10s}  "
-            f"ZS acc={zs['accuracy']*100:5.1f}%  "
-            f"FS acc={fs['accuracy']*100:5.1f}%  "
+            f"ZS acc={zs['accuracy'] * 100:5.1f}%  "
+            f"FS acc={fs['accuracy'] * 100:5.1f}%  "
             f"mem={max(zs['peak_memory_mb'], fs['peak_memory_mb']):6.0f} MB"
         )
 

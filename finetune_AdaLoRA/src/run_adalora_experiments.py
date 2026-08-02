@@ -42,10 +42,10 @@ if _env_file.exists():
     load_dotenv(_env_file)
 
 from finetune_lib import (
-    ADALORA_MODEL_REGISTRY,
-    ALL_ADALORA_MODELS,
     ADALORA_CONFIGS,
+    ADALORA_MODEL_REGISTRY,
     ALL_ADALORA_CONFIGS,
+    ALL_ADALORA_MODELS,
 )
 
 ADALORA_DIR = Path(__file__).parent.parent
@@ -148,16 +148,16 @@ def main() -> None:
 
     total_runs = len(args.models) * len(args.configs)
     print(f"\n{'=' * 60}")
-    print(f"  AdaLoRA Experiment Runner")
+    print("  AdaLoRA Experiment Runner")
     print(f"  Models   : {args.models}")
     print(f"  Configs  : {args.configs}")
     print(f"  Dataset  : {args.dataset_size}")
     print(f"  Device   : {args.device}")
     print(f"  Runs     : {total_runs} training + {total_runs} val eval")
     if args.smoke_test:
-        print(f"  Mode     : SMOKE TEST (10 steps per run)")
+        print("  Mode     : SMOKE TEST (10 steps per run)")
     if args.skip_training:
-        print(f"  Training : SKIPPED")
+        print("  Training : SKIPPED")
     print(f"{'=' * 60}")
 
     results: list[dict] = []
@@ -223,7 +223,7 @@ def main() -> None:
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"  EXPERIMENT RUNNER COMPLETE")
+    print("  EXPERIMENT RUNNER COMPLETE")
     print(f"  Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     for r in results:

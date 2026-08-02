@@ -22,10 +22,10 @@ Key design choices
   every eval_steps (save_total_limit=2) purely so load_best_model_at_end can
   restore the best weights; the adapter actually shipped is:
     1. Saved locally  → finetune_LoRA/adapters/{model}_{config}_{size}/
-    2. Pushed to HF   → {HF_HUB_REPO}/LoRA/{model}_{config}_{size}/
+    2. Pushed to HF   → {HF_EXPERIMENTS_REPO}/{version}/{model}_{technique}_{config}_{size}_{timestamp}/
   Loading for inference / merge_and_unload:
-    model = PeftModel.from_pretrained(base, HF_HUB_REPO,
-                subfolder="LoRA/qwen2.5-0.5b_B_1k")
+    model = PeftModel.from_pretrained(base, HF_EXPERIMENTS_REPO,
+                subfolder="v1.0/qwen2.5-0.5b_LoRA_B_1k_20260101-120000")
     merged = model.merge_and_unload()
 * The training report includes step-0 baseline metrics (train_loss, val_loss,
   train_accuracy, val_accuracy before any gradient update) so training-curve
@@ -68,42 +68,45 @@ os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 warnings.filterwarnings("ignore", message=".*max_new_tokens.*")
 warnings.filterwarnings("ignore", message=".*torch_dtype.*deprecated.*")
 
-import torch  # noqa: E402
-from transformers import (  # noqa: E402
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    DataCollatorForSeq2Seq,
-    EarlyStoppingCallback,
-    TrainingArguments,
-)
-from peft import (  # type: ignore  # noqa: E402
+import torch
+from datasets import Dataset
+from huggingface_hub import HfApi
+from peft import (
     LoraConfig,
     PeftModel,
     TaskType,
     get_peft_model,
     prepare_model_for_kbit_training,
 )
-from peft.optimizers import create_loraplus_optimizer  # type: ignore  # noqa: E402
-from trl import SFTTrainer  # type: ignore  # noqa: E402
-from transformers import get_cosine_schedule_with_warmup  # type: ignore  # noqa: E402
-from datasets import Dataset  # type: ignore  # noqa: E402
-from huggingface_hub import HfApi  # type: ignore  # noqa: E402
+from peft.optimizers import create_loraplus_optimizer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    DataCollatorForSeq2Seq,
+    EarlyStoppingCallback,
+    TrainingArguments,
+    get_cosine_schedule_with_warmup,
+)
+from trl.trainer.sft_trainer import SFTTrainer
 
-from finetune_lib import (  # noqa: E402
-    FINETUNE_MODEL_REGISTRY,
-    LORA_CONFIGS,
-    HF_HUB_REPO,
+from finetune_lib import (
+    CURRENT_VERSION,
     EARLY_STOPPING_PATIENCE,
     EARLY_STOPPING_THRESHOLD,
-    hf_adapter_subfolder,
-    tokenize_with_labels,
-    load_jsonl,
+    FINETUNE_MODEL_REGISTRY,
+    HF_EXPERIMENTS_REPO,
+    LORA_CONFIGS,
     TrainValAccuracyCallback,
     compute_initial_train_loss,
-    resolve_device,
+    generate_experiment_timestamp,
+    hf_adapter_subfolder,
+    load_jsonl,
     peak_memory_mb,
+    resolve_device,
+    tokenize_with_labels,
 )
+from finetune_lib.registry import log_experiment
 
 LORA_DIR = Path(__file__).parent.parent
 DEFAULT_DATA_DIR = LORA_DIR / "data"
@@ -127,13 +130,9 @@ def count_trainable(model: Any) -> tuple[int, int]:
 def parse_args(model_registry: dict[str, str] | None = None) -> argparse.Namespace:
     model_registry = model_registry or FINETUNE_MODEL_REGISTRY
     default_model = (
-        "qwen2.5-0.5b"
-        if "qwen2.5-0.5b" in model_registry
-        else next(iter(model_registry))
+        "qwen2.5-0.5b" if "qwen2.5-0.5b" in model_registry else next(iter(model_registry))
     )
-    p = argparse.ArgumentParser(
-        description="LoRA fine-tuning for intent classification."
-    )
+    p = argparse.ArgumentParser(description="LoRA fine-tuning for intent classification.")
     p.add_argument(
         "--model",
         choices=list(model_registry.keys()),
@@ -225,7 +224,10 @@ def train_main(
     print(f"  Dataset      : {args.dataset_size}")
     print(f"  Device       : {device}")
     print(f"  Adapter dest : {adapter_dir}")
-    print(f"  HF repo      : {HF_HUB_REPO}/{technique}/{run_tag}")
+    print(
+        f"  HF repo      : {HF_EXPERIMENTS_REPO}/{CURRENT_VERSION}/"
+        f"{args.model}_{technique}_{args.lora_config}_{args.dataset_size}_<timestamp>"
+    )
     if args.smoke_test:
         print("  Mode         : SMOKE TEST (10 steps only)")
     print(f"{'=' * 60}")
@@ -292,29 +294,20 @@ def train_main(
 
     # ── Tokenise datasets ─────────────────────────────────────────────────────
     print("\n  Tokenizing datasets...")
-    train_records = [
-        tokenize_with_labels(ex, tokenizer, args.model) for ex in train_examples
-    ]
-    val_records = [
-        tokenize_with_labels(ex, tokenizer, args.model) for ex in val_examples
-    ]
+    train_records = [tokenize_with_labels(ex, tokenizer, args.model) for ex in train_examples]
+    val_records = [tokenize_with_labels(ex, tokenizer, args.model) for ex in val_examples]
     train_dataset = Dataset.from_list(train_records)
     val_dataset = Dataset.from_list(val_records)
 
     # ── Step counts ───────────────────────────────────────────────────────────
-    eff_batch = (
-        lora_cfg["per_device_train_batch_size"]
-        * lora_cfg["gradient_accumulation_steps"]
-    )
+    eff_batch = lora_cfg["per_device_train_batch_size"] * lora_cfg["gradient_accumulation_steps"]
     steps_per_epoch = max(1, len(train_examples) // eff_batch)
     eval_steps = 10 if args.smoke_test else max(50, steps_per_epoch // 2)
     total_steps = steps_per_epoch * lora_cfg["num_train_epochs"]
 
     print(f"\n  Effective batch  : {eff_batch}")
     print(f"  Steps / epoch    : {steps_per_epoch}")
-    print(
-        f"  Total steps      : {total_steps if not args.smoke_test else '10 (smoke)'}"
-    )
+    print(f"  Total steps      : {total_steps if not args.smoke_test else '10 (smoke)'}")
     print(f"  Eval every       : {eval_steps} steps")
 
     # ── Training arguments ────────────────────────────────────────────────────
@@ -354,9 +347,7 @@ def train_main(
         # avoids the PyTorch deprecation warning. Disabled under 4-bit NF4
         # (QLoRA) — BNB 4-bit + gradient checkpointing is known to NaN.
         gradient_checkpointing=not quantize_4bit,
-        gradient_checkpointing_kwargs=(
-            {"use_reentrant": False} if not quantize_4bit else None
-        ),
+        gradient_checkpointing_kwargs=({"use_reentrant": False} if not quantize_4bit else None),
         # For LoRA+/DoRA+ we inject a custom optimizer below; QLoRA uses a
         # paged optimizer to save VRAM; plain LoRA/DoRA keep adamw_torch.
         optim="paged_adamw_8bit" if quantize_4bit else "adamw_torch",
@@ -430,9 +421,7 @@ def train_main(
     # signals at step=0 in log_history: eval_loss, train_accuracy, eval_accuracy.
     # We also compute initial train_loss via a single forward pass.
     print("\n  Computing step-0 baseline (pre-fine-tuning)...")
-    initial_train_loss = compute_initial_train_loss(
-        model, train_dataset, collator, device
-    )
+    initial_train_loss = compute_initial_train_loss(model, train_dataset, collator, device)
     trainer.evaluate()
     # Patch the step-0 eval log entry with the initial train_loss.
     for entry in trainer.state.log_history:
@@ -451,9 +440,7 @@ def train_main(
     )
 
     # ── Train ─────────────────────────────────────────────────────────────────
-    print(
-        f"\n  Starting training{' (smoke-test: 10 steps)' if args.smoke_test else ''}...\n"
-    )
+    print(f"\n  Starting training{' (smoke-test: 10 steps)' if args.smoke_test else ''}...\n")
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
 
@@ -464,37 +451,61 @@ def train_main(
 
     print(f"\n  Training complete in {t_elapsed:.1f}s  |  Peak VRAM: {mem_mb:.0f} MB")
 
-    trainer.model.config.use_cache = True  # restore for subsequent inference
+    trained_model = cast(Any, trainer.model)
+    if trained_model is None:
+        raise RuntimeError("Trainer model is unavailable after training")
+    trained_model.config.use_cache = True  # restore for subsequent inference
 
     # ── Save final adapter locally ────────────────────────────────────────────
     # load_best_model_at_end=True already restored the best (lowest val_loss)
     # checkpoint into trainer.model before we get here, so this saves the
     # best weights, not necessarily the last-step weights.
     hf_sub = ""
+    experiment_timestamp = ""
     if not args.smoke_test:
         print(f"\n  Saving adapter locally → {adapter_dir}")
-        trainer.model.save_pretrained(str(adapter_dir))
+        trained_model.save_pretrained(str(adapter_dir))
         tokenizer.save_pretrained(str(adapter_dir))
 
-        # ── Push to HuggingFace Hub ───────────────────────────────────────────
+        # ── Push to HuggingFace Hub (experiments repo) ────────────────────────
+        experiment_timestamp = generate_experiment_timestamp()
         hf_sub = hf_adapter_subfolder(
-            technique, args.model, args.lora_config, args.dataset_size
+            technique,
+            args.model,
+            args.lora_config,
+            args.dataset_size,
+            timestamp=experiment_timestamp,
         )
         if not args.no_push:
             hf_token = os.environ.get("HF_TOKEN")
             try:
-                print(f"  Pushing adapter to HF → {HF_HUB_REPO}/{hf_sub}")
+                print(f"  Pushing adapter to HF → {HF_EXPERIMENTS_REPO}/{hf_sub}")
                 api = HfApi(token=hf_token)
                 api.create_repo(
-                    repo_id=HF_HUB_REPO, repo_type="model", exist_ok=True, private=True
+                    repo_id=HF_EXPERIMENTS_REPO,
+                    repo_type="model",
+                    exist_ok=True,
+                    private=True,
                 )
                 api.upload_folder(
                     folder_path=str(adapter_dir),
-                    repo_id=HF_HUB_REPO,
+                    repo_id=HF_EXPERIMENTS_REPO,
                     path_in_repo=hf_sub,
-                    commit_message=f"Add {technique} adapter: {run_tag}",
+                    commit_message=f"Add {technique} adapter: {run_tag} [{experiment_timestamp}]",
                 )
                 print("  Adapter pushed successfully.")
+                log_experiment(
+                    version=CURRENT_VERSION,
+                    technique=technique,
+                    model_key=args.model,
+                    base_model_id=model_id,
+                    lora_config=args.lora_config,
+                    dataset_size=args.dataset_size,
+                    timestamp=experiment_timestamp,
+                    run_tag=run_tag,
+                    hf_repo=HF_EXPERIMENTS_REPO,
+                    hf_subfolder=hf_sub,
+                )
             except Exception as e:
                 print(f"  WARNING: HF push failed: {e}")
                 print(f"           Adapter saved locally at {adapter_dir}")
@@ -507,11 +518,7 @@ def train_main(
     eval_entries = [e for e in trainer.state.log_history if "eval_loss" in e]
     # Exclude step-0 (baseline) when reporting "final" end-of-training metrics.
     trained_evals = [e for e in eval_entries if e.get("step", 0) > 0]
-    last_eval = (
-        trained_evals[-1]
-        if trained_evals
-        else (eval_entries[-1] if eval_entries else {})
-    )
+    last_eval = trained_evals[-1] if trained_evals else (eval_entries[-1] if eval_entries else {})
 
     report = {
         "model_key": args.model,
@@ -542,8 +549,9 @@ def train_main(
         if "train_accuracy" in last_eval
         else None,
         # HF adapter location (for loading / merge_and_unload)
-        "hf_repo": HF_HUB_REPO if not args.smoke_test else None,
+        "hf_repo": HF_EXPERIMENTS_REPO if not args.smoke_test else None,
         "hf_subfolder": hf_sub if not args.smoke_test else None,
+        "version": CURRENT_VERSION if not args.smoke_test else None,
         # Complete step-by-step history including step-0 baseline.
         # train_loss every logging_steps; eval entries (eval_loss, train_accuracy,
         # eval_accuracy) at each eval checkpoint + step 0.
@@ -551,9 +559,7 @@ def train_main(
     }
 
     report_path = args.report_dir / f"{run_tag}_{ts}.json"
-    report_path.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
@@ -571,7 +577,7 @@ def train_main(
     if not args.smoke_test:
         print(f"  Local adapter    : {adapter_dir}")
         if not args.no_push:
-            print(f"  HF adapter       : {HF_HUB_REPO}/{hf_sub}")
+            print(f"  HF adapter       : {HF_EXPERIMENTS_REPO}/{hf_sub}")
     print(f"{'=' * 60}\n")
 
     del model

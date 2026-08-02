@@ -33,8 +33,9 @@ for _p in (_REPO_ROOT, _LORA_SRC):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from finetune_lib import LORAPLUS_CONFIGS  # noqa: E402
-from lora_train import train_main, parse_args  # type: ignore  # noqa: E402
+from lora_train import parse_args, train_main
+
+from finetune_lib import LORAPLUS_CONFIGS
 
 
 def main() -> None:

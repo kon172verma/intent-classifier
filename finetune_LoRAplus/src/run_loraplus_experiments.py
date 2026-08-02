@@ -27,7 +27,7 @@ for _p in (_REPO_ROOT, _LORA_SRC):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from run_lora_experiments import run_experiments_main  # type: ignore  # noqa: E402
+from run_lora_experiments import run_experiments_main
 
 _LORAPLUS_SRC = Path(__file__).parent
 TRAIN_SCRIPT = _LORAPLUS_SRC / "loraplus_train.py"

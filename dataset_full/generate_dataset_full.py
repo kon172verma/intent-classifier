@@ -28,17 +28,24 @@ import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Import generation helpers from the sibling dataset_sample package
+# Import generation helpers from dataset_sample
 # ---------------------------------------------------------------------------
-_SAMPLE_DIR = Path(__file__).parent.parent / "dataset_sample"
-sys.path.insert(0, str(_SAMPLE_DIR))
+try:
+    from dataset_sample.generate_dataset import (
+        build_example,
+        load_tools,
+    )
+except ModuleNotFoundError:
+    # Support running as a direct script: python dataset_full/generate_dataset_full.py
+    _repo_root = Path(__file__).resolve().parent.parent
+    if str(_repo_root) not in sys.path:
+        sys.path.insert(0, str(_repo_root))
+    from dataset_sample.generate_dataset import (
+        build_example,
+        load_tools,
+    )
 
-from generate_dataset import (  # type: ignore[import]  # noqa: E402
-    REQUESTS_PER_TOOL,
-    NONE_REQUESTS,
-    load_tools,
-    build_example,
-)
+_SAMPLE_DIR = Path(__file__).parent.parent / "dataset_sample"
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -50,18 +57,21 @@ FILES: int = 100
 EXAMPLES_PER_FILE: int = 100
 TOTAL: int = FILES * EXAMPLES_PER_FILE  # 10,000
 
-RARE_TOOL_NAMES: frozenset[str] = frozenset({
-    "emergency_sos",
-    "roadside_assistance",
-    "insurance_claims",
-    "home_automation_bridge",
-    "corp-fleet-manager",
-})
+RARE_TOOL_NAMES: frozenset[str] = frozenset(
+    {
+        "emergency_sos",
+        "roadside_assistance",
+        "insurance_claims",
+        "home_automation_bridge",
+        "corp-fleet-manager",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def fingerprint(example: dict) -> tuple:
     """Canonical hashable identity for an example."""
@@ -91,8 +101,8 @@ def _generate_with_distribution(
     n_rare = max(1, round(n * 0.02))
     n_common = n_valid - n_rare
 
-    n_few = round(n * 0.10)    # 1–3 tools
-    n_many = round(n * 0.10)   # 20–30 tools
+    n_few = round(n * 0.10)  # 1–3 tools
+    n_many = round(n * 0.10)  # 20–30 tools
     n_std = n - n_few - n_many  # 4–19 tools
 
     # Build answer pool
@@ -152,6 +162,7 @@ def _generate_with_distribution(
 # Main generation routine
 # ---------------------------------------------------------------------------
 
+
 def generate_full(seed: int = 42) -> list[list[dict]]:
     """
     Returns 100 lists of 100 examples each.
@@ -161,9 +172,7 @@ def generate_full(seed: int = 42) -> list[list[dict]]:
     Files 1–99 are freshly generated with guaranteed global uniqueness.
     """
     # ── File 1: load unchanged from sample.json ──────────────────────────
-    file1_examples: list[dict] = json.loads(
-        SAMPLE_JSON.read_text(encoding="utf-8")
-    )
+    file1_examples: list[dict] = json.loads(SAMPLE_JSON.read_text(encoding="utf-8"))
     if len(file1_examples) != EXAMPLES_PER_FILE:
         raise ValueError(
             f"dataset_sample/sample.json contains {len(file1_examples)} examples; "
@@ -202,8 +211,7 @@ def generate_full(seed: int = 42) -> list[list[dict]]:
     # ── Assemble 100 files ────────────────────────────────────────────────
     all_examples: list[dict] = file1_examples + remaining
     files: list[list[dict]] = [
-        all_examples[i * EXAMPLES_PER_FILE : (i + 1) * EXAMPLES_PER_FILE]
-        for i in range(FILES)
+        all_examples[i * EXAMPLES_PER_FILE : (i + 1) * EXAMPLES_PER_FILE] for i in range(FILES)
     ]
     return files
 
@@ -212,21 +220,24 @@ def generate_full(seed: int = 42) -> list[list[dict]]:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Generate the full 10,000-example tool_router dataset "
-            "(100 files × 100 examples each)."
+            "Generate the full 10,000-example tool_router dataset (100 files × 100 examples each)."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--seed", type=int, default=42,
-        help="RNG seed. File 001 always equals sample.json (seed=42); "
-             "subsequent files use seed+1.",
+        "--seed",
+        type=int,
+        default=42,
+        help="RNG seed. File 001 always equals sample.json (seed=42); subsequent files use seed+1.",
     )
     parser.add_argument(
-        "--out-dir", type=Path, default=Path(__file__).parent,
+        "--out-dir",
+        type=Path,
+        default=Path(__file__).parent,
         help="Directory to write sample_NNNN.json files.",
     )
     args = parser.parse_args()

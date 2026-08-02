@@ -23,7 +23,7 @@ for _p in (_REPO_ROOT, _LORA_SRC):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from lora_validate import validate_main  # type: ignore  # noqa: E402
+from lora_validate import validate_main
 
 if __name__ == "__main__":
     validate_main(

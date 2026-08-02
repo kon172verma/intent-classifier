@@ -196,7 +196,7 @@ def print_comparison_table(model_keys: list[str] | None = None) -> None:
     Columns: key | HF model ID | Params (B) | Ctx (k tok) | Base? | Architecture | License
     """
     # Lazy import to avoid circular dependency at module load time
-    from evaluation_lib.config import MODEL_REGISTRY  # noqa: PLC0415
+    from evaluation_lib.config import MODEL_REGISTRY
 
     keys = model_keys or sorted(MODEL_PARAMS_B, key=lambda k: MODEL_PARAMS_B.get(k, 0.0))
 

@@ -11,16 +11,24 @@ Exports
   SYSTEM_PROMPT            – tool-router system prompt (identical to zero-shot eval)
   LORA_CONFIGS             – shared A/B/C/D adapter configs
   MAX_SEQ_LENGTH           – tokenisation context cap
-  HF_HUB_REPO              – target HuggingFace repo for all adapter uploads
-  hf_adapter_subfolder()   – helper to build the per-run adapter subfolder path
-  hf_merged_subfolder()    – helper to build the per-run merged-model subfolder path
+  CURRENT_VERSION          – release-in-progress version, read from VERSION file
+  HF_EXPERIMENTS_REPO      – HF repo that receives every adapter pushed during experimentation
+  HF_RELEASE_REPO          – HF repo that receives only the final merged/GGUF/ONNX release models
+  generate_experiment_timestamp() – UTC timestamp used in adapter experiment names
+  hf_adapter_subfolder()   – helper to build the per-run adapter subfolder path (experiments repo)
+  hf_merged_subfolder()    – helper to build the per-run merged-model subfolder path (release repo)
 """
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from pathlib import Path
+
 # Reuse evaluation_lib for shared constants (avoids duplication).
 from evaluation_lib.config import (
     MODEL_REGISTRY as _EVAL_REGISTRY,
+)
+from evaluation_lib.config import (
     SYSTEM_PROMPT_ZERO_SHOT as SYSTEM_PROMPT,  # noqa: F401
 )
 
@@ -52,9 +60,7 @@ _RESTRICTED_KEYS: list[str] = [
 QLORA_MODEL_REGISTRY: dict[str, str] = {k: _EVAL_REGISTRY[k] for k in _RESTRICTED_KEYS}
 ALL_QLORA_MODELS: list[str] = _RESTRICTED_KEYS
 
-ADALORA_MODEL_REGISTRY: dict[str, str] = {
-    k: _EVAL_REGISTRY[k] for k in _RESTRICTED_KEYS
-}
+ADALORA_MODEL_REGISTRY: dict[str, str] = {k: _EVAL_REGISTRY[k] for k in _RESTRICTED_KEYS}
 ALL_ADALORA_MODELS: list[str] = _RESTRICTED_KEYS
 
 # ── Chat-template quirks ───────────────────────────────────────────────────────
@@ -63,19 +69,48 @@ ALL_ADALORA_MODELS: list[str] = _RESTRICTED_KEYS
 QWEN3_FINETUNE_KEYS: frozenset[str] = frozenset({"qwen3-0.6b"})
 
 # ── HuggingFace Hub ────────────────────────────────────────────────────────────
-# All adapters are pushed to a single HF model repo using subfolders:
+# Two separate HF repos, split by responsibility:
 #
-#   {HF_HUB_REPO}/{technique}/{model_key}_{lora_config}_{dataset_size}/
+#   HF_EXPERIMENTS_REPO — every adapter produced during experimentation.
+#     Layout:  {HF_EXPERIMENTS_REPO}/{version}/{model_key}_{technique}_{lora_config}_{dataset_size}_{timestamp}/
+#
+#   HF_RELEASE_REPO — only the 2 best merged models chosen per version release,
+#     plus their GGUF and ONNX exports.
+#     Layout:  {HF_RELEASE_REPO}/{technique}_merged/{model_key}_{lora_config}_{dataset_size}/
 #
 # Loading a saved adapter:
 #   from peft import PeftModel
 #   model = PeftModel.from_pretrained(
 #       base_model,
-#       HF_HUB_REPO,
-#       subfolder="LoRA/qwen2.5-0.5b_B_1k",
+#       HF_EXPERIMENTS_REPO,
+#       subfolder="v1.0/qwen2.5-0.5b_LoRA_B_1k_20260101-120000",
 #   )
 #   merged = model.merge_and_unload()
-HF_HUB_REPO: str = "kon172verma/intent-classifier"
+HF_EXPERIMENTS_REPO: str = "kon172verma/intent-classifier-experiments"
+HF_RELEASE_REPO: str = "kon172verma/intent-classifier"
+
+# ── Version tracking ──────────────────────────────────────────────────────────
+# CURRENT_VERSION is the version folder that new experiments are pushed under.
+# It is read from the VERSION file at the repo root so bumping the version for
+# a new round of experiments is a one-line file edit, not a code change.
+_REPO_ROOT: Path = Path(__file__).resolve().parent.parent
+_VERSION_FILE: Path = _REPO_ROOT / "VERSION"
+
+
+def _read_current_version() -> str:
+    if _VERSION_FILE.exists():
+        contents = _VERSION_FILE.read_text(encoding="utf-8").strip()
+        if contents:
+            return contents
+    return "v1.0"
+
+
+CURRENT_VERSION: str = _read_current_version()
+
+
+def generate_experiment_timestamp() -> str:
+    """Return a UTC timestamp (YYYYMMDD-HHMMSS) for tagging a new experiment."""
+    return datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
 
 
 def hf_adapter_subfolder(
@@ -83,30 +118,29 @@ def hf_adapter_subfolder(
     model_key: str,
     lora_config: str,
     dataset_size: str,
+    timestamp: str | None = None,
+    version: str | None = None,
 ) -> str:
-    """Return the HF subfolder path for a specific adapter.
+    """Return the HF_EXPERIMENTS_REPO subfolder path for a specific adapter run.
 
-    Example: hf_adapter_subfolder("LoRA", "qwen2.5-0.5b", "B", "1k")
-             → "LoRA/qwen2.5-0.5b_B_1k"
+    Naming convention: {version}/{model}_{technique}_{config}_{size}_{timestamp}
+
+    Example: hf_adapter_subfolder("LoRA", "qwen2.5-0.5b", "B", "1k", "20260101-120000")
+             → "v1.0/qwen2.5-0.5b_LoRA_B_1k_20260101-120000"
     """
-    return f"{technique}/{model_key}_{lora_config}_{dataset_size}"
+    version = version or CURRENT_VERSION
+    timestamp = timestamp or generate_experiment_timestamp()
+    return f"{version}/{model_key}_{technique}_{lora_config}_{dataset_size}_{timestamp}"
 
 
-def hf_merged_subfolder(
-    technique: str,
-    model_key: str,
-    lora_config: str,
-    dataset_size: str,
-) -> str:
-    """Return the HF subfolder path for a merged (adapter-unloaded) model.
+def hf_merged_subfolder(model_key: str) -> str:
+    """Return the HF_RELEASE_REPO subfolder path for a merged (adapter-unloaded) model.
 
-    Merged models live alongside adapters but in a separate top-level folder
-    so they are easy to distinguish and can be loaded without PEFT.
+    Layout: <model_key>/safetensors/
 
-    Example: hf_merged_subfolder("LoRA", "qwen2.5-0.5b", "B", "1k")
-             → "LoRA_merged/qwen2.5-0.5b_B_1k"
+    Example: hf_merged_subfolder("qwen3-0.6b") → "qwen3-0.6b/safetensors"
     """
-    return f"{technique}_merged/{model_key}_{lora_config}_{dataset_size}"
+    return f"{model_key}/safetensors"
 
 
 # ── Tokenisation ───────────────────────────────────────────────────────────────

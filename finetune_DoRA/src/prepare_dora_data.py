@@ -22,7 +22,7 @@ for _p in (_REPO_ROOT, _LORA_SRC):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-import prepare_lora_data as _prep  # type: ignore  # noqa: E402
+import prepare_lora_data as _prep
 
 # Redirect default output to finetune_DoRA/data/ instead of finetune_LoRA/data/
 _prep.DEFAULT_OUT_DIR = Path(__file__).parent.parent / "data"

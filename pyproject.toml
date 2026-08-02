@@ -1,0 +1,40 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+# Practical selection matching this codebase's established patterns: pyflakes,
+# pycodestyle, isort, pyupgrade, bugbear, comprehensions, and a few ruff-native
+# checks. Full "ALL" is not used since several categories conflict with
+# deliberate patterns in this codebase (broad except+continue resilience in
+# long-running training/push loops, non-executable helper scripts, naive
+# local timestamps for logging/filenames, Unicode box-drawing/arrows used
+# throughout for readable console output, zip() over same-length lists that
+# are always constructed together).
+select = ["E", "F", "I", "UP", "B", "C4", "RUF"]
+ignore = [
+    "E501",   # line length handled by formatter/line-length above, not hard-enforced
+    "RUF001", # ambiguous unicode in strings (—, →, × used deliberately in console output)
+    "RUF002", # ambiguous unicode in docstrings (same)
+    "RUF003", # ambiguous unicode in comments (same)
+    "B905",   # zip() without strict= (pairs are always constructed with equal length here)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["finetune_lib", "evaluation_lib"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/src/*.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+"release.py" = ["E402"]
+"evaluation_lib/__init__.py" = ["RUF022"]  # __all__ is grouped by submodule on purpose
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = ".:finetune_LoRA/src"  # also resolves shared LoRA entry modules used by DoRA/LoRA+ wrappers
+
+[[tool.mypy.overrides]]
+module = ["datasets", "datasets.*"]
+ignore_missing_imports = true
+

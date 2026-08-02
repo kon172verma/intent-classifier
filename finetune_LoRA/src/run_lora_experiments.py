@@ -48,11 +48,11 @@ if _env_file.exists():
 
     load_dotenv(_env_file)
 
-from finetune_lib import (  # noqa: E402
-    FINETUNE_MODEL_REGISTRY,
-    ALL_FINETUNE_MODELS,
-    LORA_CONFIGS,
+from finetune_lib import (
     ALL_CONFIGS,
+    ALL_FINETUNE_MODELS,
+    FINETUNE_MODEL_REGISTRY,
+    LORA_CONFIGS,
 )
 
 LORA_DIR = Path(__file__).parent.parent

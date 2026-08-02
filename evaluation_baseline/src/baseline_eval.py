@@ -44,10 +44,10 @@ os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 warnings.filterwarnings("ignore", message=".*max_new_tokens.*max_length.*")
 warnings.filterwarnings("ignore", message=".*torch_dtype.*deprecated.*")
 
-from evaluation_lib import (  # noqa: E402
+from evaluation_lib import (
     MODEL_REGISTRY,
-    SYSTEM_PROMPT_ZERO_SHOT,
     SYSTEM_PROMPT_FEW_SHOT,
+    SYSTEM_PROMPT_ZERO_SHOT,
     evaluate,
     resolve_device,
 )

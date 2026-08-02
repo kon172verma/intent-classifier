@@ -36,8 +36,8 @@ if _env_file.exists():
 
     load_dotenv(_env_file)
 
-from evaluation_lib import MODEL_REGISTRY  # noqa: E402, F401
-from evaluation_lib.config import ALL_MODELS  # noqa: E402
+from evaluation_lib import MODEL_REGISTRY  # noqa: F401
+from evaluation_lib.config import ALL_MODELS
 
 EVAL_SCRIPT = Path(__file__).parent / "baseline_eval.py"
 DEFAULT_DATA = _REPO_ROOT / "dataset_sample" / "sample.json"

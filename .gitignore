@@ -23,3 +23,6 @@ env/
 
 # notes
 notes.txt
+
+# local-only merge staging output (scripts/merge_models.py)
+release_staging/

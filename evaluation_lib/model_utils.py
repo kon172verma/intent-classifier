@@ -7,12 +7,15 @@ Model loading, device resolution, and GPU/CPU memory utilities.
 from __future__ import annotations
 
 import gc
-from pathlib import Path
 from typing import Any
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    PreTrainedModel,
+    PreTrainedTokenizerBase,
+)
 
 # ── Device resolution ──────────────────────────────────────────────────────────
 
@@ -51,7 +54,8 @@ def peak_memory_mb(device: torch.device) -> float:
             return 0.0
     try:
         import os
-        import psutil  # type: ignore[import-untyped]
+
+        import psutil
         return psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
     except ImportError:
         return 0.0

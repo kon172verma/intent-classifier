@@ -20,15 +20,15 @@ import traceback
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from evaluation_lib.config import (
     QWEN3_KEYS,
-    SYSTEM_PROMPT_ZERO_SHOT,
     SYSTEM_PROMPT_FEW_SHOT,  # noqa: F401
+    SYSTEM_PROMPT_ZERO_SHOT,
 )
 from evaluation_lib.model_utils import (
     dtype_for_device,
@@ -37,7 +37,6 @@ from evaluation_lib.model_utils import (
     peak_memory_mb,
     reset_peak_memory,
 )
-
 
 # ── Prompt builders ────────────────────────────────────────────────────────────
 # Prompt order: system-prompt → available-tools → user-request.
@@ -105,7 +104,7 @@ def _build_prefix_text(
     chat_template = getattr(tokenizer, "chat_template", None)
     if chat_template:
         messages = [{"role": "system", "content": system_prompt}]
-        kwargs: dict = dict(tokenize=False, add_generation_prompt=False)
+        kwargs: dict = {"tokenize": False, "add_generation_prompt": False}
         if model_key in QWEN3_KEYS:
             kwargs["enable_thinking"] = False
         return str(tokenizer.apply_chat_template(messages, **kwargs))  # type: ignore[union-attr]
@@ -175,9 +174,7 @@ class ExampleResult:
     answer: str
     prediction: str
     correct: bool
-    is_garbage: (
-        bool  # pred is non-empty, not "none", and not in the available tool list
-    )
+    is_garbage: bool  # pred is non-empty, not "none", and not in the available tool list
     latency_s: float
     tokens_generated: int
 
@@ -228,19 +225,15 @@ def run_example(
     chat_template = getattr(tokenizer, "chat_template", None)
     if chat_template:
         messages = build_chat_messages(example, system_prompt=system_prompt)
-        template_kwargs: dict = dict(tokenize=False, add_generation_prompt=True)
+        template_kwargs: dict = {"tokenize": False, "add_generation_prompt": True}
         if model_key in QWEN3_KEYS:
             template_kwargs["enable_thinking"] = False
-        prompt_text: str = str(
-            tokenizer.apply_chat_template(messages, **template_kwargs)
-        )  # type: ignore[union-attr, assignment]
+        prompt_text: str = str(tokenizer.apply_chat_template(messages, **template_kwargs))  # type: ignore[union-attr, assignment]
     else:
         prompt_text = build_raw_prompt(example, system_prompt=system_prompt)
 
     # Tokenise the full prompt once (needed by both paths).
-    full_ids: torch.Tensor = tokenizer(prompt_text, return_tensors="pt")[
-        "input_ids"
-    ].to(device)  # type: ignore[assignment, index]
+    full_ids: torch.Tensor = tokenizer(prompt_text, return_tensors="pt")["input_ids"].to(device)  # type: ignore[assignment, index]
     full_len = int(full_ids.shape[-1])
 
     t0 = time.perf_counter()
@@ -300,7 +293,7 @@ def evaluate(
     data_path: Path,
     device: torch.device,
     max_new_tokens: int,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     system_prompt: str = SYSTEM_PROMPT_ZERO_SHOT,
     eval_mode: str = "zero_shot",
 ) -> BenchmarkReport:
@@ -320,9 +313,7 @@ def evaluate(
 
     dtype = dtype_for_device(device)
     reset_peak_memory(device)
-    model, tokenizer = load_model_and_tokenizer(
-        model_id, device, dtype, model_key=model_key
-    )
+    model, tokenizer = load_model_and_tokenizer(model_id, device, dtype, model_key=model_key)
     reset_peak_memory(device)  # reset after load; measure inference memory only
 
     prefix_kv: Any | None = None
@@ -353,14 +344,14 @@ def evaluate(
                 prefix_kv=prefix_kv,
                 prefix_len=prefix_len,
             )
-        except Exception:  # noqa: BLE001
+        except Exception:
             traceback.print_exc()
             pred, lat, ntok = "", 0.0, 0
 
         correct = pred.strip().lower() == ex["answer"].strip().lower()
-        valid_tools: set[str] = {
-            t["name"].strip().lower() for t in ex["available_tools"]
-        } | {"none"}
+        valid_tools: set[str] = {t["name"].strip().lower() for t in ex["available_tools"]} | {
+            "none"
+        }
         pred_lower = pred.strip().lower()
         is_garbage = bool(pred_lower) and pred_lower not in valid_tools
         per_results.append(
