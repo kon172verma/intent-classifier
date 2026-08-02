@@ -22,20 +22,15 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent.parent
-_LORA_SRC = _REPO_ROOT / "finetune_LoRA" / "src"
-for _p in (_REPO_ROOT, _LORA_SRC):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-from run_lora_experiments import run_experiments_main
-
-_DORAPLUS_SRC = Path(__file__).parent
-TRAIN_SCRIPT = _DORAPLUS_SRC / "doraplus_train.py"
-EVAL_SCRIPT = _DORAPLUS_SRC / "doraplus_validate.py"
+from finetune_lib.wrappers import run_experiments_wrapper
 
 if __name__ == "__main__":
-    run_experiments_main(
+    run_experiments_wrapper(
+        __file__,
         technique="DoRA+",
-        train_script=TRAIN_SCRIPT,
-        eval_script=EVAL_SCRIPT,
+        train_script_name="doraplus_train.py",
+        eval_script_name="doraplus_validate.py",
     )

@@ -20,19 +20,16 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent.parent
-_LORA_SRC = _REPO_ROOT / "finetune_LoRA" / "src"
-for _p in (_REPO_ROOT, _LORA_SRC):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-from lora_validate import validate_main
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from finetune_lib import QLORA_MODEL_REGISTRY
+from finetune_lib.wrappers import run_validate_wrapper
 
 if __name__ == "__main__":
-    validate_main(
+    run_validate_wrapper(
+        __file__,
         technique="QLoRA",
-        base_dir=Path(__file__).parent.parent,
         quantize_4bit=True,
         model_registry=QLORA_MODEL_REGISTRY,
     )

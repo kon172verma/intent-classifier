@@ -30,27 +30,19 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent.parent
-_LORA_SRC = _REPO_ROOT / "finetune_LoRA" / "src"
-for _p in (_REPO_ROOT, _LORA_SRC):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-from lora_train import parse_args, train_main
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from finetune_lib import LORAPLUS_CONFIGS
+from finetune_lib.wrappers import run_train_wrapper
 
 
 def main() -> None:
-    # parse_args() reads --lora-config from sys.argv so we can look up the ratio
-    # before calling train_main (which also calls parse_args internally).
-    _args = parse_args()
-    _ratio = LORAPLUS_CONFIGS[_args.lora_config]["loraplus_lr_ratio"]
-
-    train_main(
+    run_train_wrapper(
+        __file__,
         technique="DoRA+",
         use_dora=True,
-        base_dir=Path(__file__).parent.parent,
-        loraplus_lr_ratio=_ratio,
+        loraplus_configs=LORAPLUS_CONFIGS,
     )
 
 

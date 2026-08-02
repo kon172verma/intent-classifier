@@ -34,7 +34,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from finetune_lib import ALL_ADALORA_CONFIGS, ALL_ADALORA_MODELS
-from finetune_lib.plot_lib import plot_combined_accuracy_memory, plot_training_curves
+from finetune_lib.wrappers import parse_plot_args, run_plot_pipeline
 
 ADALORA_DIR = Path(__file__).parent.parent
 DEFAULT_TRAIN_DIR = ADALORA_DIR / "reports_training"
@@ -45,64 +45,23 @@ _TECHNIQUE = "AdaLoRA"
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Plot AdaLoRA experiment results.")
-    p.add_argument("--train-reports-dir", type=Path, default=DEFAULT_TRAIN_DIR)
-    p.add_argument("--val-reports-dir", type=Path, default=DEFAULT_VAL_DIR)
-    p.add_argument("--test-reports-dir", type=Path, default=DEFAULT_TEST_DIR)
-    p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    return p.parse_args()
+    return parse_plot_args(
+        description="Plot AdaLoRA experiment results.",
+        train_reports_dir=DEFAULT_TRAIN_DIR,
+        val_reports_dir=DEFAULT_VAL_DIR,
+        test_reports_dir=DEFAULT_TEST_DIR,
+        out_dir=DEFAULT_OUT_DIR,
+    )
 
 
 def main() -> None:
     args = parse_args()
-    args.out_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"\n  Generating {_TECHNIQUE} plots → {args.out_dir}")
-    print(f"  Training reports   : {args.train_reports_dir}")
-    print(f"  Validation reports : {args.val_reports_dir}")
-    print(f"  Test reports       : {args.test_reports_dir}")
-    print()
-
-    print("  [1/4] Training curves (2 models × 4 configs)...")
-    plot_training_curves(
-        train_reports_dir=args.train_reports_dir,
+    run_plot_pipeline(
+        args=args,
+        technique=_TECHNIQUE,
         all_models=ALL_ADALORA_MODELS,
         all_configs=ALL_ADALORA_CONFIGS,
-        out_dir=args.out_dir,
-        technique=_TECHNIQUE,
     )
-
-    print("  [2/4] Combined chart — train split...")
-    plot_combined_accuracy_memory(
-        reports_dir=args.train_reports_dir,
-        all_models=ALL_ADALORA_MODELS,
-        all_configs=ALL_ADALORA_CONFIGS,
-        out_dir=args.out_dir,
-        split="train",
-        technique=_TECHNIQUE,
-    )
-
-    print("  [3/4] Combined chart — val split...")
-    plot_combined_accuracy_memory(
-        reports_dir=args.val_reports_dir,
-        all_models=ALL_ADALORA_MODELS,
-        all_configs=ALL_ADALORA_CONFIGS,
-        out_dir=args.out_dir,
-        split="val",
-        technique=_TECHNIQUE,
-    )
-
-    print("  [4/4] Combined chart — test split (skips if no reports)...")
-    plot_combined_accuracy_memory(
-        reports_dir=args.test_reports_dir,
-        all_models=ALL_ADALORA_MODELS,
-        all_configs=ALL_ADALORA_CONFIGS,
-        out_dir=args.out_dir,
-        split="test",
-        technique=_TECHNIQUE,
-    )
-
-    print(f"\n  Done. All plots saved to {args.out_dir}")
 
 
 if __name__ == "__main__":

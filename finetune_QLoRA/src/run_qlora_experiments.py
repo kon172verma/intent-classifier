@@ -25,24 +25,18 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent.parent
-_LORA_SRC = _REPO_ROOT / "finetune_LoRA" / "src"
-for _p in (_REPO_ROOT, _LORA_SRC):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
-from run_lora_experiments import run_experiments_main
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from finetune_lib import ALL_QLORA_MODELS, QLORA_MODEL_REGISTRY
-
-_QLORA_SRC = Path(__file__).parent
-TRAIN_SCRIPT = _QLORA_SRC / "qlora_train.py"
-EVAL_SCRIPT = _QLORA_SRC / "qlora_validate.py"
+from finetune_lib.wrappers import run_experiments_wrapper
 
 if __name__ == "__main__":
-    run_experiments_main(
+    run_experiments_wrapper(
+        __file__,
         technique="QLoRA",
-        train_script=TRAIN_SCRIPT,
-        eval_script=EVAL_SCRIPT,
+        train_script_name="qlora_train.py",
+        eval_script_name="qlora_validate.py",
         model_registry=QLORA_MODEL_REGISTRY,
         default_models=ALL_QLORA_MODELS,
     )
