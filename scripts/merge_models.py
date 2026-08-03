@@ -101,8 +101,7 @@ def _resolve_adapter_subfolder(
             raise ValueError(
                 f"No experiment logged in EXPERIMENTS.jsonl for "
                 f"{technique}/{model_key}_{lora_config}_{dataset_size} "
-                f"(version={version}). Pass 'model_config_size:timestamp' explicitly, "
-                "or run scripts/migrate_adapters_to_experiments.py first."
+                f"(version={version}). Pass 'model_config_size:timestamp' explicitly."
             )
         timestamp = entry["timestamp"]
     return hf_adapter_subfolder(

@@ -38,8 +38,7 @@ models:
     hf_release_path: LoRA_merged/llama3.2-1b_C_1k
 ```
 
-To publish this release once the experiments repo migration
-(`scripts/migrate_adapters_to_experiments.py --execute`) has run:
+To publish this release:
 
 ```bash
 python release.py --version v1.0 --technique LoRA \
