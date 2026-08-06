@@ -1,394 +1,138 @@
-# Project: Edge Tool Selection using SLM + QLoRA/AdaLoRA
+# Intent Classifier — Fine-Tuning Experiments
+
+Train a Small Language Model (SLM) to route user requests to the correct tool from a
+dynamically provided list. The model receives a user request and a list of available tools
+with descriptions, and outputs either the selected tool name or `"none"`.
 
 ## Related Repositories
 
-- **This repo** (GitHub, [kon172verma/intent-classifier](https://github.com/kon172verma/intent-classifier)): fine-tuning code, configs, reports, charts, and the release pipeline (merge/unload/tag).
-- **Experiments** (Hugging Face, [kon172verma/intent-classifier-experiments](https://huggingface.co/kon172verma/intent-classifier-experiments)): every adapter produced during experimentation, organized by version folder. Written to by this repo's training scripts.
-- **Release** (Hugging Face, [kon172verma/intent-classifier](https://huggingface.co/kon172verma/intent-classifier)): only the 2 best merged/unloaded models per release, plus GGUF and ONNX exports. Written to only by this repo's `release.py`.
-- **Inference** (GitHub, [kon172verma/intent-classifier-inference](https://github.com/kon172verma/intent-classifier-inference)): downloads models from the release repo and benchmarks them on edge hardware (Raspberry Pi, Jetson, Qualcomm, Mac).
-
-## Versioning and Release Workflow
-
-- `VERSION` (this repo) holds the version folder that new experiments are pushed under, e.g. `v1.0`. Bump it to start a new round of experiments — the next training push will automatically create a new folder in the experiments repo.
-- `EXPERIMENTS.jsonl` (this repo) is an append-only log of every adapter pushed to the experiments repo, written automatically by the training scripts (`finetune_lib/registry.py`).
-- `RELEASES.md` (this repo) documents each finalized release: which experiments were chosen, their merged/GGUF/ONNX locations, and the GitHub tag.
-- Adapter naming convention in the experiments repo: `{version}/{model}_{technique}_{config}_{dataset_size}_{timestamp}`, e.g. `v1.0/qwen3-0.6b_LoRA_C_1k_20260715-044041`.
-- To publish a release: pick the 2 best experiments, run `release.py` (merges + pushes to the release repo, optionally publishes GGUF/ONNX, then creates a local git tag — review and `git push origin <version>` yourself).
-
-## Project Goal
-
-Build a complete research and engineering project that trains a Small Language Model (SLM) to perform dynamic MCP tool selection on an edge device.
-
-The model receives:
-
-* A user request
-* A dynamically changing list of available MCP tools
-* Tool descriptions
-
-The model outputs:
-
-* The selected tool name
-* OR the string "none" if no available tool can satisfy the request
-
-The model must output only the tool name or "none".
-
-Example:
-
-Input:
-
-Available Tools:
-
-Name: tool_7f2a91
-Description: Provides driving analytics and vehicle telemetry.
-
-Name: face_emotion
-Description: Analyzes facial expressions and emotions.
-
-User Request:
-Show me the average speed and fuel efficiency for the last week.
-
-Selected Tool:
-
-Output:
-
-tool_7f2a91
+| Repo | Purpose |
+| ------ | --------- |
+| **This repo** — GitHub [kon172verma/intent-classifier](https://github.com/kon172verma/intent-classifier) | Dataset, baseline evaluation, fine-tuning experiments, and release reports |
+| **Experiments** — HF [kon172verma/intent-classifier-experiments](https://huggingface.co/kon172verma/intent-classifier-experiments) | Every adapter produced during experimentation, organized by version folder |
+| **Release** — HF [kon172verma/intent-classifier](https://huggingface.co/kon172verma/intent-classifier) | The 2 best models per release (merged, full-weight) |
+| **Inference** — GitHub [kon172verma/intent-classifier-inference](https://github.com/kon172verma/intent-classifier-inference) | Downloads release models and benchmarks them across inference engines (llama.cpp, HF Transformers, ONNX, TensorRT-LLM) on edge hardware |
 
 ---
 
-## Long-Term Vision
+## Dataset
 
-The final system should support:
+A synthetic dataset of tool-routing examples generated from a fixed catalog of 30 tools.
 
-* Dynamic MCP server discovery
-* Dynamic tool names
-* Dynamic tool descriptions
-* Edge deployment
-* Quantized models
-* PEFT fine-tuning
-* Benchmarking of multiple SLMs
-* Comparison of LoRA, QLoRA, and AdaLoRA
+**Schema:**
 
-The goal is to determine whether a small edge-deployable language model can reliably perform tool routing with high accuracy while consuming minimal memory.
-
----
-
-## Phase 1: Dataset Generation
-
-Create a synthetic dataset generator.
-
-Dataset schema:
-
+```json
 {
-"user_request": "...",
-"available_tools": [
-{
-"name": "...",
-"description": "..."
+  "user_request": "...",
+  "available_tools": [{"name": "...", "description": "..."}],
+  "answer": "tool_name_or_none"
 }
-],
-"answer": "tool_name_or_none"
-}
+```
 
-### Tool Catalog
+**Key properties:**
 
-A fixed reference catalog of 30 tools is maintained at:
+- ~20% of examples have `"none"` as the answer
+- 5 rare tools appear as the correct answer in ≤ 2–3% of examples
+- Available-tools count is distributed across few-tool (1–3), standard (4–19),
+  and many-tool (20–30) regimes
+- Split: 80% train / 10% validation / 10% test
 
-dataset_sample/tools_reference.json
-
-Tools have stable names and descriptions. The catalog is the single source of truth used by the generator.
-Tool names intentionally mix naming styles (kebab-case corp names, snake_case) to mimic realistic MCP server registries.
-
-Five tools in the catalog are designated **rare**: they appear as the correct answer in fewer than 2-3% of total examples, but they still appear in the available_tools list of other examples so the model learns their descriptions. This forces the model to generalise intent classification rather than memorise frequent patterns.
-
-Rare tools: emergency_sos, roadside_assistance, insurance_claims, home_automation_bridge, corp-fleet-manager.
-
-### Available-Tools Count Distribution
-
-Each example draws a random subset of tools from the catalog. The count distribution is:
-
-* 10% of examples: 1-3 tools (few-tool regime — tests disambiguation with minimal context)
-* 10% of examples: 20-30 tools (many-tool regime — tests selection under noise)
-* 80% of examples: 4-19 tools (standard regime)
-
-### Answer Distribution
-
-* ~20% of examples: answer is "none" (no available tool satisfies the request)
-* ~80% of examples: answer is a valid tool name from the available_tools list
-
-### Requirements
-
-* Generate at least 10,000 examples total
-* Support configurable dataset size via CLI argument
-* Randomise tool ordering within each example
-* Correct tool is always included in available_tools for non-none examples
-* Rare tools appear as the correct answer in ≤ 2-3% of examples
-* "none" examples must include plausible-but-wrong tools in the available_tools list
-
-### Generation Milestones
-
-1. Generate 100 sample examples first for manual review and prompt debugging
-2. Scale to 10,000 examples after validation
-
-### Dataset Split
-
-80% train
-10% validation
-10% test
-
-Export:
-
-train.jsonl
-validation.jsonl
-test.jsonl
+Dataset lives in `dataset_full/` (full scale) and `dataset_sample/` (100-example sample
+used during development).
 
 ---
 
-## Phase 2: Baseline Evaluation
+## Baseline Evaluation
 
-Implement inference benchmarking for:
+Zero-shot accuracy benchmarked across a range of SLMs before any fine-tuning. Results live in `evaluation_baseline/`.
 
-* Qwen3-0.6B
-* Qwen3-1.7B
-* Phi-3 Mini
-* SmolLM3
+| Key | Model | Size |
+| ----- | ------- | ------ |
+| pythia-70m | EleutherAI/pythia-70m | 70M |
+| cerebras-111m | cerebras/Cerebras-GPT-111M | 111M |
+| smollm2-135m | HuggingFaceTB/SmolLM2-135M-Instruct | 135M |
+| gemma3-270m | google/gemma-3-270m-it | 270M |
+| smollm2-360m | HuggingFaceTB/SmolLM2-360M-Instruct | 360M |
+| qwen2.5-0.5b | Qwen/Qwen2.5-0.5B-Instruct | 0.5B |
+| qwen3-0.6b | Qwen/Qwen3-0.6B | 0.6B |
+| gemma3-1b | google/gemma-3-1b-it | 1B |
+| llama3.2-1b | meta-llama/Llama-3.2-1B-Instruct | 1B |
+| qwen3-1.7b | Qwen/Qwen3-1.7B | 1.7B |
+| smollm2-1.7b | HuggingFaceTB/SmolLM2-1.7B-Instruct | 1.7B |
+| granite3.3-2b | ibm-granite/granite-3.3-2b-instruct | 2B |
+| gemma2-2b | google/gemma-2-2b-it | 2B |
+| smollm3 | HuggingFaceTB/SmolLM3-3B | 3B |
+| llama3.2-3b | meta-llama/Llama-3.2-3B-Instruct | 3B |
 
-| Model        | Parameters |
-| ------------ | ---------- |
-| SmolLM2-135M | 135M       |
-| Qwen2.5-0.5B | 0.5B       |
-| Gemma 3 270M | 270M       |
-| SmolLM2-360M | 360M       |
-| TinyLlama    | 1.1B       |
-| Qwen2.5-1.5B | 1.5B       |
-| Gemma 3 1B   | 1B         |
-| Phi-3 Mini   | 3.8B       |
-| Llama 3.2 3B | 3B         |
-| Qwen3-4B     | 4B         |
-| Qwen3-0.6B   | 0.6B       |
-| Qwen3-1.7B   | 1.7B       |
-| SmolLM3      | 1.7B       |
-
-Use zero-shot prompting.
-
-Prompt template:
-
-You are a tool router.
-
-Rules:
-
-* Return only the tool name.
-* Return "none" if no tool matches.
-* Do not explain.
-
-Available Tools:
-...
-
-User Request:
-...
-
-Selected Tool:
-
-Metrics:
-
-* Exact Match Accuracy
-* Latency
-* Tokens/sec
-* Memory Usage
-
-Generate benchmark reports.
+Metric: Exact Match Accuracy.
 
 ---
 
-## Phase 3: Fine-Tuning
+## Fine-Tuning
 
-Implement support for:
+Six PEFT techniques are implemented and evaluated, each in its own directory:
 
-### LoRA
+| Technique | Directory | Notes |
+| ----------- | ----------- | ------- |
+| LoRA | `finetune_LoRA/` | rank, alpha, dropout |
+| LoRA+ | `finetune_LoRAplus/` | differential learning rates for A/B matrices |
+| DoRA | `finetune_DoRA/` | weight decomposition into magnitude + direction |
+| DoRA+ | `finetune_DoRAplus/` | DoRA with LoRA+ learning rate schedule |
+| AdaLoRA | `finetune_AdaLoRA/` | adaptive rank allocation with SVD pruning |
+| QLoRA | `finetune_QLoRA/` | NF4 quantized base + LoRA adapters |
 
-Parameters:
+All techniques use HuggingFace PEFT. Shared training utilities live in `finetune_lib/`.
+Each training run evaluates the adapter on the validation/test set and logs metrics
+alongside the adapter.
 
-* rank
-* alpha
-* dropout
-
-### QLoRA
-
-Parameters:
-
-* NF4 quantization
-* double quantization
-* bfloat16 compute
-
-### AdaLoRA
-
-Parameters:
-
-* target rank
-* initial rank
-* warmup schedule
-* pruning schedule
-
-Use HuggingFace PEFT.
-
-Implement configuration files.
-
-Example:
-
-configs/lora.yaml
-configs/qlora.yaml
-configs/adalora.yaml
+Adapters are pushed to the experiments repo under
+`{version}/{model}_{technique}_{config}_{dataset_size}_{timestamp}`
+(e.g. `v1.0/qwen3-0.6b_LoRA_C_1k_20260715-044041`). `EXPERIMENTS.jsonl` is an
+append-only log of every push, written by `finetune_lib/registry.py`.
 
 ---
 
-## Phase 4: Experiment Tracking
+## Release Evaluation
 
-Use:
+Once all fine-tuning experiments for a version are complete, the 2 best adapters are
+selected and subjected to a deeper evaluation in a dedicated `evaluation_release/` folder
+(separate from the per-technique evaluations in each `finetune_<technique>/` directory).
+This evaluation computes:
 
-* Weights & Biases or MLflow
+- Exact Match Accuracy
+- Per-tool Precision, Recall, and F1
+- Confusion matrix
 
-Track:
-
-* training loss
-* validation loss
-* accuracy
-* memory usage
-* trainable parameters
-* training time
-
-Save experiment metadata.
+Results are used to write the release report documenting the selection rationale,
+metrics comparison, and final adapter locations in the release repo.
 
 ---
 
-## Phase 5: Evaluation
+## Versioning and Release
 
-Compute:
+`VERSION` holds the current experiment version (e.g. `v1.0`). Bumping it starts a new
+round — all subsequent adapter pushes land in a new folder in the experiments repo.
 
-Exact Match Accuracy
-
-Confusion Matrix
-
-Per-tool Precision
-
-Per-tool Recall
-
-Per-tool F1
-
-Generate plots.
-
-Compare:
-
-* Zero-shot
-* LoRA
-* QLoRA
-* AdaLoRA
-
----
-
-## Phase 6: Edge Deployment
-
-Support:
-
-* GGUF export
-* llama.cpp inference
-* ONNX export
-
-Benchmark:
-
-* RAM usage
-* CPU usage
-* latency
-
-Target devices:
-
-* Raspberry Pi
-* Jetson
-* Automotive edge computer
-* Laptop CPU
-
----
-
-## Phase 7: MCP Integration
-
-Create a runtime service.
-
-Input:
-
-{
-"user_request": "...",
-"tools": [...]
-}
-
-Output:
-
-{
-"selected_tool": "..."
-}
-
-The runtime should:
-
-1. Discover MCP servers
-2. Build prompt
-3. Query model
-4. Return tool name
-
-No tool execution yet.
-
-Only routing.
+After the release evaluation is complete, the 2 best adapters are merged and pushed to the release repo.
 
 ---
 
 ## Project Structure
 
-intent-classifier/
-├── data/
-├── datasets/
-├── models/
-├── training/
-├── evaluation/
-├── deployment/
-├── inference/
-├── configs/
-├── experiments/
-├── notebooks/
-└── tests/
-
----
-
-## Coding Requirements
-
-* Python 3.12
-* HuggingFace Transformers
-* PEFT
-* Datasets
-* Accelerate
-* BitsAndBytes
-* PyTorch
-
-Use type hints everywhere.
-
-Use dataclasses where appropriate.
-
-Write production-quality code.
-
-Add unit tests.
-
-Add CLI commands.
-
-Support GPU and CPU execution.
-
----
-
-## Deliverables
-
-1. Dataset generator
-2. Baseline evaluation framework
-3. LoRA training pipeline
-4. QLoRA training pipeline
-5. AdaLoRA training pipeline
-6. Evaluation suite
-7. Edge deployment benchmarks
-8. MCP router service
-9. Documentation
-10. Reproducible experiments
-
-Implement the project incrementally, beginning with Phase 1 (dataset generation) and Phase 2 (baseline evaluation).
+```text
+dataset_sample/        # 100-example sample
+dataset_full/          # Full 10k+ example dataset
+evaluation_lib/        # Shared evaluation utilities
+evaluation_baseline/   # Zero-shot benchmark results
+finetune_lib/          # Shared training utilities and registry
+finetune_LoRA/         # LoRA experiments
+finetune_LoRAplus/     # LoRA+ experiments
+finetune_DoRA/         # DoRA experiments
+finetune_DoRAplus/     # DoRA+ experiments
+finetune_AdaLoRA/      # AdaLoRA experiments
+finetune_QLoRA/        # QLoRA experiments
+evaluation_release/    # Deep per-tool evaluation for the 2 best models per release
+scripts/               # Helper scripts
+EXPERIMENTS.jsonl      # Append-only log of all adapter pushes
+VERSION                # Current experiment version
+```
