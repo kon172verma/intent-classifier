@@ -97,14 +97,20 @@ from finetune_lib import (
     FINETUNE_MODEL_REGISTRY,
     HF_EXPERIMENTS_REPO,
     LORA_CONFIGS,
+    LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS,
+    NO_TOOL_ID,
+    PROMPT_FORMAT_VERSION,
+    TOOL_IDS,
     TrainValAccuracyCallback,
     compute_initial_train_loss,
     generate_experiment_timestamp,
     hf_adapter_subfolder,
+    hf_report_path,
     load_jsonl,
     peak_memory_mb,
     resolve_device,
     tokenize_with_labels,
+    upload_report_to_hf,
 )
 from finetune_lib.registry import log_experiment
 
@@ -273,6 +279,10 @@ def train_main(
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=False)
     else:
         model.enable_input_require_grads()  # gradient flow through frozen base layers
+    use_gradient_checkpointing = (
+        not quantize_4bit
+        and args.model not in LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS
+    )
     model.config.use_cache = False  # incompatible with gradient checkpointing
 
     # ── Apply LoRA ────────────────────────────────────────────────────────────
@@ -291,6 +301,10 @@ def train_main(
     trainable, total = count_trainable(model)
     print(f"\n  Trainable params : {trainable:,}  ({trainable / total * 100:.3f}%)")
     print(f"  Total params     : {total:,}")
+    print(
+        "  Grad checkpoint  : "
+        f"{'enabled' if use_gradient_checkpointing else 'disabled'}"
+    )
 
     # ── Tokenise datasets ─────────────────────────────────────────────────────
     print("\n  Tokenizing datasets...")
@@ -343,11 +357,13 @@ def train_main(
         greater_is_better=False,
         report_to="none",
         dataloader_pin_memory=(device.type == "cuda"),
-        # Gradient checkpointing: ~30-40% VRAM saving; use_reentrant=False
-        # avoids the PyTorch deprecation warning. Disabled under 4-bit NF4
-        # (QLoRA) — BNB 4-bit + gradient checkpointing is known to NaN.
-        gradient_checkpointing=not quantize_4bit,
-        gradient_checkpointing_kwargs=({"use_reentrant": False} if not quantize_4bit else None),
+        # Gradient checkpointing: ~30-40% VRAM saving for larger models.
+        # Disabled under 4-bit NF4 (QLoRA), and skipped for smaller models
+        # that fit comfortably on L4 without the extra compute overhead.
+        gradient_checkpointing=use_gradient_checkpointing,
+        gradient_checkpointing_kwargs=(
+            {"use_reentrant": False} if use_gradient_checkpointing else None
+        ),
         # For LoRA+/DoRA+ we inject a custom optimizer below; QLoRA uses a
         # paged optimizer to save VRAM; plain LoRA/DoRA keep adamw_torch.
         optim="paged_adamw_8bit" if quantize_4bit else "adamw_torch",
@@ -462,6 +478,7 @@ def train_main(
     # best weights, not necessarily the last-step weights.
     hf_sub = ""
     experiment_timestamp = ""
+    adapter_pushed = False
     if not args.smoke_test:
         print(f"\n  Saving adapter locally → {adapter_dir}")
         trained_model.save_pretrained(str(adapter_dir))
@@ -506,6 +523,7 @@ def train_main(
                     hf_repo=HF_EXPERIMENTS_REPO,
                     hf_subfolder=hf_sub,
                 )
+                adapter_pushed = True
             except Exception as e:
                 print(f"  WARNING: HF push failed: {e}")
                 print(f"           Adapter saved locally at {adapter_dir}")
@@ -530,12 +548,18 @@ def train_main(
         "device": str(device),
         "dtype": str(dtype).replace("torch.", ""),
         "timestamp": ts,
+        "prompt_format": PROMPT_FORMAT_VERSION,
+        "tool_id_scheme": "".join(TOOL_IDS),
+        "no_tool_id": NO_TOOL_ID,
+        "gradient_checkpointing": use_gradient_checkpointing,
         "trainable_params": trainable,
         "total_params": total,
         "trainable_pct": round(trainable / total * 100, 4),
         "steps_per_epoch": steps_per_epoch,
         "total_steps_trained": trainer.state.global_step,
         "early_stopped": trainer.state.global_step < total_steps,
+        "early_stopping_patience": EARLY_STOPPING_PATIENCE,
+        "early_stopping_threshold": EARLY_STOPPING_THRESHOLD,
         "peak_memory_mb": round(mem_mb, 1),
         "total_training_time_s": round(t_elapsed, 1),
         "final_train_loss": round(final_train_loss, 6),
@@ -559,7 +583,27 @@ def train_main(
     }
 
     report_path = args.report_dir / f"{run_tag}_{ts}.json"
+    report["hf_report_path"] = (
+        hf_report_path(
+            report_name=report_path.name,
+            version=CURRENT_VERSION,
+            technique=technique,
+            report_group=args.report_dir.name,
+        )
+        if adapter_pushed
+        else None
+    )
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    if adapter_pushed:
+        uploaded_path = upload_report_to_hf(
+            report_path=report_path,
+            version=CURRENT_VERSION,
+            technique=technique,
+            report_group=args.report_dir.name,
+            commit_message=f"Add {technique} training report: {run_tag} [{ts}]",
+        )
+        if uploaded_path:
+            print(f"  Report pushed  : {HF_EXPERIMENTS_REPO}/{uploaded_path}")
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")

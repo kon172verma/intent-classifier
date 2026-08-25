@@ -18,6 +18,14 @@ Quick imports:
     from finetune_lib.registry import log_experiment, find_latest_experiment
 """
 
+from evaluation_lib.eval_core import (  # noqa: F401
+    NO_TOOL_ID,
+    PROMPT_FORMAT_VERSION,
+    TOOL_IDS,
+    answer_to_tool_id,
+    tool_id_to_answer,
+)
+
 from .config import (  # noqa: F401
     ADALORA_CONFIGS,
     ADALORA_MODEL_REGISTRY,
@@ -35,6 +43,7 @@ from .config import (  # noqa: F401
     HF_EXPERIMENTS_REPO,
     HF_RELEASE_REPO,
     LORA_CONFIGS,
+    LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS,
     LORAPLUS_CONFIGS,
     MAX_SEQ_LENGTH,
     QLORA_MODEL_REGISTRY,
@@ -53,8 +62,10 @@ from .lib import (  # noqa: F401
     compute_per_tool_metrics,
     # re-exported from evaluation_lib
     extract_prediction,
+    hf_report_path,
     load_jsonl,
     peak_memory_mb,
     resolve_device,
     tokenize_with_labels,
+    upload_report_to_hf,
 )

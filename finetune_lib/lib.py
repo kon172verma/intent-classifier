@@ -19,6 +19,7 @@ Re-exports from evaluation_lib (no duplication):
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -32,13 +33,22 @@ from transformers import (
 )
 
 # ── Re-export shared utilities from evaluation_lib ────────────────────────────
-from evaluation_lib.eval_core import extract_prediction
+from evaluation_lib.eval_core import (
+    TOOL_IDS,
+    answer_to_tool_id,
+    extract_prediction,
+)
 from evaluation_lib.model_utils import (  # noqa: F401
     peak_memory_mb,
     resolve_device,
 )
 
-from .config import MAX_SEQ_LENGTH, QWEN3_FINETUNE_KEYS, SYSTEM_PROMPT
+from .config import (
+    HF_EXPERIMENTS_REPO,
+    MAX_SEQ_LENGTH,
+    QWEN3_FINETUNE_KEYS,
+    SYSTEM_PROMPT,
+)
 
 # ── Helpers imported from evaluation_lib ──────────────────────────────────────
 
@@ -83,11 +93,12 @@ def compute_accuracy(predictions: list[str], labels: list[str]) -> float:
 
 
 def _tool_block(tools: list[dict]) -> str:
-    parts: list[str] = []
-    for t in tools:
-        parts.append(f"Name: {t['name']}")
-        parts.append(f"Description: {t['description']}")
-        parts.append("")
+    if len(tools) > len(TOOL_IDS):
+        raise ValueError(f"At most {len(TOOL_IDS)} tools are supported per example.")
+
+    parts: list[str] = ["ID | Name | Description"]
+    for tool_id, t in zip(TOOL_IDS[: len(tools)], tools, strict=True):
+        parts.append(f"{tool_id} | {t['name']} | {t['description']}")
     return "\n".join(parts)
 
 
@@ -111,7 +122,7 @@ def build_chat_messages(
         {"role": "user", "content": user_content},
     ]
     if include_answer:
-        messages.append({"role": "assistant", "content": example["answer"]})
+        messages.append({"role": "assistant", "content": answer_to_tool_id(example)})
     return messages
 
 
@@ -210,6 +221,54 @@ def load_jsonl(path: Path) -> list[dict]:
     ]
 
 
+def hf_report_path(
+    report_name: str,
+    version: str,
+    technique: str,
+    report_group: str,
+) -> str:
+    """Return the central HF path for one report JSON."""
+    technique_slug = technique.lower().replace("+", "plus")
+    return f"reports/{version}/{technique_slug}/{report_group}/{report_name}"
+
+
+def upload_report_to_hf(
+    report_path: Path,
+    version: str,
+    technique: str,
+    report_group: str,
+    commit_message: str,
+) -> str | None:
+    """Upload one JSON report to the central HF reports tree."""
+    path_in_repo = hf_report_path(
+        report_name=report_path.name,
+        version=version,
+        technique=technique,
+        report_group=report_group,
+    )
+
+    try:
+        from huggingface_hub import HfApi
+
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        api.create_repo(
+            repo_id=HF_EXPERIMENTS_REPO,
+            repo_type="model",
+            exist_ok=True,
+            private=True,
+        )
+        api.upload_file(
+            path_or_fileobj=str(report_path),
+            repo_id=HF_EXPERIMENTS_REPO,
+            path_in_repo=path_in_repo,
+            commit_message=commit_message,
+        )
+        return path_in_repo
+    except Exception as exc:
+        print(f"  WARNING: HF report upload failed: {exc}")
+        return None
+
+
 # ── Inference helper (used by accuracy callback) ──────────────────────────────
 
 
@@ -220,7 +279,7 @@ def _generate_one(
     device: torch.device,
     model_key: str,
 ) -> str:
-    """Greedy generation on a single example; returns the predicted tool name."""
+    """Greedy generation on a single example; returns the predicted tool id."""
     messages = build_chat_messages(example, include_answer=False)
     text = apply_chat_template_safe(
         tokenizer, messages, model_key, add_generation_prompt=True
@@ -231,7 +290,7 @@ def _generate_one(
     with torch.no_grad():
         out = model.generate(
             **inputs,
-            max_new_tokens=16,
+            max_new_tokens=8,
             do_sample=False,
             pad_token_id=pad_id,
         )
@@ -253,7 +312,7 @@ def _compute_sample_accuracy(
     correct = 0
     for ex in examples:
         pred = _generate_one(model, tokenizer, ex, device, model_key)
-        if pred == ex["answer"]:
+        if pred == answer_to_tool_id(ex):
             correct += 1
     return correct / len(examples)
 

@@ -60,14 +60,21 @@ from finetune_lib import (
     ADALORA_MODEL_REGISTRY,
     CURRENT_VERSION,
     HF_EXPERIMENTS_REPO,
+    NO_TOOL_ID,
+    PROMPT_FORMAT_VERSION,
+    TOOL_IDS,
+    answer_to_tool_id,
     apply_chat_template_safe,
     build_chat_messages,
     compute_per_tool_metrics,
     extract_prediction,
     hf_adapter_subfolder,
+    hf_report_path,
     load_jsonl,
     peak_memory_mb,
     resolve_device,
+    tool_id_to_answer,
+    upload_report_to_hf,
 )
 from finetune_lib.registry import find_latest_experiment
 
@@ -97,7 +104,7 @@ def run_inference(
     with torch.no_grad():
         out = model.generate(
             **inputs,
-            max_new_tokens=16,
+            max_new_tokens=8,
             do_sample=False,
             pad_token_id=int(tokenizer.eos_token_id),
         )
@@ -283,14 +290,18 @@ def main() -> None:
 
     for i, ex in enumerate(examples, 1):
         pred, latency, n_tok = run_inference(model, tokenizer, ex, device, args.model)
-        correct = pred == ex["answer"]
+        answer_id = answer_to_tool_id(ex)
+        prediction_tool = tool_id_to_answer(ex, pred)
+        correct = pred == answer_id
         latencies.append(latency)
         tok_counts.append(n_tok)
         results.append(
             {
                 "index": i,
                 "answer": ex["answer"],
+                "answer_id": answer_id,
                 "prediction": pred,
+                "prediction_tool": prediction_tool,
                 "correct": correct,
                 "latency_s": round(latency, 4),
             }
@@ -300,7 +311,7 @@ def main() -> None:
             print(f"  [{i:>4}/{len(examples)}]  running_acc={running_acc:.3f}")
 
     # ── Metrics ───────────────────────────────────────────────────────────────
-    predictions = [r["prediction"] for r in results]
+    predictions = [r["prediction_tool"] for r in results]
     labels = [ex["answer"] for ex in examples]
     accuracy = sum(r["correct"] for r in results) / len(results)
 
@@ -333,6 +344,9 @@ def main() -> None:
         "technique": _TECHNIQUE,
         "split": args.split,
         "timestamp": ts,
+        "prompt_format": PROMPT_FORMAT_VERSION,
+        "tool_id_scheme": "".join(TOOL_IDS),
+        "no_tool_id": NO_TOOL_ID,
         "n_examples": len(results),
         "n_correct": sum(r["correct"] for r in results),
         "accuracy": round(accuracy, 4),
@@ -344,13 +358,34 @@ def main() -> None:
         "peak_memory_mb": round(mem_mb, 1),
         "hf_repo": HF_EXPERIMENTS_REPO if not args.local else None,
         "hf_subfolder": hf_sub if not args.local else None,
+        "hf_report_path": None,
         "per_tool_metrics": per_tool,
         "results": results,
     }
 
     report_name = f"{run_tag}_{args.split}_{ts}.json"
     report_path = out_dir / report_name
+    report["hf_report_path"] = (
+        hf_report_path(
+            report_name=report_path.name,
+            version=version,
+            technique=_TECHNIQUE,
+            report_group=out_dir.name,
+        )
+        if not args.local and hf_sub
+        else None
+    )
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    if not args.local and hf_sub:
+        uploaded_path = upload_report_to_hf(
+            report_path=report_path,
+            version=version,
+            technique=_TECHNIQUE,
+            report_group=out_dir.name,
+            commit_message=f"Add AdaLoRA {args.split} report: {run_tag} [{ts}]",
+        )
+        if uploaded_path:
+            print(f"  Report pushed  : {HF_EXPERIMENTS_REPO}/{uploaded_path}")
 
     print(f"\n  Accuracy   : {accuracy:.4f}  ({sum(r['correct'] for r in results)}/{len(results)})")
     print(f"  Avg latency: {avg_lat_ms:.1f} ms")

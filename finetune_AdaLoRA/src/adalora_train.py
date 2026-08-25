@@ -69,14 +69,19 @@ from finetune_lib import (
     ADALORA_MODEL_REGISTRY,
     CURRENT_VERSION,
     HF_EXPERIMENTS_REPO,
+    NO_TOOL_ID,
+    PROMPT_FORMAT_VERSION,
+    TOOL_IDS,
     TrainValAccuracyCallback,
     compute_initial_train_loss,
     generate_experiment_timestamp,
     hf_adapter_subfolder,
+    hf_report_path,
     load_jsonl,
     peak_memory_mb,
     resolve_device,
     tokenize_with_labels,
+    upload_report_to_hf,
 )
 from finetune_lib.registry import log_experiment
 
@@ -369,6 +374,7 @@ def main() -> None:
     # ── Save final adapter locally ────────────────────────────────────────────
     hf_sub = ""
     experiment_timestamp = ""
+    adapter_pushed = False
     if not args.smoke_test:
         print(f"\n  Saving adapter locally → {adapter_dir}")
         trained_model.save_pretrained(str(adapter_dir))
@@ -412,6 +418,7 @@ def main() -> None:
                     hf_repo=HF_EXPERIMENTS_REPO,
                     hf_subfolder=hf_sub,
                 )
+                adapter_pushed = True
             except Exception as e:
                 print(f"  WARNING: HF push failed: {e}")
                 print(f"           Adapter saved locally at {adapter_dir}")
@@ -437,6 +444,9 @@ def main() -> None:
         "device": str(device),
         "dtype": str(dtype).replace("torch.", ""),
         "timestamp": ts,
+        "prompt_format": PROMPT_FORMAT_VERSION,
+        "tool_id_scheme": "".join(TOOL_IDS),
+        "no_tool_id": NO_TOOL_ID,
         "trainable_params_init": trainable,
         "total_params": total,
         "trainable_pct_init": round(trainable / total * 100, 4),
@@ -456,6 +466,7 @@ def main() -> None:
         else None,
         "hf_repo": HF_EXPERIMENTS_REPO if not args.smoke_test else None,
         "hf_subfolder": hf_sub if not args.smoke_test else None,
+        "hf_report_path": None,
         "version": CURRENT_VERSION if not args.smoke_test else None,
         "log_history": trainer.state.log_history,
     }
@@ -464,7 +475,27 @@ def main() -> None:
     report["lora_config"] = args.adalora_config
 
     report_path = args.report_dir / f"{run_tag}_{ts}.json"
+    report["hf_report_path"] = (
+        hf_report_path(
+            report_name=report_path.name,
+            version=CURRENT_VERSION,
+            technique=_TECHNIQUE,
+            report_group=args.report_dir.name,
+        )
+        if adapter_pushed
+        else None
+    )
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    if adapter_pushed:
+        uploaded_path = upload_report_to_hf(
+            report_path=report_path,
+            version=CURRENT_VERSION,
+            technique=_TECHNIQUE,
+            report_group=args.report_dir.name,
+            commit_message=f"Add AdaLoRA training report: {run_tag} [{ts}]",
+        )
+        if uploaded_path:
+            print(f"  Report pushed  : {HF_EXPERIMENTS_REPO}/{uploaded_path}")
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
