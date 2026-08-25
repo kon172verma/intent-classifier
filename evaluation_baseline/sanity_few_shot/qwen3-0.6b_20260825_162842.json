@@ -1,0 +1,61 @@
+{
+  "model_key": "qwen3-0.6b",
+  "model_id": "Qwen/Qwen3-0.6B",
+  "device": "cuda",
+  "dtype": "torch.bfloat16",
+  "timestamp": "2026-08-25T16:28:42",
+  "eval_mode": "few_shot",
+  "prompt_format": "tool_id_v1",
+  "tool_id_scheme": "a-zA-Z",
+  "no_tool_id": "-",
+  "n_examples": 3,
+  "n_correct": 0,
+  "accuracy": 0.0,
+  "garbage_pct": 0.0,
+  "avg_latency_ms": 141.37,
+  "p50_latency_ms": 88.21,
+  "p95_latency_ms": 249.22,
+  "avg_tokens_per_sec": 17.92,
+  "peak_memory_mb": 1266.97,
+  "results": [
+    {
+      "index": 0,
+      "user_request": "Call my wife.",
+      "n_tools": 18,
+      "answer": "call_handler",
+      "answer_id": "d",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": false,
+      "is_garbage": false,
+      "latency_s": 0.24922477599966442,
+      "tokens_generated": 2
+    },
+    {
+      "index": 1,
+      "user_request": "Any accidents reported on Route 1?",
+      "n_tools": 16,
+      "answer": "traffic_alert_service",
+      "answer_id": "l",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": false,
+      "is_garbage": false,
+      "latency_s": 0.08821345099977407,
+      "tokens_generated": 2
+    },
+    {
+      "index": 2,
+      "user_request": "Alert me if my heart rate goes above 100.",
+      "n_tools": 15,
+      "answer": "health_monitor",
+      "answer_id": "b",
+      "prediction": "e",
+      "prediction_tool": "vehicle_diagnostics",
+      "correct": false,
+      "is_garbage": false,
+      "latency_s": 0.08666458700008661,
+      "tokens_generated": 2
+    }
+  ]
+}
