@@ -18,6 +18,7 @@ Re-exports from evaluation_lib (no duplication):
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 from pathlib import Path
@@ -267,6 +268,45 @@ def upload_report_to_hf(
     except Exception as exc:
         print(f"  WARNING: HF report upload failed: {exc}")
         return None
+
+
+def build_training_arguments(
+    total_training_steps: int,
+    **kwargs: Any,
+) -> TrainingArguments:
+    """Build TrainingArguments across Transformers API versions."""
+    params = inspect.signature(TrainingArguments.__init__).parameters
+    adapted = dict(kwargs)
+
+    if "eval_strategy" in adapted and "eval_strategy" not in params:
+        eval_strategy = adapted.pop("eval_strategy")
+        if "evaluation_strategy" in params:
+            adapted["evaluation_strategy"] = eval_strategy
+
+    if "warmup_ratio" in adapted and "warmup_ratio" not in params:
+        warmup_ratio = float(adapted.pop("warmup_ratio"))
+        if "warmup_steps" in params and "warmup_steps" not in adapted:
+            adapted["warmup_steps"] = (
+                max(1, int(total_training_steps * warmup_ratio))
+                if total_training_steps > 0 and warmup_ratio > 0
+                else 0
+            )
+
+    if (
+        "gradient_checkpointing_kwargs" in adapted
+        and "gradient_checkpointing_kwargs" not in params
+    ):
+        adapted.pop("gradient_checkpointing_kwargs")
+
+    supported = {k: v for k, v in adapted.items() if k in params}
+    unsupported = sorted(set(adapted) - set(supported))
+    if unsupported:
+        print(
+            "  WARNING: Ignoring unsupported TrainingArguments: "
+            f"{', '.join(unsupported)}"
+        )
+
+    return TrainingArguments(**supported)
 
 
 # ── Inference helper (used by accuracy callback) ──────────────────────────────

@@ -85,7 +85,6 @@ from transformers import (
     BitsAndBytesConfig,
     DataCollatorForSeq2Seq,
     EarlyStoppingCallback,
-    TrainingArguments,
     get_cosine_schedule_with_warmup,
 )
 from trl.trainer.sft_trainer import SFTTrainer
@@ -102,6 +101,7 @@ from finetune_lib import (
     PROMPT_FORMAT_VERSION,
     TOOL_IDS,
     TrainValAccuracyCallback,
+    build_training_arguments,
     compute_initial_train_loss,
     generate_experiment_timestamp,
     hf_adapter_subfolder,
@@ -328,7 +328,8 @@ def train_main(
     use_bf16 = device.type == "cuda" and torch.cuda.is_bf16_supported()
     use_fp16 = device.type == "cuda" and not use_bf16
 
-    training_args = TrainingArguments(  # type: ignore[call-arg]
+    training_args = build_training_arguments(
+        total_training_steps=10 if args.smoke_test else total_steps,
         output_dir=str(tmp_dir),
         num_train_epochs=lora_cfg["num_train_epochs"] if not args.smoke_test else 1,
         max_steps=10 if args.smoke_test else -1,

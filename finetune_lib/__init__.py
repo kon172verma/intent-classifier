@@ -57,6 +57,7 @@ from .lib import (  # noqa: F401
     TrainValAccuracyCallback,
     apply_chat_template_safe,
     build_chat_messages,
+    build_training_arguments,
     compute_accuracy,
     compute_initial_train_loss,
     compute_per_tool_metrics,
