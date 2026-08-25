@@ -1,129 +1,286 @@
-# Intent Classifier — Fine-Tuning Experiments
+# Intent Classifier: Fine-Tuning Experiments
 
-Train a Small Language Model (SLM) to route user requests to the correct tool from a
-dynamically provided list. The model receives a user request and a list of available tools
-with descriptions, and outputs either the selected tool name or `"none"`.
+Train a Small Language Model (SLM) to route a user request to the right tool
+from a dynamic list of available tools.
+
+In v2.0 the dataset schema stays the same, but prompts are rendered with
+positional tool IDs. The model now predicts the tool ID, not the tool name. If
+no tool matches, it predicts `-`.
 
 ## Related Repositories
 
-| Repo | Purpose |
-| ------ | --------- |
-| **This repo** — GitHub [kon172verma/intent-classifier](https://github.com/kon172verma/intent-classifier) | Dataset, baseline evaluation, fine-tuning experiments, and release reports |
-| **Experiments** — HF [kon172verma/intent-classifier-experiments](https://huggingface.co/kon172verma/intent-classifier-experiments) | Every adapter produced during experimentation, organized by version folder |
-| **Release** — HF [kon172verma/intent-classifier](https://huggingface.co/kon172verma/intent-classifier) | The 2 best models per release (merged, full-weight) |
-| **Inference** — GitHub [kon172verma/intent-classifier-inference](https://github.com/kon172verma/intent-classifier-inference) | Downloads release models and benchmarks them across inference engines (llama.cpp, HF Transformers, ONNX, TensorRT-LLM) on edge hardware |
+- This repo: `github.com/kon172verma/intent-classifier`
+- Experiments repo: `huggingface.co/kon172verma/intent-classifier-experiments`
+- Release repo: `huggingface.co/kon172verma/intent-classifier`
+- Inference repo: `github.com/kon172verma/intent-classifier-inference`
 
----
+## Version 2.0
+
+v2.0 keeps the same examples and answer names in `dataset_sample/` and
+`dataset_full/`, but changes how examples are presented to the model.
+
+Why v2.0 exists:
+
+- Shorter outputs: `a` is cheaper to generate and parse than `call_handler`.
+- Cleaner labels: the model only has to emit one of `a-z`, `A-Z`, or `-`.
+- Dynamic tools still work: IDs are assigned per example from the listed order.
+- Smaller benchmark decode budget: evaluation and validation use fewer tokens.
+
+The current ID scheme supports up to 52 tools per example:
+
+```text
+a-z, A-Z
+```
+
+`-` is reserved for "no valid tool".
 
 ## Dataset
 
-A synthetic dataset of tool-routing examples generated from a fixed catalog of 30 tools.
+A synthetic dataset of tool-routing examples generated from a fixed catalog of
+30 tools.
 
-**Schema:**
+Schema:
 
 ```json
 {
   "user_request": "...",
-  "available_tools": [{"name": "...", "description": "..."}],
+  "available_tools": [
+    {
+      "name": "...",
+      "description": "..."
+    }
+  ],
   "answer": "tool_name_or_none"
 }
 ```
 
-**Key properties:**
+Important detail: `answer` remains the readable tool name or `none` on disk.
+During training and inference, the prompt renderer maps it to the positional ID
+shown in that example.
 
-- ~20% of examples have `"none"` as the answer
-- 5 rare tools appear as the correct answer in ≤ 2–3% of examples
-- Available-tools count is distributed across few-tool (1–3), standard (4–19),
-  and many-tool (20–30) regimes
-- Split: 80% train / 10% validation / 10% test
+Key properties:
 
-Dataset lives in `dataset_full/` (full scale) and `dataset_sample/` (100-example sample
-used during development).
+- About 20% of examples have `none` as the answer.
+- Five rare tools appear as the correct answer in only 2-3% of examples.
+- Available-tools count spans few-tool, standard, and many-tool regimes.
+- Split: 80% train, 10% validation, 10% test.
 
----
+Dataset folders:
+
+- `dataset_sample/`: 100-example sample used during development.
+- `dataset_full/`: full-scale dataset.
+
+## Prompt Format
+
+Prompt order is always:
+
+```text
+system prompt -> available tools -> user request -> selected tool
+```
+
+System prompt:
+
+```text
+You are a tool router.
+
+Available tools are listed with id, name, and description.
+
+Rules:
+- Return only the tool id.
+- Use the id from the available tools list.
+- Return "-" if no tool matches.
+- Do not explain.
+```
+
+User message body:
+
+```text
+Available Tools:
+ID | Name | Description
+a | call_handler | Makes hands-free phone calls.
+b | nav_route_planner | Plans routes and navigation.
+c | sms_messenger | Reads and sends short SMS messages.
+
+User Request:
+Call my wife.
+
+Selected Tool:
+```
+
+The expected assistant output for this example is:
+
+```text
+a
+```
+
+## Qwen3-0.6B Template Example
+
+Before `apply_chat_template`, a training example is represented as messages:
+
+```python
+[
+    {
+        "role": "system",
+        "content": (
+            "You are a tool router.\n\n"
+            "Available tools are listed with id, name, and description.\n\n"
+            "Rules:\n"
+            "- Return only the tool id.\n"
+            "- Use the id from the available tools list.\n"
+            "- Return \"-\" if no tool matches.\n"
+            "- Do not explain."
+        ),
+    },
+    {
+        "role": "user",
+        "content": (
+            "Available Tools:\n"
+            "ID | Name | Description\n"
+            "a | call_handler | Makes hands-free phone calls.\n"
+            "b | nav_route_planner | Plans routes and navigation.\n"
+            "c | sms_messenger | Reads and sends short SMS messages.\n\n"
+            "User Request:\n"
+            "Call my wife.\n\n"
+            "Selected Tool:"
+        ),
+    },
+    {
+        "role": "assistant",
+        "content": "a",
+    },
+]
+```
+
+After Qwen3-0.6B `apply_chat_template(..., enable_thinking=False)`:
+
+```text
+<|im_start|>system
+You are a tool router.
+
+Available tools are listed with id, name, and description.
+
+Rules:
+- Return only the tool id.
+- Use the id from the available tools list.
+- Return "-" if no tool matches.
+- Do not explain.<|im_end|>
+<|im_start|>user
+Available Tools:
+ID | Name | Description
+a | call_handler | Makes hands-free phone calls.
+b | nav_route_planner | Plans routes and navigation.
+c | sms_messenger | Reads and sends short SMS messages.
+
+User Request:
+Call my wife.
+
+Selected Tool:<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+a<|im_end|>
+```
+
+For inference, the same system and user messages are rendered with
+`add_generation_prompt=True`; the model then generates the final ID.
 
 ## Baseline Evaluation
 
-Zero-shot accuracy benchmarked across a range of SLMs before any fine-tuning. Results live in `evaluation_baseline/`.
+Zero-shot and few-shot baselines live in `evaluation_baseline/`. Shared prompt
+construction, parsing, and report schemas live in `evaluation_lib/`.
 
-| Key | Model | Size |
-| ----- | ------- | ------ |
-| pythia-70m | EleutherAI/pythia-70m | 70M |
-| cerebras-111m | cerebras/Cerebras-GPT-111M | 111M |
-| smollm2-135m | HuggingFaceTB/SmolLM2-135M-Instruct | 135M |
-| gemma3-270m | google/gemma-3-270m-it | 270M |
-| smollm2-360m | HuggingFaceTB/SmolLM2-360M-Instruct | 360M |
-| qwen2.5-0.5b | Qwen/Qwen2.5-0.5B-Instruct | 0.5B |
-| qwen3-0.6b | Qwen/Qwen3-0.6B | 0.6B |
-| gemma3-1b | google/gemma-3-1b-it | 1B |
-| llama3.2-1b | meta-llama/Llama-3.2-1B-Instruct | 1B |
-| qwen3-1.7b | Qwen/Qwen3-1.7B | 1.7B |
-| smollm2-1.7b | HuggingFaceTB/SmolLM2-1.7B-Instruct | 1.7B |
-| granite3.3-2b | ibm-granite/granite-3.3-2b-instruct | 2B |
-| gemma2-2b | google/gemma-2-2b-it | 2B |
-| smollm3 | HuggingFaceTB/SmolLM3-3B | 3B |
-| llama3.2-3b | meta-llama/Llama-3.2-3B-Instruct | 3B |
+Metric: exact-match accuracy on the predicted tool ID.
 
-Metric: Exact Match Accuracy.
-
----
+The baseline matrix includes models from 70M to 3B parameters. The final
+fine-tuning shortlist is documented in `evaluation_baseline/final_report.md`.
 
 ## Fine-Tuning
 
-Six PEFT techniques are implemented and evaluated, each in its own directory:
+Six PEFT techniques are implemented:
 
-| Technique | Directory | Notes |
-| ----------- | ----------- | ------- |
-| LoRA | `finetune_LoRA/` | rank, alpha, dropout |
-| LoRA+ | `finetune_LoRAplus/` | differential learning rates for A/B matrices |
-| DoRA | `finetune_DoRA/` | weight decomposition into magnitude + direction |
-| DoRA+ | `finetune_DoRAplus/` | DoRA with LoRA+ learning rate schedule |
-| AdaLoRA | `finetune_AdaLoRA/` | adaptive rank allocation with SVD pruning |
-| QLoRA | `finetune_QLoRA/` | NF4 quantized base + LoRA adapters |
+- LoRA: `finetune_LoRA/`
+- LoRA+: `finetune_LoRAplus/`
+- DoRA: `finetune_DoRA/`
+- DoRA+: `finetune_DoRAplus/`
+- AdaLoRA: `finetune_AdaLoRA/`
+- QLoRA: `finetune_QLoRA/`
 
-All techniques use HuggingFace PEFT. Shared training utilities live in `finetune_lib/`.
-Each training run evaluates the adapter on the validation/test set and logs metrics
-alongside the adapter.
+Shared fine-tuning utilities live in `finetune_lib/`. All PEFT training paths
+use the same v2 prompt renderer and train on the ID label.
 
-Adapters are pushed to the experiments repo under
-`{version}/{model}_{technique}_{config}_{dataset_size}_{timestamp}`
-(e.g. `v1.0/qwen3-0.6b_LoRA_C_1k_20260715-044041`). `EXPERIMENTS.jsonl` is an
-append-only log of every push, written by `finetune_lib/registry.py`.
+Adapters are pushed to the experiments repo under:
 
----
+```text
+{version}/{model}_{technique}_{config}_{dataset_size}_{timestamp}
+```
 
-## Release Evaluation
+Example:
 
-Once all fine-tuning experiments for a version are complete, the 2 best adapters are
-selected and subjected to a deeper evaluation in a dedicated `evaluation_release/` folder
-(separate from the per-technique evaluations in each `finetune_<technique>/` directory).
-This evaluation computes:
+```text
+v2.0/qwen3-0.6b_LoRA_C_1k_20260715-044041
+```
 
-- Exact Match Accuracy
-- Per-tool Precision, Recall, and F1
-- Confusion matrix
+`EXPERIMENTS.jsonl` is the append-only index of adapter pushes.
 
-Results are used to write the release report documenting the selection rationale,
-metrics comparison, and final adapter locations in the release repo.
+## Checkpoints And Reports
 
----
+LoRA-family training writes Hugging Face Trainer checkpoints locally under:
 
-## Versioning and Release
+```text
+finetune_<technique>/tmp/{model}_{config}_{dataset_size}/checkpoint-*
+```
 
-`VERSION` holds the current experiment version (e.g. `v1.0`). Bumping it starts a new
-round — all subsequent adapter pushes land in a new folder in the experiments repo.
+The trainer keeps disk usage bounded with `save_total_limit=2`. With
+`load_best_model_at_end=True`, the saved and pushed adapter is the best
+validation-loss adapter restored at the end, not every intermediate checkpoint.
 
-After the release evaluation is complete, the 2 best adapters are merged and pushed to the release repo.
+Training, validation, and test JSON reports are written locally under each
+technique folder:
 
----
+```text
+reports_training/
+reports_validation/
+reports_test/
+```
+
+For non-smoke runs, scripts also upload JSON reports to a central reports tree
+in the experiments repo. Adapter files stay in their adapter run folders, while
+reports are grouped by version, technique, and report type:
+
+```text
+reports/
+  v2.0/
+    dora/
+      reports_training/
+      reports_validation/
+      reports_test/
+    loraplus/
+      reports_training/
+      reports_validation/
+      reports_test/
+```
+
+Each JSON report still includes `hf_subfolder`, which points back to the exact
+adapter run that produced it. This keeps reports easy to fetch after a Colab
+disconnect without mixing them into adapter artifact folders.
+
+## Versioning And Release
+
+`VERSION` holds the current experiment version. Bumping it starts a new round;
+subsequent adapter pushes land in the matching version folder.
+
+After release evaluation, the best adapters are merged and pushed to the
+release repo.
 
 ## Project Structure
 
 ```text
 dataset_sample/        # 100-example sample
-dataset_full/          # Full 10k+ example dataset
+dataset_full/          # Full dataset
 evaluation_lib/        # Shared evaluation utilities
-evaluation_baseline/   # Zero-shot benchmark results
+evaluation_baseline/   # Zero-shot and few-shot baseline results
 finetune_lib/          # Shared training utilities and registry
 finetune_LoRA/         # LoRA experiments
 finetune_LoRAplus/     # LoRA+ experiments
@@ -131,8 +288,8 @@ finetune_DoRA/         # DoRA experiments
 finetune_DoRAplus/     # DoRA+ experiments
 finetune_AdaLoRA/      # AdaLoRA experiments
 finetune_QLoRA/        # QLoRA experiments
-evaluation_release/    # Deep per-tool evaluation for the 2 best models per release
+evaluation_release/    # Deep evaluation for release candidates
 scripts/               # Helper scripts
-EXPERIMENTS.jsonl      # Append-only log of all adapter pushes
+EXPERIMENTS.jsonl      # Append-only log of adapter pushes
 VERSION                # Current experiment version
 ```
