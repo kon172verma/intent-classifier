@@ -16,14 +16,19 @@ from .config import (
     SYSTEM_PROMPT_ZERO_SHOT,
 )
 from .eval_core import (
+    NO_TOOL_ID,
+    PROMPT_FORMAT_VERSION,
+    TOOL_IDS,
     BenchmarkReport,
     ExampleResult,
+    answer_to_tool_id,
     build_chat_messages,
     build_raw_prompt,
     compute_prefix_kv_cache,
     evaluate,
     extract_prediction,
     run_example,
+    tool_id_to_answer,
 )
 from .model_info import (
     MODEL_ARCHITECTURE,
@@ -51,8 +56,10 @@ __all__ = [
     "MODEL_REGISTRY", "ALL_MODELS", "QWEN3_KEYS",
     "SYSTEM_PROMPT_ZERO_SHOT", "SYSTEM_PROMPT_FEW_SHOT", "SYSTEM_PROMPT",
     # eval_core
-    "ExampleResult", "BenchmarkReport",
+    "ExampleResult", "BenchmarkReport", "TOOL_IDS", "NO_TOOL_ID",
+    "PROMPT_FORMAT_VERSION",
     "build_chat_messages", "build_raw_prompt", "extract_prediction",
+    "answer_to_tool_id", "tool_id_to_answer",
     "run_example", "evaluate", "compute_prefix_kv_cache",
     # model_utils
     "resolve_device", "dtype_for_device", "load_model_and_tokenizer",

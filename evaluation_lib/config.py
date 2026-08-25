@@ -20,24 +20,24 @@ from __future__ import annotations
 # apply_chat_template — see QWEN3_KEYS comment for context.
 MODEL_REGISTRY: dict[str, str] = {
     # ── TINY (<300M) ──────────────────────────────────────────────────────
-    "pythia-70m":     "EleutherAI/pythia-70m",                  # base only — no instruct variant exists
-    "cerebras-111m":  "cerebras/Cerebras-GPT-111M",             # base only — no instruct variant exists
-    "smollm2-135m":   "HuggingFaceTB/SmolLM2-135M-Instruct",    # instruct, open
-    "gemma3-270m":    "google/gemma-3-270m-it",                 # instruct, gated (Google Gemma licence)
+    "pythia-70m": "EleutherAI/pythia-70m",  # base only — no instruct variant exists
+    "cerebras-111m": "cerebras/Cerebras-GPT-111M",  # base only — no instruct variant exists
+    "smollm2-135m": "HuggingFaceTB/SmolLM2-135M-Instruct",  # instruct, open
+    "gemma3-270m": "google/gemma-3-270m-it",  # instruct, gated (Google Gemma licence)
     # ── SMALL (<1B) ────────────────────────────────────────────────────────
-    "smollm2-360m":   "HuggingFaceTB/SmolLM2-360M-Instruct",    # instruct, open
-    "qwen2.5-0.5b":   "Qwen/Qwen2.5-0.5B-Instruct",             # instruct, open
-    "qwen3-0.6b":     "Qwen/Qwen3-0.6B",                        # unified base+chat, open
+    "smollm2-360m": "HuggingFaceTB/SmolLM2-360M-Instruct",  # instruct, open
+    "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B-Instruct",  # instruct, open
+    "qwen3-0.6b": "Qwen/Qwen3-0.6B",  # unified base+chat, open
     # ── MEDIUM (<2B) ───────────────────────────────────────────────────────
-    "gemma3-1b":      "google/gemma-3-1b-it",                   # instruct, gated (Google Gemma licence)
-    "llama3.2-1b":    "meta-llama/Llama-3.2-1B-Instruct",       # instruct, gated (Meta Llama 3.2 licence)
-    "qwen3-1.7b":     "Qwen/Qwen3-1.7B",                        # unified base+chat, open
-    "smollm2-1.7b":   "HuggingFaceTB/SmolLM2-1.7B-Instruct",    # instruct, open
+    "gemma3-1b": "google/gemma-3-1b-it",  # instruct, gated (Google Gemma licence)
+    "llama3.2-1b": "meta-llama/Llama-3.2-1B-Instruct",  # instruct, gated (Meta Llama 3.2 licence)
+    "qwen3-1.7b": "Qwen/Qwen3-1.7B",  # unified base+chat, open
+    "smollm2-1.7b": "HuggingFaceTB/SmolLM2-1.7B-Instruct",  # instruct, open
     # ── LARGE (<=3B) ───────────────────────────────────────────────────────
-    "granite3.3-2b":  "ibm-granite/granite-3.3-2b-instruct",    # instruct, open
-    "gemma2-2b":      "google/gemma-2-2b-it",                   # instruct, gated (Google Gemma licence); Gemma 2 series
-    "smollm3":        "HuggingFaceTB/SmolLM3-3B",               # unified base+chat, open
-    "llama3.2-3b":    "meta-llama/Llama-3.2-3B-Instruct",       # instruct, gated (Meta Llama 3.2 licence)
+    "granite3.3-2b": "ibm-granite/granite-3.3-2b-instruct",  # instruct, open
+    "gemma2-2b": "google/gemma-2-2b-it",  # instruct, gated (Google Gemma licence); Gemma 2 series
+    "smollm3": "HuggingFaceTB/SmolLM3-3B",  # unified base+chat, open
+    "llama3.2-3b": "meta-llama/Llama-3.2-3B-Instruct",  # instruct, gated (Meta Llama 3.2 licence)
 }
 
 # Ordered smallest → largest (used as default run order in batch runners)
@@ -78,58 +78,50 @@ QWEN3_KEYS: frozenset[str] = frozenset({"qwen3-0.6b", "qwen3-1.7b", "smollm3"})
 
 SYSTEM_PROMPT_ZERO_SHOT: str = (
     "You are a tool router.\n\n"
+    "Available tools are listed with id, name, and description.\n\n"
     "Rules:\n"
-    "- Return only the tool name.\n"
-    '- Return "none" if no tool matches.\n'
+    "- Return only the tool id.\n"
+    "- Use the id from the available tools list.\n"
+    '- Return "-" if no tool matches.\n'
     "- Do not explain."
 )
 
 SYSTEM_PROMPT_FEW_SHOT: str = (
     "You are a tool router.\n\n"
+    "Available tools are listed with id, name, and description.\n\n"
     "Rules:\n"
-    "- Return only the tool name.\n"
-    '- Return "none" if no tool matches.\n'
+    "- Return only the tool id.\n"
+    "- Use the id from the available tools list.\n"
+    '- Return "-" if no tool matches.\n'
     "- Do not explain.\n\n"
     "Examples:\n\n"
     # ── Example 1: clear match ──────────────────────────────────────────────
     "Available Tools:\n"
-    "Name: nav_route_planner\n"
-    "Description: Plans a driving route to a destination.\n"
-    "\n"
-    "Name: climate_control\n"
-    "Description: Adjusts cabin temperature and fan settings.\n"
-    "\n"
-    "Name: media_player_ctrl\n"
-    "Description: Controls music and audio playback.\n"
+    "ID | Name | Description\n"
+    "a | nav_route_planner | Plans a driving route to a destination.\n"
+    "b | climate_control | Adjusts cabin temperature and fan settings.\n"
+    "c | media_player_ctrl | Controls music and audio playback.\n"
     "\n"
     'User Request: "Get me to the downtown office by 9 am."\n'
-    "Selected Tool: nav_route_planner\n\n"
+    "Selected Tool: a\n\n"
     # ── Example 2: clear match ──────────────────────────────────────────────
     "Available Tools:\n"
-    "Name: call_handler\n"
-    "Description: Makes and manages phone calls.\n"
-    "\n"
-    "Name: sms_messenger\n"
-    "Description: Sends and reads SMS text messages.\n"
-    "\n"
-    "Name: vehicle_diagnostics\n"
-    "Description: Reads and explains vehicle fault codes and sensor data.\n"
+    "ID | Name | Description\n"
+    "a | call_handler | Makes and manages phone calls.\n"
+    "b | sms_messenger | Sends and reads SMS text messages.\n"
+    "c | vehicle_diagnostics | Reads and explains vehicle fault codes and sensor data.\n"
     "\n"
     "User Request: \"Send a quick text to the office: 'stuck in traffic'.\"\n"
-    "Selected Tool: sms_messenger\n\n"
-    # ── Example 3: no match → none ──────────────────────────────────────────
+    "Selected Tool: b\n\n"
+    # ── Example 3: no match -> "-" ──────────────────────────────────────────
     "Available Tools:\n"
-    "Name: ev_charging_scheduler\n"
-    "Description: Schedules and manages EV charging sessions.\n"
-    "\n"
-    "Name: fuel_station_finder\n"
-    "Description: Finds nearby fuel stations and current prices.\n"
-    "\n"
-    "Name: parking_locator\n"
-    "Description: Finds and reserves parking spots.\n"
+    "ID | Name | Description\n"
+    "a | ev_charging_scheduler | Schedules and manages EV charging sessions.\n"
+    "b | fuel_station_finder | Finds nearby fuel stations and current prices.\n"
+    "c | parking_locator | Finds and reserves parking spots.\n"
     "\n"
     'User Request: "How do I file my tax return online?"\n'
-    "Selected Tool: none"
+    "Selected Tool: -"
 )
 
 # Alias for code that imports just SYSTEM_PROMPT

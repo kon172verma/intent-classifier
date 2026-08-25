@@ -36,7 +36,7 @@ if _env_file.exists():
 
     load_dotenv(_env_file)
 
-from evaluation_lib import MODEL_REGISTRY  # noqa: F401
+from evaluation_lib import MODEL_REGISTRY, PROMPT_FORMAT_VERSION  # noqa: F401
 from evaluation_lib.config import ALL_MODELS
 
 EVAL_SCRIPT = Path(__file__).parent / "baseline_eval.py"
@@ -63,13 +63,20 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--mode", default="zero_shot", choices=["zero_shot", "few_shot"])
     p.add_argument("--out-dir", type=Path, default=None)
     p.add_argument("--limit", type=int, default=None)
-    p.add_argument("--max-new-tokens", type=int, default=32)
+    p.add_argument("--max-new-tokens", type=int, default=8)
     return p.parse_args()
 
 
 def latest_report_for(model_key: str, reports_dir: Path) -> Path | None:
     matches = sorted(reports_dir.glob(f"{model_key}_*.json"))
-    return matches[-1] if matches else None
+    for path in reversed(matches):
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if report.get("prompt_format") == PROMPT_FORMAT_VERSION:
+            return path
+    return None
 
 
 def run_model(
@@ -153,6 +160,9 @@ def save_summary(results: list[dict], out_dir: Path) -> None:
         "device",
         "dtype",
         "timestamp",
+        "prompt_format",
+        "tool_id_scheme",
+        "no_tool_id",
         "n_examples",
         "n_correct",
         "accuracy",

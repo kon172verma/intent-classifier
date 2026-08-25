@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--data", "-d", type=Path, default=DEFAULT_DATA)
     p.add_argument("--device", type=str, default="auto",
                    choices=["auto", "cpu", "cuda", "mps"])
-    p.add_argument("--max-new-tokens", type=int, default=32)
+    p.add_argument("--max-new-tokens", type=int, default=8)
     p.add_argument("--mode", type=str, default="zero_shot",
                    choices=["zero_shot", "few_shot"])
     p.add_argument("--out-dir", type=Path, default=None)

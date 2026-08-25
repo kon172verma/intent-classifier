@@ -15,6 +15,7 @@ from __future__ import annotations
 import copy
 import json
 import re
+import string
 import time
 import traceback
 from dataclasses import asdict, dataclass, field
@@ -44,14 +45,57 @@ from evaluation_lib.model_utils import (
 #                    tool list + user request (in that order).
 # For base models  : same order flattened into a single completion string.
 
+TOOL_IDS: tuple[str, ...] = tuple(string.ascii_lowercase + string.ascii_uppercase)
+NO_TOOL_ID = "-"
+PROMPT_FORMAT_VERSION = "tool_id_v1"
+
 
 def _tool_block(tools: list[dict]) -> str:
-    parts: list[str] = []
-    for t in tools:
-        parts.append(f"Name: {t['name']}")
-        parts.append(f"Description: {t['description']}")
-        parts.append("")
+    if len(tools) > len(TOOL_IDS):
+        raise ValueError(f"At most {len(TOOL_IDS)} tools are supported per example.")
+
+    parts: list[str] = ["ID | Name | Description"]
+    for tool_id, t in zip(TOOL_IDS[: len(tools)], tools, strict=True):
+        parts.append(f"{tool_id} | {t['name']} | {t['description']}")
     return "\n".join(parts)
+
+
+def _tool_id_maps(example: dict) -> tuple[dict[str, str], dict[str, str]]:
+    """Return (id_to_name, name_to_id) for the example's available tools."""
+    tools = example["available_tools"]
+    if len(tools) > len(TOOL_IDS):
+        raise ValueError(f"At most {len(TOOL_IDS)} tools are supported per example.")
+
+    id_to_name: dict[str, str] = {}
+    name_to_id: dict[str, str] = {}
+    for tool_id, tool in zip(TOOL_IDS[: len(tools)], tools, strict=True):
+        name = str(tool["name"]).strip()
+        id_to_name[tool_id] = name
+        name_to_id[name.lower()] = tool_id
+    return id_to_name, name_to_id
+
+
+def answer_to_tool_id(example: dict) -> str:
+    """Map the dataset's tool-name answer to the positional id shown in the prompt."""
+    answer = str(example["answer"]).strip()
+    if answer.lower() == "none":
+        return NO_TOOL_ID
+
+    _, name_to_id = _tool_id_maps(example)
+    try:
+        return name_to_id[answer.lower()]
+    except KeyError as exc:
+        raise ValueError(f"Answer {answer!r} is not present in available_tools.") from exc
+
+
+def tool_id_to_answer(example: dict, tool_id: str) -> str:
+    """Map a predicted id back to a dataset-style answer for readable reports."""
+    pred_id = tool_id.strip()
+    if pred_id == NO_TOOL_ID:
+        return "none"
+
+    id_to_name, _ = _tool_id_maps(example)
+    return id_to_name.get(pred_id, pred_id)
 
 
 def build_raw_prompt(
@@ -143,7 +187,7 @@ _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 def extract_prediction(raw_generated: str) -> str:
     """
-    Extract the tool name from raw model output.
+    Extract the tool id from raw model output.
 
     Steps:
     1. Strip Qwen3 <think>…</think> blocks.
@@ -172,9 +216,11 @@ class ExampleResult:
     user_request: str
     n_tools: int
     answer: str
+    answer_id: str
     prediction: str
+    prediction_tool: str
     correct: bool
-    is_garbage: bool  # pred is non-empty, not "none", and not in the available tool list
+    is_garbage: bool  # pred is non-empty and not a valid tool id or "-"
     latency_s: float
     tokens_generated: int
 
@@ -187,10 +233,13 @@ class BenchmarkReport:
     dtype: str
     timestamp: str
     eval_mode: str  # "zero_shot" | "few_shot"
+    prompt_format: str
+    tool_id_scheme: str
+    no_tool_id: str
     n_examples: int
     n_correct: int
     accuracy: float
-    garbage_pct: float  # % of wrong predictions that are hallucinated tool names
+    garbage_pct: float  # % of predictions outside the valid id set
     avg_latency_ms: float
     p50_latency_ms: float
     p95_latency_ms: float
@@ -348,19 +397,21 @@ def evaluate(
             traceback.print_exc()
             pred, lat, ntok = "", 0.0, 0
 
-        correct = pred.strip().lower() == ex["answer"].strip().lower()
-        valid_tools: set[str] = {t["name"].strip().lower() for t in ex["available_tools"]} | {
-            "none"
-        }
-        pred_lower = pred.strip().lower()
-        is_garbage = bool(pred_lower) and pred_lower not in valid_tools
+        answer_id = answer_to_tool_id(ex)
+        pred_id = pred.strip()
+        valid_ids = set(TOOL_IDS[: len(ex["available_tools"])]) | {NO_TOOL_ID}
+        correct = pred_id == answer_id
+        is_garbage = bool(pred_id) and pred_id not in valid_ids
+        prediction_tool = tool_id_to_answer(ex, pred_id)
         per_results.append(
             ExampleResult(
                 index=i,
                 user_request=ex["user_request"],
                 n_tools=len(ex["available_tools"]),
                 answer=ex["answer"],
+                answer_id=answer_id,
                 prediction=pred,
+                prediction_tool=prediction_tool,
                 correct=correct,
                 is_garbage=is_garbage,
                 latency_s=lat,
@@ -370,7 +421,8 @@ def evaluate(
         status = "✓" if correct else ("?" if is_garbage else "✗")
         print(
             f"  [{i + 1:>3}/{len(examples)}] {status} "
-            f"pred={pred!r:30s}  ans={ex['answer']!r:30s}  "
+            f"pred_id={pred!r:4s} ans_id={answer_id!r:4s}  "
+            f"pred_tool={prediction_tool!r:30s} ans={ex['answer']!r:30s}  "
             f"{lat * 1000:.0f}ms"
         )
 
@@ -403,6 +455,9 @@ def evaluate(
         dtype=str(dtype),
         timestamp=datetime.now().isoformat(timespec="seconds"),
         eval_mode=eval_mode,
+        prompt_format=PROMPT_FORMAT_VERSION,
+        tool_id_scheme="a-zA-Z",
+        no_tool_id=NO_TOOL_ID,
         n_examples=len(per_results),
         n_correct=n_correct,
         accuracy=round(accuracy, 4),
