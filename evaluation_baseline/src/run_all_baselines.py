@@ -108,9 +108,7 @@ def run_model(
         cmd += ["--limit", str(limit)]
 
     print(f"\n{'=' * 60}\n  Running: {model_key}\n{'=' * 60}")
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     assert proc.stdout is not None
     for line in proc.stdout:
         print(line, end="", flush=True)
@@ -186,9 +184,7 @@ def save_summary(results: list[dict], out_dir: Path) -> None:
 
 def main() -> None:
     args = parse_args()
-    out_dir = args.out_dir or (
-        FS_REPORTS_DIR if args.mode == "few_shot" else REPORTS_DIR
-    )
+    out_dir = args.out_dir or (FS_REPORTS_DIR if args.mode == "few_shot" else REPORTS_DIR)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     targets = args.models if args.models else ALL_MODELS

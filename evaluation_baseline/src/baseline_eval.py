@@ -38,6 +38,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 _env_file = _REPO_ROOT / ".env"
 if _env_file.exists():
     from dotenv import load_dotenv
+
     load_dotenv(_env_file)
 
 os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
@@ -52,9 +53,9 @@ from evaluation_lib import (
     resolve_device,
 )
 
-DEFAULT_DATA    = _REPO_ROOT / "dataset_sample" / "sample.json"
+DEFAULT_DATA = _REPO_ROOT / "dataset_sample" / "sample.json"
 DEFAULT_OUT_DIR = Path(__file__).parent.parent / "reports_zero_shot"
-DEFAULT_FS_DIR  = Path(__file__).parent.parent / "reports_few_shot"
+DEFAULT_FS_DIR = Path(__file__).parent.parent / "reports_few_shot"
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,18 +63,16 @@ def parse_args() -> argparse.Namespace:
         description="Baseline evaluation for MCP tool routing.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--model", "-m", type=str,
-                   help="Model key (see --list-models) or full HF model ID.")
+    p.add_argument(
+        "--model", "-m", type=str, help="Model key (see --list-models) or full HF model ID."
+    )
     p.add_argument("--data", "-d", type=Path, default=DEFAULT_DATA)
-    p.add_argument("--device", type=str, default="auto",
-                   choices=["auto", "cpu", "cuda", "mps"])
+    p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda", "mps"])
     p.add_argument("--max-new-tokens", type=int, default=8)
-    p.add_argument("--mode", type=str, default="zero_shot",
-                   choices=["zero_shot", "few_shot"])
+    p.add_argument("--mode", type=str, default="zero_shot", choices=["zero_shot", "few_shot"])
     p.add_argument("--out-dir", type=Path, default=None)
     p.add_argument("--limit", type=int, default=None)
-    p.add_argument("--list-models", action="store_true",
-                   help="Print the model registry and exit.")
+    p.add_argument("--list-models", action="store_true", help="Print the model registry and exit.")
     return p.parse_args()
 
 
@@ -96,20 +95,20 @@ def main() -> None:
     if model_key in MODEL_REGISTRY:
         model_id = MODEL_REGISTRY[model_key]
     else:
-        model_id  = args.model
+        model_id = args.model
         model_key = args.model.split("/")[-1].lower()
 
-    device        = resolve_device(args.device)
+    device = resolve_device(args.device)
     system_prompt = SYSTEM_PROMPT_FEW_SHOT if args.mode == "few_shot" else SYSTEM_PROMPT_ZERO_SHOT
-    out_dir       = args.out_dir or (DEFAULT_FS_DIR if args.mode == "few_shot" else DEFAULT_OUT_DIR)
+    out_dir = args.out_dir or (DEFAULT_FS_DIR if args.mode == "few_shot" else DEFAULT_OUT_DIR)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  Model   : {model_id}")
     print(f"  Mode    : {args.mode}")
     print(f"  Device  : {device}")
     print(f"  Data    : {args.data}")
     print(f"  Limit   : {args.limit or 'all'}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     report = evaluate(
         model_key=model_key,
@@ -122,9 +121,9 @@ def main() -> None:
         eval_mode=args.mode,
     )
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  RESULTS — {report.model_key}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Accuracy       : {report.accuracy:.2%}  ({report.n_correct}/{report.n_examples})")
     print(f"  Garbage preds  : {report.garbage_pct:.1f}%")
     print(f"  Avg latency    : {report.avg_latency_ms:.1f} ms")
@@ -132,10 +131,10 @@ def main() -> None:
     print(f"  P95 latency    : {report.p95_latency_ms:.1f} ms")
     print(f"  Avg tokens/sec : {report.avg_tokens_per_sec:.1f}")
     print(f"  Peak memory    : {report.peak_memory_mb:.1f} MB")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    ts       = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = out_dir / f"{model_key}_{ts}.json"
     out_path.write_text(
         json.dumps(asdict(report), indent=2, ensure_ascii=False),

@@ -19,6 +19,7 @@ from transformers import (
 
 # ── Device resolution ──────────────────────────────────────────────────────────
 
+
 def resolve_device(requested: str) -> torch.device:
     """Resolve a device string; 'auto' picks CUDA > MPS > CPU."""
     if requested == "auto":
@@ -39,6 +40,7 @@ def dtype_for_device(device: torch.device) -> torch.dtype:
 
 # ── Memory tracking ────────────────────────────────────────────────────────────
 
+
 def reset_peak_memory(device: torch.device) -> None:
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
@@ -46,17 +48,18 @@ def reset_peak_memory(device: torch.device) -> None:
 
 def peak_memory_mb(device: torch.device) -> float:
     if device.type == "cuda":
-        return torch.cuda.max_memory_allocated(device) / 1024 ** 2
+        return torch.cuda.max_memory_allocated(device) / 1024**2
     if device.type == "mps":
         try:
-            return torch.mps.current_allocated_memory() / 1024 ** 2
+            return torch.mps.current_allocated_memory() / 1024**2
         except AttributeError:
             return 0.0
     try:
         import os
 
         import psutil
-        return psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
+
+        return psutil.Process(os.getpid()).memory_info().rss / 1024**2
     except ImportError:
         return 0.0
 
@@ -75,6 +78,7 @@ def free_model_memory(model: Any, tokenizer: Any, device: torch.device) -> None:
 
 
 # ── Model loading ──────────────────────────────────────────────────────────────
+
 
 def load_model_and_tokenizer(
     model_id: str,
@@ -107,7 +111,9 @@ def load_model_and_tokenizer(
                 **kwargs,
             )
         except (ImportError, ValueError, NotImplementedError):
-            print(f"  Loading model     … (device={device}, dtype={dtype}, attn=sdpa [FA2 unavailable])")
+            print(
+                f"  Loading model     … (device={device}, dtype={dtype}, attn=sdpa [FA2 unavailable])"
+            )
             model = AutoModelForCausalLM.from_pretrained(
                 model_id,
                 dtype=dtype,
