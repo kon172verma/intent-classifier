@@ -50,13 +50,7 @@ ALL_FINETUNE_MODELS: list[str] = _FINETUNE_KEYS
 
 # These smaller models fit comfortably on a Colab L4 for LoRA-family PEFT
 # without gradient checkpointing, so we avoid its extra compute overhead.
-LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS: frozenset[str] = frozenset(
-    {
-        "smollm2-360m",
-        "qwen2.5-0.5b",
-        "qwen3-0.6b",
-    }
-)
+LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS: frozenset[str] = frozenset({})
 
 # ── Restricted model subset (QLoRA, AdaLoRA) ──────────────────────────────────
 # QLoRA and AdaLoRA are limited to 2 models: the small Qwen3 base+chat model
