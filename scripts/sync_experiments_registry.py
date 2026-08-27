@@ -84,6 +84,9 @@ def infer_remote_subfolders(repo_id: str, token: str | None) -> tuple[set[str], 
 
     We infer adapter folders from the first two path components in repo files:
         version/subfolder/...
+
+    Evaluation reports are stored separately under reports/... and are not
+    adapter folders, so they are excluded from registry reconciliation.
     """
     from huggingface_hub import HfApi
 
@@ -93,6 +96,8 @@ def infer_remote_subfolders(repo_id: str, token: str | None) -> tuple[set[str], 
     candidate_subfolders: set[str] = set()
     for p in files:
         parts = p.split("/")
+        if parts[0] == "reports":
+            continue
         if len(parts) >= 3:
             candidate_subfolders.add(f"{parts[0]}/{parts[1]}")
 
