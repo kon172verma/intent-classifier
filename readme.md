@@ -210,6 +210,19 @@ Six PEFT techniques are implemented:
 Shared fine-tuning utilities live in `finetune_lib/`. All PEFT training paths
 use the same v2 prompt renderer and train on the ID label.
 
+### v2.0 Experiment Reports
+
+The completed 1k experiment matrices, charts, and technique-specific findings
+are documented in the final reports below. Reported accuracy is exact-match on
+the predicted positional tool ID.
+
+- [LoRA](finetune_LoRA/final_report.md)
+- [LoRA+](finetune_LoRAplus/final_report.md)
+- [DoRA](finetune_DoRA/final_report.md)
+- [DoRA+](finetune_DoRAplus/final_report.md)
+- [AdaLoRA](finetune_AdaLoRA/final_report.md)
+- [QLoRA](finetune_QLoRA/final_report.md)
+
 Adapters are pushed to the experiments repo under:
 
 ```text
