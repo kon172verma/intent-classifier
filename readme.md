@@ -224,6 +224,28 @@ v2.0/qwen3-0.6b_LoRA_C_1k_20260715-044041
 
 `EXPERIMENTS.jsonl` is the append-only index of adapter pushes.
 
+### Synchronize The Experiment Registry
+
+The registry script compares local adapter entries with the Hugging Face
+experiments repository. It deliberately ignores the remote `reports/` tree,
+which contains evaluation artifacts rather than adapter folders. Set `HF_TOKEN`
+before running either command.
+
+Verify that the local registry and remote adapter folders are in sync:
+
+```bash
+./scripts/sync_experiments_registry.py --strict
+```
+
+Add remote adapter folders missing from `EXPERIMENTS.jsonl` and remove stale or
+duplicate local entries:
+
+```bash
+./scripts/sync_experiments_registry.py --sync
+```
+
+After synchronizing, run the strict verification command again.
+
 ## Checkpoints And Reports
 
 LoRA-family training writes Hugging Face Trainer checkpoints locally under:
