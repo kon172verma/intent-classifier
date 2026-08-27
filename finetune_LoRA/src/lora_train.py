@@ -163,6 +163,12 @@ def parse_args(model_registry: dict[str, str] | None = None) -> argparse.Namespa
         default=None,
         help="Root dir for locally saved adapters (default: finetune_LoRA/adapters/).",
     )
+    p.add_argument(
+        "--ckpt-dir",
+        type=Path,
+        default=None,
+        help="Root dir for Trainer checkpoints (default: finetune_<technique>/tmp/).",
+    )
     p.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR)
     p.add_argument(
         "--device",
@@ -218,7 +224,7 @@ def train_main(
     data_dir = (args.data_dir or base_dir / "data") / args.dataset_size
     adapter_dir = (args.adapter_dir or base_dir / "adapters") / run_tag
     # TrainingArguments requires an output_dir even when save_strategy="no".
-    tmp_dir = base_dir / "tmp" / run_tag
+    tmp_dir = (args.ckpt_dir or base_dir / "tmp") / run_tag
     args.report_dir.mkdir(parents=True, exist_ok=True)
     adapter_dir.mkdir(parents=True, exist_ok=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)

@@ -135,6 +135,12 @@ def parse_args(
         choices=["auto", "cpu", "cuda", "mps"],
     )
     p.add_argument(
+        "--ckpt-dir",
+        type=Path,
+        default=None,
+        help="Root dir for per-run Trainer checkpoints.",
+    )
+    p.add_argument(
         "--skip-training",
         action="store_true",
         help="Skip lora_train.py and only run val evaluation on existing adapters.",
@@ -212,6 +218,8 @@ def run_experiments_main(
                     train_cmd.append("--smoke-test")
                 if args.no_push:
                     train_cmd.append("--no-push")
+                if args.ckpt_dir is not None:
+                    train_cmd.extend(["--ckpt-dir", str(args.ckpt_dir)])
                 train_ok = run_subprocess(train_cmd, f"TRAIN  {label}")
 
             # ── Validation ───────────────────────────────────────────────────────────
