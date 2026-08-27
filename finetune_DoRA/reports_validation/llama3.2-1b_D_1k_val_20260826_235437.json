@@ -1,0 +1,927 @@
+{
+  "model_key": "llama3.2-1b",
+  "model_id": "meta-llama/Llama-3.2-1B-Instruct",
+  "lora_config": "D",
+  "dataset_size": "1k",
+  "technique": "DoRA",
+  "split": "val",
+  "timestamp": "20260826_235437",
+  "prompt_format": "tool_id_v1",
+  "tool_id_scheme": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  "no_tool_id": "-",
+  "n_examples": 100,
+  "n_correct": 96,
+  "accuracy": 0.96,
+  "anchor_accuracy": null,
+  "avg_latency_ms": 452.89,
+  "p50_latency_ms": 449.64,
+  "p95_latency_ms": 489.97,
+  "avg_tokens_per_sec": 4.44,
+  "peak_memory_mb": 2856.2,
+  "hf_repo": "kon172verma/intent-classifier-experiments",
+  "hf_subfolder": "v2.0/llama3.2-1b_DoRA_D_1k_20260826-205911",
+  "hf_report_path": "reports/v2.0/dora/reports_validation/llama3.2-1b_D_1k_val_20260826_235437.json",
+  "per_tool_metrics": {},
+  "results": [
+    {
+      "index": 1,
+      "answer": "roadside_assistance",
+      "answer_id": "n",
+      "prediction": "n",
+      "prediction_tool": "roadside_assistance",
+      "correct": true,
+      "latency_s": 0.765
+    },
+    {
+      "index": 2,
+      "answer": "corp-contact-sync",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "corp-contact-sync",
+      "correct": true,
+      "latency_s": 0.4336
+    },
+    {
+      "index": 3,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.431
+    },
+    {
+      "index": 4,
+      "answer": "corp-scheduler-app",
+      "answer_id": "o",
+      "prediction": "o",
+      "prediction_tool": "corp-scheduler-app",
+      "correct": true,
+      "latency_s": 0.4523
+    },
+    {
+      "index": 5,
+      "answer": "sms_messenger",
+      "answer_id": "d",
+      "prediction": "d",
+      "prediction_tool": "sms_messenger",
+      "correct": true,
+      "latency_s": 0.4315
+    },
+    {
+      "index": 6,
+      "answer": "traffic_alert_service",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "traffic_alert_service",
+      "correct": true,
+      "latency_s": 0.4419
+    },
+    {
+      "index": 7,
+      "answer": "package_tracker",
+      "answer_id": "n",
+      "prediction": "n",
+      "prediction_tool": "package_tracker",
+      "correct": true,
+      "latency_s": 0.4545
+    },
+    {
+      "index": 8,
+      "answer": "remote_vehicle_lock",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "remote_vehicle_lock",
+      "correct": true,
+      "latency_s": 0.4289
+    },
+    {
+      "index": 9,
+      "answer": "in_car_analytics",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "in_car_analytics",
+      "correct": true,
+      "latency_s": 0.4463
+    },
+    {
+      "index": 10,
+      "answer": "trip_logger",
+      "answer_id": "p",
+      "prediction": "p",
+      "prediction_tool": "trip_logger",
+      "correct": true,
+      "latency_s": 0.4557
+    },
+    {
+      "index": 11,
+      "answer": "news_briefing",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "news_briefing",
+      "correct": true,
+      "latency_s": 0.4333
+    },
+    {
+      "index": 12,
+      "answer": "health_monitor",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "health_monitor",
+      "correct": true,
+      "latency_s": 0.4331
+    },
+    {
+      "index": 13,
+      "answer": "ev_charging_scheduler",
+      "answer_id": "v",
+      "prediction": "v",
+      "prediction_tool": "ev_charging_scheduler",
+      "correct": true,
+      "latency_s": 0.4693
+    },
+    {
+      "index": 14,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4305
+    },
+    {
+      "index": 15,
+      "answer": "climate_control",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "climate_control",
+      "correct": true,
+      "latency_s": 0.4279
+    },
+    {
+      "index": 16,
+      "answer": "corp-contact-sync",
+      "answer_id": "i",
+      "prediction": "i",
+      "prediction_tool": "corp-contact-sync",
+      "correct": true,
+      "latency_s": 0.4617
+    },
+    {
+      "index": 17,
+      "answer": "vehicle_diagnostics",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "vehicle_diagnostics",
+      "correct": true,
+      "latency_s": 0.4614
+    },
+    {
+      "index": 18,
+      "answer": "call_handler",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "call_handler",
+      "correct": true,
+      "latency_s": 0.4266
+    },
+    {
+      "index": 19,
+      "answer": "package_tracker",
+      "answer_id": "g",
+      "prediction": "g",
+      "prediction_tool": "package_tracker",
+      "correct": true,
+      "latency_s": 0.434
+    },
+    {
+      "index": 20,
+      "answer": "poi_search",
+      "answer_id": "e",
+      "prediction": "e",
+      "prediction_tool": "poi_search",
+      "correct": true,
+      "latency_s": 0.4304
+    },
+    {
+      "index": 21,
+      "answer": "climate_control",
+      "answer_id": "l",
+      "prediction": "l",
+      "prediction_tool": "climate_control",
+      "correct": true,
+      "latency_s": 0.464
+    },
+    {
+      "index": 22,
+      "answer": "toll_payment_service",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "toll_payment_service",
+      "correct": true,
+      "latency_s": 0.4377
+    },
+    {
+      "index": 23,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4291
+    },
+    {
+      "index": 24,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4624
+    },
+    {
+      "index": 25,
+      "answer": "nav_route_planner",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "nav_route_planner",
+      "correct": true,
+      "latency_s": 0.447
+    },
+    {
+      "index": 26,
+      "answer": "poi_search",
+      "answer_id": "f",
+      "prediction": "f",
+      "prediction_tool": "poi_search",
+      "correct": true,
+      "latency_s": 0.46
+    },
+    {
+      "index": 27,
+      "answer": "face_emotion",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "face_emotion",
+      "correct": true,
+      "latency_s": 0.4315
+    },
+    {
+      "index": 28,
+      "answer": "sms_messenger",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "sms_messenger",
+      "correct": true,
+      "latency_s": 0.4894
+    },
+    {
+      "index": 29,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4293
+    },
+    {
+      "index": 30,
+      "answer": "climate_control",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "climate_control",
+      "correct": true,
+      "latency_s": 0.4616
+    },
+    {
+      "index": 31,
+      "answer": "health_monitor",
+      "answer_id": "e",
+      "prediction": "t",
+      "prediction_tool": "face_emotion",
+      "correct": false,
+      "latency_s": 0.49
+    },
+    {
+      "index": 32,
+      "answer": "poi_search",
+      "answer_id": "d",
+      "prediction": "d",
+      "prediction_tool": "poi_search",
+      "correct": true,
+      "latency_s": 0.4479
+    },
+    {
+      "index": 33,
+      "answer": "media_player_ctrl",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "media_player_ctrl",
+      "correct": true,
+      "latency_s": 0.4296
+    },
+    {
+      "index": 34,
+      "answer": "corp-kariya-weather-app",
+      "answer_id": "e",
+      "prediction": "e",
+      "prediction_tool": "corp-kariya-weather-app",
+      "correct": true,
+      "latency_s": 0.4903
+    },
+    {
+      "index": 35,
+      "answer": "package_tracker",
+      "answer_id": "d",
+      "prediction": "d",
+      "prediction_tool": "package_tracker",
+      "correct": true,
+      "latency_s": 0.4513
+    },
+    {
+      "index": 36,
+      "answer": "parking_locator",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "parking_locator",
+      "correct": true,
+      "latency_s": 0.431
+    },
+    {
+      "index": 37,
+      "answer": "ev_charging_scheduler",
+      "answer_id": "d",
+      "prediction": "d",
+      "prediction_tool": "ev_charging_scheduler",
+      "correct": true,
+      "latency_s": 0.4334
+    },
+    {
+      "index": 38,
+      "answer": "roadside_assistance",
+      "answer_id": "d",
+      "prediction": "d",
+      "prediction_tool": "roadside_assistance",
+      "correct": true,
+      "latency_s": 0.4397
+    },
+    {
+      "index": 39,
+      "answer": "remote_vehicle_lock",
+      "answer_id": "f",
+      "prediction": "f",
+      "prediction_tool": "remote_vehicle_lock",
+      "correct": true,
+      "latency_s": 0.4347
+    },
+    {
+      "index": 40,
+      "answer": "corp-cloud-sync",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "corp-cloud-sync",
+      "correct": true,
+      "latency_s": 0.4577
+    },
+    {
+      "index": 41,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4446
+    },
+    {
+      "index": 42,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4627
+    },
+    {
+      "index": 43,
+      "answer": "media_player_ctrl",
+      "answer_id": "g",
+      "prediction": "g",
+      "prediction_tool": "media_player_ctrl",
+      "correct": true,
+      "latency_s": 0.4928
+    },
+    {
+      "index": 44,
+      "answer": "corp-scheduler-app",
+      "answer_id": "j",
+      "prediction": "j",
+      "prediction_tool": "corp-scheduler-app",
+      "correct": true,
+      "latency_s": 0.4904
+    },
+    {
+      "index": 45,
+      "answer": "corp-cloud-sync",
+      "answer_id": "j",
+      "prediction": "j",
+      "prediction_tool": "corp-cloud-sync",
+      "correct": true,
+      "latency_s": 0.453
+    },
+    {
+      "index": 46,
+      "answer": "parking_locator",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "parking_locator",
+      "correct": true,
+      "latency_s": 0.4269
+    },
+    {
+      "index": 47,
+      "answer": "corp-cloud-sync",
+      "answer_id": "i",
+      "prediction": "i",
+      "prediction_tool": "corp-cloud-sync",
+      "correct": true,
+      "latency_s": 0.4546
+    },
+    {
+      "index": 48,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4297
+    },
+    {
+      "index": 49,
+      "answer": "news_briefing",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "news_briefing",
+      "correct": true,
+      "latency_s": 0.4342
+    },
+    {
+      "index": 50,
+      "answer": "face_emotion",
+      "answer_id": "y",
+      "prediction": "y",
+      "prediction_tool": "face_emotion",
+      "correct": true,
+      "latency_s": 0.4946
+    },
+    {
+      "index": 51,
+      "answer": "package_tracker",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "package_tracker",
+      "correct": true,
+      "latency_s": 0.4313
+    },
+    {
+      "index": 52,
+      "answer": "call_handler",
+      "answer_id": "l",
+      "prediction": "l",
+      "prediction_tool": "call_handler",
+      "correct": true,
+      "latency_s": 0.4619
+    },
+    {
+      "index": 53,
+      "answer": "traffic_alert_service",
+      "answer_id": "g",
+      "prediction": "g",
+      "prediction_tool": "traffic_alert_service",
+      "correct": true,
+      "latency_s": 0.4343
+    },
+    {
+      "index": 54,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4349
+    },
+    {
+      "index": 55,
+      "answer": "climate_control",
+      "answer_id": "n",
+      "prediction": "n",
+      "prediction_tool": "climate_control",
+      "correct": true,
+      "latency_s": 0.4605
+    },
+    {
+      "index": 56,
+      "answer": "vehicle_diagnostics",
+      "answer_id": "a",
+      "prediction": "i",
+      "prediction_tool": "health_monitor",
+      "correct": false,
+      "latency_s": 0.4406
+    },
+    {
+      "index": 57,
+      "answer": "corp-contact-sync",
+      "answer_id": "g",
+      "prediction": "f",
+      "prediction_tool": "poi_search",
+      "correct": false,
+      "latency_s": 0.4505
+    },
+    {
+      "index": 58,
+      "answer": "safety_proposal",
+      "answer_id": "k",
+      "prediction": "k",
+      "prediction_tool": "safety_proposal",
+      "correct": true,
+      "latency_s": 0.4632
+    },
+    {
+      "index": 59,
+      "answer": "poi_search",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "poi_search",
+      "correct": true,
+      "latency_s": 0.4503
+    },
+    {
+      "index": 60,
+      "answer": "corp-cloud-sync",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "corp-cloud-sync",
+      "correct": true,
+      "latency_s": 0.4297
+    },
+    {
+      "index": 61,
+      "answer": "corp-cloud-sync",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "corp-cloud-sync",
+      "correct": true,
+      "latency_s": 0.4631
+    },
+    {
+      "index": 62,
+      "answer": "corp-scheduler-app",
+      "answer_id": "k",
+      "prediction": "k",
+      "prediction_tool": "corp-scheduler-app",
+      "correct": true,
+      "latency_s": 0.458
+    },
+    {
+      "index": 63,
+      "answer": "poi_search",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "poi_search",
+      "correct": true,
+      "latency_s": 0.4316
+    },
+    {
+      "index": 64,
+      "answer": "battery_status_monitor",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "battery_status_monitor",
+      "correct": true,
+      "latency_s": 0.429
+    },
+    {
+      "index": 65,
+      "answer": "nav_route_planner",
+      "answer_id": "b",
+      "prediction": "a",
+      "prediction_tool": "roadside_assistance",
+      "correct": false,
+      "latency_s": 0.441
+    },
+    {
+      "index": 66,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4489
+    },
+    {
+      "index": 67,
+      "answer": "trip_logger",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "trip_logger",
+      "correct": true,
+      "latency_s": 0.4618
+    },
+    {
+      "index": 68,
+      "answer": "sms_messenger",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "sms_messenger",
+      "correct": true,
+      "latency_s": 0.4884
+    },
+    {
+      "index": 69,
+      "answer": "sms_messenger",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "sms_messenger",
+      "correct": true,
+      "latency_s": 0.4586
+    },
+    {
+      "index": 70,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4512
+    },
+    {
+      "index": 71,
+      "answer": "corp-kariya-weather-app",
+      "answer_id": "j",
+      "prediction": "j",
+      "prediction_tool": "corp-kariya-weather-app",
+      "correct": true,
+      "latency_s": 0.4488
+    },
+    {
+      "index": 72,
+      "answer": "fuel_station_finder",
+      "answer_id": "n",
+      "prediction": "n",
+      "prediction_tool": "fuel_station_finder",
+      "correct": true,
+      "latency_s": 0.4867
+    },
+    {
+      "index": 73,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4799
+    },
+    {
+      "index": 74,
+      "answer": "face_emotion",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "face_emotion",
+      "correct": true,
+      "latency_s": 0.4277
+    },
+    {
+      "index": 75,
+      "answer": "nav_route_planner",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "nav_route_planner",
+      "correct": true,
+      "latency_s": 0.4636
+    },
+    {
+      "index": 76,
+      "answer": "remote_vehicle_lock",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "remote_vehicle_lock",
+      "correct": true,
+      "latency_s": 0.4328
+    },
+    {
+      "index": 77,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.434
+    },
+    {
+      "index": 78,
+      "answer": "trip_logger",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "trip_logger",
+      "correct": true,
+      "latency_s": 0.4343
+    },
+    {
+      "index": 79,
+      "answer": "traffic_alert_service",
+      "answer_id": "o",
+      "prediction": "o",
+      "prediction_tool": "traffic_alert_service",
+      "correct": true,
+      "latency_s": 0.4617
+    },
+    {
+      "index": 80,
+      "answer": "media_player_ctrl",
+      "answer_id": "e",
+      "prediction": "e",
+      "prediction_tool": "media_player_ctrl",
+      "correct": true,
+      "latency_s": 0.4468
+    },
+    {
+      "index": 81,
+      "answer": "media_player_ctrl",
+      "answer_id": "c",
+      "prediction": "c",
+      "prediction_tool": "media_player_ctrl",
+      "correct": true,
+      "latency_s": 0.4356
+    },
+    {
+      "index": 82,
+      "answer": "ev_charging_scheduler",
+      "answer_id": "h",
+      "prediction": "h",
+      "prediction_tool": "ev_charging_scheduler",
+      "correct": true,
+      "latency_s": 0.4516
+    },
+    {
+      "index": 83,
+      "answer": "health_monitor",
+      "answer_id": "e",
+      "prediction": "e",
+      "prediction_tool": "health_monitor",
+      "correct": true,
+      "latency_s": 0.4657
+    },
+    {
+      "index": 84,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4298
+    },
+    {
+      "index": 85,
+      "answer": "traffic_alert_service",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "traffic_alert_service",
+      "correct": true,
+      "latency_s": 0.4368
+    },
+    {
+      "index": 86,
+      "answer": "safety_proposal",
+      "answer_id": "b",
+      "prediction": "b",
+      "prediction_tool": "safety_proposal",
+      "correct": true,
+      "latency_s": 0.4289
+    },
+    {
+      "index": 87,
+      "answer": "media_player_ctrl",
+      "answer_id": "k",
+      "prediction": "k",
+      "prediction_tool": "media_player_ctrl",
+      "correct": true,
+      "latency_s": 0.4581
+    },
+    {
+      "index": 88,
+      "answer": "trip_logger",
+      "answer_id": "l",
+      "prediction": "l",
+      "prediction_tool": "trip_logger",
+      "correct": true,
+      "latency_s": 0.4572
+    },
+    {
+      "index": 89,
+      "answer": "parking_locator",
+      "answer_id": "f",
+      "prediction": "f",
+      "prediction_tool": "parking_locator",
+      "correct": true,
+      "latency_s": 0.4587
+    },
+    {
+      "index": 90,
+      "answer": "corp-kariya-weather-app",
+      "answer_id": "a",
+      "prediction": "a",
+      "prediction_tool": "corp-kariya-weather-app",
+      "correct": true,
+      "latency_s": 0.4337
+    },
+    {
+      "index": 91,
+      "answer": "nav_route_planner",
+      "answer_id": "n",
+      "prediction": "n",
+      "prediction_tool": "nav_route_planner",
+      "correct": true,
+      "latency_s": 0.4649
+    },
+    {
+      "index": 92,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.451
+    },
+    {
+      "index": 93,
+      "answer": "ev_charging_scheduler",
+      "answer_id": "l",
+      "prediction": "l",
+      "prediction_tool": "ev_charging_scheduler",
+      "correct": true,
+      "latency_s": 0.4548
+    },
+    {
+      "index": 94,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.4338
+    },
+    {
+      "index": 95,
+      "answer": "trip_logger",
+      "answer_id": "p",
+      "prediction": "p",
+      "prediction_tool": "trip_logger",
+      "correct": true,
+      "latency_s": 0.4665
+    },
+    {
+      "index": 96,
+      "answer": "poi_search",
+      "answer_id": "l",
+      "prediction": "l",
+      "prediction_tool": "poi_search",
+      "correct": true,
+      "latency_s": 0.4528
+    },
+    {
+      "index": 97,
+      "answer": "battery_status_monitor",
+      "answer_id": "n",
+      "prediction": "n",
+      "prediction_tool": "battery_status_monitor",
+      "correct": true,
+      "latency_s": 0.4654
+    },
+    {
+      "index": 98,
+      "answer": "none",
+      "answer_id": "-",
+      "prediction": "-",
+      "prediction_tool": "none",
+      "correct": true,
+      "latency_s": 0.441
+    },
+    {
+      "index": 99,
+      "answer": "parking_locator",
+      "answer_id": "f",
+      "prediction": "f",
+      "prediction_tool": "parking_locator",
+      "correct": true,
+      "latency_s": 0.4777
+    },
+    {
+      "index": 100,
+      "answer": "remote_vehicle_lock",
+      "answer_id": "f",
+      "prediction": "f",
+      "prediction_tool": "remote_vehicle_lock",
+      "correct": true,
+      "latency_s": 0.4699
+    }
+  ]
+}
