@@ -135,6 +135,12 @@ def parse_args(
         choices=["auto", "cpu", "cuda", "mps"],
     )
     p.add_argument(
+        "--gradient-checkpointing",
+        action="store_true",
+        default=True,
+        help="Enable gradient checkpointing during training (enabled by default).",
+    )
+    p.add_argument(
         "--ckpt-dir",
         type=Path,
         default=None,
@@ -182,6 +188,7 @@ def run_experiments_main(
     print(f"  Configs  : {args.configs}")
     print(f"  Dataset  : {args.dataset_size}")
     print(f"  Device   : {args.device}")
+    print(f"  Grad ckpt: {'enabled' if args.gradient_checkpointing else 'disabled'}")
     print(f"  Runs     : {total_runs} training + {total_runs} val eval")
     if args.smoke_test:
         print("  Mode     : SMOKE TEST (10 steps per run)")
@@ -216,6 +223,8 @@ def run_experiments_main(
                 ]
                 if args.smoke_test:
                     train_cmd.append("--smoke-test")
+                if args.gradient_checkpointing:
+                    train_cmd.append("--gradient-checkpointing")
                 if args.no_push:
                     train_cmd.append("--no-push")
                 if args.ckpt_dir is not None:

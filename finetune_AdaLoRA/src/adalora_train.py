@@ -169,6 +169,12 @@ def parse_args() -> argparse.Namespace:
         choices=["auto", "cpu", "cuda", "mps"],
     )
     p.add_argument(
+        "--gradient-checkpointing",
+        action="store_true",
+        default=True,
+        help="Enable gradient checkpointing during training (enabled by default).",
+    )
+    p.add_argument(
         "--smoke-test",
         action="store_true",
         help="Run 10 training steps only — validates the full pipeline without committing.",
@@ -204,6 +210,7 @@ def main() -> None:
     print(f"  AdaLoRA cfg  : {args.adalora_config} — {ada_cfg['description']}")
     print(f"  Dataset      : {args.dataset_size}")
     print(f"  Device       : {device}")
+    print(f"  Grad checkpoint: {'enabled' if args.gradient_checkpointing else 'disabled'}")
     print(f"  Adapter dest : {adapter_dir}")
     print(
         f"  HF repo      : {HF_EXPERIMENTS_REPO}/{CURRENT_VERSION}/"
@@ -236,7 +243,7 @@ def main() -> None:
         trust_remote_code=False,
     )
     model.enable_input_require_grads()
-    model.config.use_cache = False
+    model.config.use_cache = not args.gradient_checkpointing
 
     # ── Step counts (needed for AdaLoraConfig.total_step) ────────────────────
     eff_batch = ada_cfg["per_device_train_batch_size"] * ada_cfg["gradient_accumulation_steps"]
@@ -302,9 +309,10 @@ def main() -> None:
         save_strategy="no",
         report_to="none",
         dataloader_pin_memory=(device.type == "cuda"),
-        # AdaLoRA is incompatible with gradient checkpointing — the rank-update
-        # callback requires a full forward/backward pass at each step.
-        gradient_checkpointing=False,
+        gradient_checkpointing=args.gradient_checkpointing,
+        gradient_checkpointing_kwargs=(
+            {"use_reentrant": False} if args.gradient_checkpointing else None
+        ),
         optim="adamw_torch",
     )
 
@@ -448,6 +456,7 @@ def main() -> None:
         "prompt_format": PROMPT_FORMAT_VERSION,
         "tool_id_scheme": "".join(TOOL_IDS),
         "no_tool_id": NO_TOOL_ID,
+        "gradient_checkpointing": args.gradient_checkpointing,
         "trainable_params_init": trainable,
         "total_params": total,
         "trainable_pct_init": round(trainable / total * 100, 4),

@@ -96,7 +96,6 @@ from finetune_lib import (
     FINETUNE_MODEL_REGISTRY,
     HF_EXPERIMENTS_REPO,
     LORA_CONFIGS,
-    LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS,
     NO_TOOL_ID,
     PROMPT_FORMAT_VERSION,
     TOOL_IDS,
@@ -174,6 +173,12 @@ def parse_args(model_registry: dict[str, str] | None = None) -> argparse.Namespa
         "--device",
         default="auto",
         choices=["auto", "cpu", "cuda", "mps"],
+    )
+    p.add_argument(
+        "--gradient-checkpointing",
+        action="store_true",
+        default=True,
+        help="Enable gradient checkpointing during training (enabled by default).",
     )
     p.add_argument(
         "--smoke-test",
@@ -279,17 +284,17 @@ def train_main(
         device_map={"": device},
         trust_remote_code=False,
     )
+    use_gradient_checkpointing = args.gradient_checkpointing
     if quantize_4bit:
-        # kbit-training prep enables gradient flow through frozen 4-bit layers.
-        # Replaces enable_input_require_grads() used for full-precision LoRA.
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=False)
+        # kbit-training prep enables gradient flow through frozen 4-bit layers
+        # and configures checkpointing for QLoRA when requested.
+        model = prepare_model_for_kbit_training(
+            model,
+            use_gradient_checkpointing=use_gradient_checkpointing,
+        )
     else:
         model.enable_input_require_grads()  # gradient flow through frozen base layers
-    use_gradient_checkpointing = (
-        not quantize_4bit
-        and args.model not in LORA_GRADIENT_CHECKPOINTING_SKIP_KEYS
-    )
-    model.config.use_cache = False  # incompatible with gradient checkpointing
+    model.config.use_cache = not use_gradient_checkpointing
 
     # ── Apply LoRA ────────────────────────────────────────────────────────────
     lora_peft_config = LoraConfig(
@@ -364,9 +369,7 @@ def train_main(
         greater_is_better=False,
         report_to="none",
         dataloader_pin_memory=(device.type == "cuda"),
-        # Gradient checkpointing: ~30-40% VRAM saving for larger models.
-        # Disabled under 4-bit NF4 (QLoRA), and skipped for smaller models
-        # that fit comfortably on L4 without the extra compute overhead.
+        # Gradient checkpointing trades extra compute for lower activation memory.
         gradient_checkpointing=use_gradient_checkpointing,
         gradient_checkpointing_kwargs=(
             {"use_reentrant": False} if use_gradient_checkpointing else None
