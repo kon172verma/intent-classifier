@@ -16,15 +16,35 @@ import argparse
 import json
 import os
 import re
-import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+
+# Keep this script independent from finetune_lib. Importing that package also
+# imports the evaluation and training stack, which requires PyTorch and is not
+# installed in the lightweight release-registry GitHub Actions job.
+DEFAULT_HF_EXPERIMENTS_REPO = "kon172verma/intent-classifier-experiments"
+DEFAULT_REGISTRY_PATH = _REPO_ROOT / "EXPERIMENTS.jsonl"
+KNOWN_FINETUNE_MODELS: dict[str, str] = {
+    "smollm2-360m": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B-Instruct",
+    "qwen3-0.6b": "Qwen/Qwen3-0.6B",
+    "llama3.2-1b": "meta-llama/Llama-3.2-1B-Instruct",
+    "smollm2-1.7b": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+}
+
+
+def read_current_version() -> str:
+    """Return the release version without importing the ML configuration stack."""
+    version_file = _REPO_ROOT / "VERSION"
+    if version_file.exists():
+        version = version_file.read_text(encoding="utf-8").strip()
+        if version:
+            return version
+    return "v1.0"
 
 HF_SUBFOLDER_RE = re.compile(
     r"^(?P<version>[^/]+)/"
@@ -159,19 +179,14 @@ def write_registry(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def main() -> None:
-    from finetune_lib.config import (
-        CURRENT_VERSION,
-        FINETUNE_MODEL_REGISTRY,
-        HF_EXPERIMENTS_REPO,
-    )
-    from finetune_lib.registry import REGISTRY_PATH
+    current_version = read_current_version()
 
     parser = argparse.ArgumentParser(
         description="Verify/sync EXPERIMENTS.jsonl against HF experiments repo folders."
     )
-    parser.add_argument("--repo-id", default=HF_EXPERIMENTS_REPO)
-    parser.add_argument("--registry-path", type=Path, default=REGISTRY_PATH)
-    parser.add_argument("--version-fallback", default=CURRENT_VERSION)
+    parser.add_argument("--repo-id", default=DEFAULT_HF_EXPERIMENTS_REPO)
+    parser.add_argument("--registry-path", type=Path, default=DEFAULT_REGISTRY_PATH)
+    parser.add_argument("--version-fallback", default=current_version)
     parser.add_argument(
         "--sync",
         action="store_true",
@@ -250,7 +265,7 @@ def main() -> None:
                     "version": remote_row.version,
                     "technique": remote_row.technique,
                     "model_key": remote_row.model_key,
-                    "base_model_id": FINETUNE_MODEL_REGISTRY.get(remote_row.model_key, ""),
+                    "base_model_id": KNOWN_FINETUNE_MODELS.get(remote_row.model_key, ""),
                     "lora_config": remote_row.lora_config,
                     "dataset_size": remote_row.dataset_size,
                     "timestamp": remote_row.timestamp,
