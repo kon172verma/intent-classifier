@@ -1,220 +1,121 @@
-# Intent Classifier: Fine-Tuning Experiments
+# Intent Classifier
 
-Train a Small Language Model (SLM) to route a user request to the right tool
-from a dynamic list of available tools.
+This project fine-tunes small language models (SLMs) to route a natural-language
+request to the correct tool from the tools available in that request. It contains
+the synthetic dataset, baseline evaluations, PEFT fine-tuning experiments, and
+the final reports for each experiment version.
 
-In v2.0 the dataset schema stays the same, but prompts are rendered with
-positional tool IDs. The model now predicts the tool ID, not the tool name. If
-no tool matches, it predicts `-`.
+## Repositories
 
-## Related Repositories
+| Repository | Purpose |
+| --- | --- |
+| [Source](https://github.com/kon172verma/intent-classifier) | Dataset, evaluations, fine-tuning code, reports, and experiment registry |
+| [Experiments](https://huggingface.co/kon172verma/intent-classifier-experiments) | Versioned adapter artifacts and uploaded JSON reports |
+| [Release](https://huggingface.co/kon172verma/intent-classifier) | Selected merged models for release |
+| [Inference](https://github.com/kon172verma/intent-classifier-inference) | Downloads and benchmarks released models on inference engines and edge hardware |
 
-- This repo: `github.com/kon172verma/intent-classifier`
-- Experiments repo: `huggingface.co/kon172verma/intent-classifier-experiments`
-- Release repo: `huggingface.co/kon172verma/intent-classifier`
-- Inference repo: `github.com/kon172verma/intent-classifier-inference`
+## The Tool-Routing Task
 
-## Version 2.0
+Each example provides a user query and a dynamic, ordered list of available
+tools. The model must select the one tool that matches the request, or return
+"-" when no listed tool applies. Tool availability and ordering vary by example,
+so a model cannot rely on a fixed tool position.
 
-v2.0 keeps the same examples and answer names in `dataset_sample/` and
-`dataset_full/`, but changes how examples are presented to the model.
+The on-disk record retains the readable answer name:
 
-Why v2.0 exists:
-
-- Shorter outputs: `a` is cheaper to generate and parse than `call_handler`.
-- Cleaner labels: the model only has to emit one of `a-z`, `A-Z`, or `-`.
-- Dynamic tools still work: IDs are assigned per example from the listed order.
-- Smaller benchmark decode budget: evaluation and validation use fewer tokens.
-
-The current ID scheme supports up to 52 tools per example:
-
-```text
-a-z, A-Z
-```
-
-`-` is reserved for "no valid tool".
-
-## Dataset
-
-A synthetic dataset of tool-routing examples generated from a fixed catalog of
-30 tools.
-
-Schema:
-
-```json
+~~~json
 {
-  "user_request": "...",
+  "user_request": "Call my wife.",
   "available_tools": [
     {
-      "name": "...",
-      "description": "..."
+      "name": "health_monitor",
+      "description": "Monitors driver biometrics such as heart rate and fatigue."
+    },
+    {
+      "name": "insurance_claims",
+      "description": "Initiates and tracks vehicle insurance claims."
+    },
+    {
+      "name": "nav_route_planner",
+      "description": "Plans routes and navigation."
+    },
+    {
+      "name": "call_handler",
+      "description": "Initiates, receives, holds, and terminates hands-free phone calls."
     }
   ],
-  "answer": "tool_name_or_none"
+  "answer": "call_handler"
 }
-```
+~~~
 
-Important detail: `answer` remains the readable tool name or `none` on disk.
-During training and inference, the prompt renderer maps it to the positional ID
-shown in that example.
+In the v2 prompt format, the same example is rendered for the model as:
 
-Key properties:
-
-- About 20% of examples have `none` as the answer.
-- Five rare tools appear as the correct answer in only 2-3% of examples.
-- Available-tools count spans few-tool, standard, and many-tool regimes.
-- Split: 80% train, 10% validation, 10% test.
-
-Dataset folders:
-
-- `dataset_sample/`: 100-example sample used during development.
-- `dataset_full/`: full-scale dataset.
-
-## Prompt Format
-
-Prompt order is always:
-
-```text
-system prompt -> available tools -> user request -> selected tool
-```
-
-System prompt:
-
-```text
+~~~text
 You are a tool router.
 
-Available tools are listed with id, name, and description.
-
-Rules:
-- Return only the tool id.
-- Use the id from the available tools list.
-- Return "-" if no tool matches.
-- Do not explain.
-```
-
-User message body:
-
-```text
 Available Tools:
 ID | Name | Description
-a | call_handler | Makes hands-free phone calls.
-b | nav_route_planner | Plans routes and navigation.
-c | sms_messenger | Reads and sends short SMS messages.
+a | health_monitor | Monitors driver biometrics such as heart rate and fatigue.
+b | insurance_claims | Initiates and tracks vehicle insurance claims.
+c | nav_route_planner | Plans routes and navigation.
+d | call_handler | Initiates, receives, holds, and terminates hands-free phone calls.
 
 User Request:
 Call my wife.
 
 Selected Tool:
-```
+~~~
 
-The expected assistant output for this example is:
+The expected output is "d". IDs are assigned from the displayed tool order
+(a-z, then A-Z); "-" is reserved for no matching tool. The production prompt
+also instructs the model to return only the ID and not an explanation.
 
-```text
-a
-```
+## Dataset
 
-## Qwen3-0.6B Template Example
+The dataset is synthetic and built from a fixed catalog of 30 automotive,
+navigation, communication, personal-assistance, and corporate tools. Each
+record has user_request, available_tools, and answer fields.
 
-Before `apply_chat_template`, a training example is represented as messages:
+- dataset_sample/ contains 100 development examples and the canonical tool
+  catalog.
+- dataset_full/ contains 10,000 globally unique examples in 100 JSON files;
+  sample_0001.json is identical to the development sample.
+- The full-data experiments use an 80/10/10 split: 8,000 train, 1,000
+  validation, and 1,000 test examples.
+- About 20% of examples are no-tool cases. Tool-list sizes span 1-3, 4-19, and
+  20-30 tools; five tools are deliberately rare answers (about 2-3% each).
 
-```python
-[
-    {
-        "role": "system",
-        "content": (
-            "You are a tool router.\n\n"
-            "Available tools are listed with id, name, and description.\n\n"
-            "Rules:\n"
-            "- Return only the tool id.\n"
-            "- Use the id from the available tools list.\n"
-            "- Return \"-\" if no tool matches.\n"
-            "- Do not explain."
-        ),
-    },
-    {
-        "role": "user",
-        "content": (
-            "Available Tools:\n"
-            "ID | Name | Description\n"
-            "a | call_handler | Makes hands-free phone calls.\n"
-            "b | nav_route_planner | Plans routes and navigation.\n"
-            "c | sms_messenger | Reads and sends short SMS messages.\n\n"
-            "User Request:\n"
-            "Call my wife.\n\n"
-            "Selected Tool:"
-        ),
-    },
-    {
-        "role": "assistant",
-        "content": "a",
-    },
-]
-```
+Dataset generation and other maintenance commands are documented in
+[dev_notes.md](dev_notes.md).
 
-After Qwen3-0.6B `apply_chat_template(..., enable_thinking=False)`:
+## Experiment Versions And Recommendations
 
-```text
-<|im_start|>system
-You are a tool router.
+All reported scores are exact-match routing accuracy. v1.0 predicts a readable
+tool name; v2.0 and v2.1 use the dynamic positional tool-ID format shown above.
 
-Available tools are listed with id, name, and description.
+| Version | Scope | Best adapters / completed models |
+| --- | --- | --- |
+| v2.1 | Full 10k positional-ID DoRA+ experiments, configuration D | Qwen3-0.6B: 99.8% test; Qwen2.5-0.5B: 99.9%; SmolLM2-360M: 99.7%. **Recommended: Qwen2.5-0.5B**, the highest-scoring and fastest of the three (253 ms P50). |
+| v2.0 | 1k positional-ID experiment matrix (800/100/100) | **DoRA+ Qwen3-0.6B D** (99% validation, 100% test) and **DoRA+ Llama3.2-1B C** (96% validation, 100% test) are the recommended pair. |
+| v1.0 | Initial 1k name-output experiments | **LoRA Qwen3-0.6B C** (99% test) and **LoRA Llama3.2-1B C** (100% test) were the two selected release adapters. |
 
-Rules:
-- Return only the tool id.
-- Use the id from the available tools list.
-- Return "-" if no tool matches.
-- Do not explain.<|im_end|>
-<|im_start|>user
-Available Tools:
-ID | Name | Description
-a | call_handler | Makes hands-free phone calls.
-b | nav_route_planner | Plans routes and navigation.
-c | sms_messenger | Reads and sends short SMS messages.
+---
 
-User Request:
-Call my wife.
+The v2.1 models were evaluated on the shared 1,000-example test split. Their
+test scores, on a fixed 100-example subset, are 99.8% for Qwen3-0.6B,
+99.9% for Qwen2.5-0.5B, and 99.7% for SmolLM2-360M.
 
-Selected Tool:<|im_end|>
-<|im_start|>assistant
-<think>
+## Fine-Tuning And Final Reports
 
-</think>
+### v2.1 final report
 
-a<|im_end|>
-```
+- [Full-dataset DoRA+ fine-tuning](full_dataset_finetune/final_report.md)
 
-For inference, the same system and user messages are rendered with
-`add_generation_prompt=True`; the model then generates the final ID.
+The 1k matrix evaluates six PEFT techniques with shared utilities in
+finetune_lib/. Each report includes results, findings, charts, and links to
+the underlying training, validation, and test JSON reports.
 
-## Baseline Evaluation
-
-Zero-shot and few-shot baselines live in `evaluation_baseline/`. Shared prompt
-construction, parsing, and report schemas live in `evaluation_lib/`.
-
-Metric: exact-match accuracy on the predicted tool ID.
-
-The baseline matrix includes models from 70M to 3B parameters. The final
-fine-tuning shortlist is documented in `evaluation_baseline/final_report.md`.
-
-## Fine-Tuning
-
-Six PEFT techniques are implemented:
-
-- LoRA: `finetune_LoRA/`
-- LoRA+: `finetune_LoRAplus/`
-- DoRA: `finetune_DoRA/`
-- DoRA+: `finetune_DoRAplus/`
-- AdaLoRA: `finetune_AdaLoRA/`
-- QLoRA: `finetune_QLoRA/`
-
-Shared fine-tuning utilities live in `finetune_lib/`. All PEFT training paths
-use the same v2 prompt renderer and train on the ID label.
-
-### v2.0 Experiment Reports
-
-The completed 1k experiment matrices, charts, and technique-specific findings
-are documented in the final reports below. Reported accuracy is exact-match on
-the predicted positional tool ID.
+### v2.0 final reports
 
 - [LoRA](finetune_LoRA/final_report.md)
 - [LoRA+](finetune_LoRAplus/final_report.md)
@@ -223,108 +124,57 @@ the predicted positional tool ID.
 - [AdaLoRA](finetune_AdaLoRA/final_report.md)
 - [QLoRA](finetune_QLoRA/final_report.md)
 
-Adapters are pushed to the experiments repo under:
+The baseline shortlist is documented separately in the
+[baseline final report](evaluation_baseline/final_report.md).
 
-```text
+## Versioning, Artifacts, And Releases
+
+VERSION identifies the active experiment version. Each adapter push is logged
+in the append-only EXPERIMENTS.jsonl registry and stored in the experiments
+repository at:
+
+~~~text
 {version}/{model}_{technique}_{config}_{dataset_size}_{timestamp}
-```
+~~~
 
-Example:
+For example:
 
-```text
-v2.0/qwen3-0.6b_LoRA_C_1k_20260715-044041
-```
+~~~text
+v2.1/qwen2.5-0.5b_DoRA+_D_10k_20260828-134739
+~~~
 
-`EXPERIMENTS.jsonl` is the append-only index of adapter pushes.
+Training, validation, and test reports are saved next to their experiments in
+reports_training/, reports_validation/, and reports_test/. Non-smoke runs also
+upload reports to the experiments repository under a versioned reports/ tree.
+Every report records the adapter's hf_subfolder, preserving the link between a
+metric and the exact adapter that produced it.
 
-### Synchronize The Experiment Registry
-
-The registry script compares local adapter entries with the Hugging Face
-experiments repository. It deliberately ignores the remote `reports/` tree,
-which contains evaluation artifacts rather than adapter folders. Set `HF_TOKEN`
-before running either command.
-
-Verify that the local registry and remote adapter folders are in sync:
-
-```bash
-./scripts/sync_experiments_registry.py --strict
-```
-
-Add remote adapter folders missing from `EXPERIMENTS.jsonl` and remove stale or
-duplicate local entries:
-
-```bash
-./scripts/sync_experiments_registry.py --sync
-```
-
-After synchronizing, run the strict verification command again.
-
-## Checkpoints And Reports
-
-LoRA-family training writes Hugging Face Trainer checkpoints locally under:
-
-```text
-finetune_<technique>/tmp/{model}_{config}_{dataset_size}/checkpoint-*
-```
-
-The trainer keeps disk usage bounded with `save_total_limit=2`. With
-`load_best_model_at_end=True`, the saved and pushed adapter is the best
-validation-loss adapter restored at the end, not every intermediate checkpoint.
-
-Training, validation, and test JSON reports are written locally under each
-technique folder:
-
-```text
-reports_training/
-reports_validation/
-reports_test/
-```
-
-For non-smoke runs, scripts also upload JSON reports to a central reports tree
-in the experiments repo. Adapter files stay in their adapter run folders, while
-reports are grouped by version, technique, and report type:
-
-```text
-reports/
-  v2.0/
-    dora/
-      reports_training/
-      reports_validation/
-      reports_test/
-    loraplus/
-      reports_training/
-      reports_validation/
-      reports_test/
-```
-
-Each JSON report still includes `hf_subfolder`, which points back to the exact
-adapter run that produced it. This keeps reports easy to fetch after a Colab
-disconnect without mixing them into adapter artifact folders.
-
-## Versioning And Release
-
-`VERSION` holds the current experiment version. Bumping it starts a new round;
-subsequent adapter pushes land in the matching version folder.
-
-After release evaluation, the best adapters are merged and pushed to the
-release repo.
+A release selects the best adapters for that version, merges each adapter into
+its base model, and publishes the resulting full-weight model to the release
+repository. The final reports above provide the selection rationale and
+evaluation evidence. Operational details, including registry synchronization,
+are in [dev_notes.md](dev_notes.md).
 
 ## Project Structure
 
-```text
-dataset_sample/        # 100-example sample
-dataset_full/          # Full dataset
-evaluation_lib/        # Shared evaluation utilities
-evaluation_baseline/   # Zero-shot and few-shot baseline results
-finetune_lib/          # Shared training utilities and registry
-finetune_LoRA/         # LoRA experiments
-finetune_LoRAplus/     # LoRA+ experiments
-finetune_DoRA/         # DoRA experiments
-finetune_DoRAplus/     # DoRA+ experiments
-finetune_AdaLoRA/      # AdaLoRA experiments
-finetune_QLoRA/        # QLoRA experiments
-evaluation_release/    # Deep evaluation for release candidates
-scripts/               # Helper scripts
-EXPERIMENTS.jsonl      # Append-only log of adapter pushes
-VERSION                # Current experiment version
-```
+~~~text
+dataset_sample/             # 100-example sample, tool catalog, and generator
+dataset_full/               # 10,000-example dataset and full-data generator
+
+evaluation_lib/             # Shared prompt rendering, parsing, and evaluation
+evaluation_baseline/        # Zero-shot/few-shot baselines and final report
+
+finetune_lib/               # Shared PEFT configuration, training, and registry
+finetune_LoRA/              # LoRA 1k experiments and final report
+finetune_LoRAplus/          # LoRA+ 1k experiments and final report
+finetune_DoRA/              # DoRA 1k experiments and final report
+finetune_DoRAplus/          # DoRA+ 1k experiments and final report
+finetune_AdaLoRA/           # AdaLoRA 1k experiments and final report
+finetune_QLoRA/             # QLoRA 1k experiments and final report
+full_dataset_finetune/      # v2.1 10k DoRA+ experiments, charts, final report
+
+scripts/                    # Repository maintenance helpers
+EXPERIMENTS.jsonl           # Append-only adapter registry
+VERSION                     # Active experiment version
+dev_notes.md                # Development and maintenance procedures
+~~~
